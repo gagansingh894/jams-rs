@@ -1,4 +1,4 @@
-use crate::model::predictor::Predictor;
+use crate::model::predictor::{ModelInput, Predictor};
 use tensorflow::{Graph, SavedModelBundle, SessionOptions};
 
 pub struct Tensorflow {
@@ -17,7 +17,7 @@ impl Tensorflow {
 }
 
 impl Predictor for Tensorflow {
-    fn predict() {
+    fn predict(input: ModelInput) {
         todo!()
     }
 }

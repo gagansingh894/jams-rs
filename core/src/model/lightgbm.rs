@@ -1,4 +1,4 @@
-use crate::model::predictor::Predictor;
+use crate::model::predictor::{ModelInput, Predictor};
 use lgbm;
 
 pub struct LightGBM {
@@ -14,7 +14,7 @@ impl LightGBM {
 }
 
 impl Predictor for LightGBM {
-    fn predict() {
+    fn predict(input: ModelInput) {
         todo!()
     }
 }

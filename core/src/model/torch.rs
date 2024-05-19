@@ -1,4 +1,4 @@
-use crate::model::predictor::Predictor;
+use crate::model::predictor::{ModelInput, Predictor};
 
 use tch::CModule;
 
@@ -14,7 +14,7 @@ impl Torch {
 }
 
 impl Predictor for Torch {
-    fn predict() {
+    fn predict(input: ModelInput) {
         todo!()
     }
 }

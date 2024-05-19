@@ -1,4 +1,4 @@
-use crate::model::predictor::Predictor;
+use crate::model::predictor::{ModelInput, Predictor};
 
 use catboost_rs;
 
@@ -15,7 +15,7 @@ impl Catboost {
 }
 
 impl Predictor for Catboost {
-    fn predict() {
+    fn predict(input: ModelInput) {
         todo!()
     }
 }
