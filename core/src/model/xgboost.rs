@@ -1,15 +1,15 @@
-use crate::model::predictor::Predictor;
+use crate::model::predictor::{ModelInput, Predictor};
 
 pub struct XGBoost {}
 
 impl XGBoost {
-    pub fn load() -> Self {
+    pub fn load() -> anyhow::Result<Self> {
         todo!()
     }
 }
 
 impl Predictor for XGBoost {
-    fn predict() {
+    fn predict(input: ModelInput) {
         todo!()
     }
 }
