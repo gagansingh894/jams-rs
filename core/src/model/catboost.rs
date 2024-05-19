@@ -15,7 +15,7 @@ impl Catboost {
 }
 
 impl Predictor for Catboost {
-    fn predict(input: ModelInput) {
+    fn predict(&self, input: ModelInput) {
         todo!()
     }
 }
