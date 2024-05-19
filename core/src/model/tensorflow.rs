@@ -17,7 +17,7 @@ impl Tensorflow {
 }
 
 impl Predictor for Tensorflow {
-    fn predict(input: ModelInput) {
+    fn predict(&self, input: ModelInput) {
         todo!()
     }
 }
