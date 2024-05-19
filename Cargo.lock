@@ -194,6 +194,7 @@ dependencies = [
  "anyhow",
  "catboost-rs",
  "lgbm",
+ "serde",
  "serde_json",
  "tch",
  "tensorflow",
