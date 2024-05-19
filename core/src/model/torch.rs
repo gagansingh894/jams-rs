@@ -14,7 +14,7 @@ impl Torch {
 }
 
 impl Predictor for Torch {
-    fn predict(input: ModelInput) {
+    fn predict(&self, input: ModelInput) {
         todo!()
     }
 }
