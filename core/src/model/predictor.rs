@@ -2,7 +2,7 @@ use serde::Deserialize;
 use std::collections::HashMap;
 
 pub trait Predictor {
-    fn predict(input: ModelInput);
+    fn predict(&self, input: ModelInput);
 }
 
 // Feature Name is an alias to string which refers to the feature name which is being fed into the model
