@@ -14,7 +14,7 @@ impl LightGBM {
 }
 
 impl Predictor for LightGBM {
-    fn predict(&self, input: ModelInput)) {
+    fn predict(&self, input: ModelInput) {
         todo!()
     }
 }

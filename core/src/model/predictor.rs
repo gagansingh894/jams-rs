@@ -6,10 +6,10 @@ pub trait Predictor {
 }
 
 // Feature Name is an alias to string which refers to the feature name which is being fed into the model
-type FeatureName = String;
+pub(crate) type FeatureName = String;
 
 // Value defines valid types which the model can accept as input
-#[derive(Deserialize, Debug)]
+#[derive(Deserialize, Debug, Clone)]
 pub enum Value {
     String(String),
     Int(i64),
@@ -17,7 +17,7 @@ pub enum Value {
 }
 
 // ModelInput is the core type which Predictor accepts.
-#[derive(Deserialize, Debug)]
+#[derive(Deserialize, Debug, Clone)]
 pub struct ModelInput(HashMap<FeatureName, Vec<Value>>);
 
 impl ModelInput {
@@ -32,12 +32,20 @@ impl ModelInput {
         Ok(Self(model_input))
     }
 
+    pub fn from_hashmap(value: HashMap<FeatureName, Vec<Value>>) -> anyhow::Result<Self> {
+        Ok(Self(value))
+    }
+
     pub fn inner(self) -> HashMap<FeatureName, Vec<Value>> {
         self.0
     }
 
     pub fn iter(&self) -> std::collections::hash_map::Iter<'_, FeatureName, Vec<Value>> {
         self.0.iter()
+    }
+
+    pub fn into_iter(self) -> std::collections::hash_map::IntoIter<FeatureName, Vec<Value>> {
+        self.0.into_iter()
     }
 }
 
