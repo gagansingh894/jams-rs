@@ -9,7 +9,7 @@ impl XGBoost {
 }
 
 impl Predictor for XGBoost {
-   fn predict(&self, input: ModelInput) {
+    fn predict(&self, input: ModelInput) {
         todo!()
     }
 }
