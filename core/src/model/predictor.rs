@@ -1,4 +1,5 @@
 use serde::Deserialize;
+use std::collections::hash_map::Iter;
 use std::collections::HashMap;
 
 pub trait Predictor {
@@ -10,15 +11,36 @@ type FeatureName = String;
 
 // Value defines valid types which the model can accept as input
 #[derive(Deserialize, Debug)]
-pub enum Value {
-    String(String),
-    Int(i64),
-    Float(f64),
+pub enum Values {
+    String(Vec<String>),
+    Int(Vec<i64>),
+    Float(Vec<f64>),
+}
+
+impl FromIterator<i64> for Values {
+    fn from_iter<I: IntoIterator<Item = i64>>(iter: I) -> Self {
+        let values: Vec<i64> = iter.into_iter().collect();
+        Values::Int(values)
+    }
+}
+
+impl FromIterator<f64> for Values {
+    fn from_iter<I: IntoIterator<Item = f64>>(iter: I) -> Self {
+        let values: Vec<f64> = iter.into_iter().collect();
+        Values::Float(values)
+    }
+}
+
+impl FromIterator<String> for Values {
+    fn from_iter<I: IntoIterator<Item = String>>(iter: I) -> Self {
+        let values: Vec<String> = iter.into_iter().collect();
+        Values::String(values)
+    }
 }
 
 // ModelInput is the core type which Predictor accepts.
 #[derive(Deserialize, Debug)]
-pub struct ModelInput(HashMap<FeatureName, Vec<Value>>);
+pub struct ModelInput(HashMap<FeatureName, Values>);
 
 impl ModelInput {
     pub fn from_str(json: &str) -> anyhow::Result<ModelInput> {
@@ -32,20 +54,18 @@ impl ModelInput {
         Ok(Self(model_input))
     }
 
-    pub fn inner(self) -> HashMap<FeatureName, Vec<Value>> {
+    pub fn inner(self) -> HashMap<FeatureName, Values> {
         self.0
     }
 
-    pub fn iter(&self) -> std::collections::hash_map::Iter<'_, FeatureName, Vec<Value>> {
+    pub fn iter(&self) -> Iter<'_, FeatureName, Values> {
         self.0.iter()
     }
 }
 
-fn parse_json_serde_value(
-    json: serde_json::Value,
-) -> anyhow::Result<HashMap<FeatureName, Vec<Value>>> {
+fn parse_json_serde_value(json: serde_json::Value) -> anyhow::Result<HashMap<FeatureName, Values>> {
     // create an empty hashmap to store the features
-    let mut model_input: HashMap<FeatureName, Vec<Value>> = HashMap::new();
+    let mut model_input: HashMap<FeatureName, Values> = HashMap::new();
 
     for (key, values) in json.as_object().unwrap().into_iter() {
         let feature_name: FeatureName = key.to_string();
@@ -60,24 +80,15 @@ fn parse_json_serde_value(
 
         if first.is_i64() {
             // todo: can fail, simplifying with unwrap
-            let feature_values = vec
-                .iter()
-                .map(|v| Value::Int(v.as_i64().unwrap()))
-                .collect();
+            let feature_values = vec.iter().map(|v| v.as_i64().unwrap()).collect();
             model_input.insert(feature_name, feature_values);
         } else if first.is_f64() {
             // todo: can fail, simplifying with unwrap
-            let feature_values = vec
-                .iter()
-                .map(|v| Value::Float(v.as_f64().unwrap()))
-                .collect();
+            let feature_values = vec.iter().map(|v| v.as_f64().unwrap()).collect();
             model_input.insert(feature_name, feature_values);
         } else if first.is_string() {
             // todo: can fail, simplifying with unwrap
-            let feature_values = vec
-                .iter()
-                .map(|v| Value::String(v.as_str().unwrap().to_owned()))
-                .collect();
+            let feature_values = vec.iter().map(|v| v.as_str().unwrap().to_owned()).collect();
             model_input.insert(feature_name, feature_values);
         } else {
             // todo: error out
