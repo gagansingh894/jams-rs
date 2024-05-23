@@ -59,7 +59,7 @@ download_libtorch() {
 # Function to install Node.js and npm
 install_nodejs() {
     echo "Adding NodeSource repository and installing Node.js..."
-    curl -fsSL https://deb.nodesource.com/setup_14.x | bash -
+    curl -fsSL https://deb.nodesource.com/setup_20.x | bash -
     apt-get install -y nodejs
     rm -rf /var/lib/apt/lists/*
 }
