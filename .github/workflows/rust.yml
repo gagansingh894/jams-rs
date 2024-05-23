@@ -11,10 +11,16 @@ env:
 
 jobs:
   build:
+    runs-on: ubuntu-latest
 
-    runs-on: rust:1.78
+    container:
+      image: rust:1.78
+      options: --user root
 
     steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+
     # todo: fix this as it is not working
     - name: Git Semantic Version
       uses: PaulHatch/semantic-version@v5.3.0
@@ -22,9 +28,9 @@ jobs:
           bump_each_commit: true
 
     - name: Setup Environment
-      run: .github/setup_environment.sh
+      run: bash build/setup_environment.sh
 
-    - name: Build
-      run: make build
+    - name: Lint
+      run: make lint
     - name: Run tests
       run: make test

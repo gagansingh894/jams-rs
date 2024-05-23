@@ -6,22 +6,22 @@ set -e
 # Function to update package lists and install dependencies
 install_dependencies() {
     echo "Updating package lists and installing dependencies..."
-    sudo apt-get update
-    sudo apt-get install -y clang wget
-    sudo rm -rf /var/lib/apt/lists/*
+    apt-get update
+    apt-get install -y clang wget
+    rm -rf /var/lib/apt/lists/*
 }
 
 # Function to install Bazel
 install_bazel() {
     echo "Installing Bazel 3.7.2..."
-    sudo apt-get update
-    sudo apt-get install -y wget
+    apt-get update
+    apt-get install -y wget
     wget -qO /tmp/bazel-installer.sh https://github.com/bazelbuild/bazel/releases/download/3.7.2/bazel-3.7.2-installer-linux-x86_64.sh
     chmod +x /tmp/bazel-installer.sh
-    sudo /tmp/bazel-installer.sh
+    /tmp/bazel-installer.sh
     rm /tmp/bazel-installer.sh
-    sudo apt-get clean
-    sudo rm -rf /var/lib/apt/lists/*
+    apt-get clean
+    rm -rf /var/lib/apt/lists/*
 }
 
 # Function to confirm Bazel installation
@@ -52,7 +52,7 @@ download_catboost() {
 download_libtorch() {
     echo "Downloading and extracting libtorch..."
     wget -O /tmp/libtorch.zip https://download.pytorch.org/libtorch/cpu/libtorch-cxx11-abi-shared-with-deps-2.2.0%2Bcpu.zip
-    sudo unzip /tmp/libtorch.zip -d /usr/local
+    unzip /tmp/libtorch.zip -d /usr/local
     rm /tmp/libtorch.zip
 }
 
