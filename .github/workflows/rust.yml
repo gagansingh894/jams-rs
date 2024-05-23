@@ -22,7 +22,6 @@ jobs:
           bump_each_commit: true
 
     - name: Setup Environment
-      uses: actions/checkout@v4
       run: .github/setup_environment.sh
 
     - name: Build
