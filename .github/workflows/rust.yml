@@ -17,9 +17,9 @@ jobs:
       image: rust:1.78
       options: --user root
       env:
-        LD_LIBRARY_PATH: /usr/local/lib
         LIGHTGBM_LIB_DIR: /usr/local/lib
         LIBTORCH: /usr/local/libtorch
+        LD_LIBRARY_PATH: /usr/local/lib/libtorch/lib:/usr/local/lib
 
     steps:
     - name: Checkout
