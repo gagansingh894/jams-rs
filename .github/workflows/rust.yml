@@ -23,18 +23,18 @@ jobs:
         LD_LIBRARY_PATH: /usr/local/lib/libtorch/lib:/usr/local/lib
 
     steps:
-    - name: Checkout
-      uses: actions/checkout@v4
+      - name: Checkout
+        uses: actions/checkout@v4
 
-    - name: Setup Environment
-      run: bash build/setup_environment.sh
+      - name: Setup Environment
+        run: bash build/setup_environment.sh
 
-    - name: Lint
-      run: make lint
+      - name: Lint
+        run: make lint
 
-    # todo: tests not running on linux docker but running locally on apple silicon
-    - name: Run tests
-      run: make test
+      # todo: tests not running on linux docker but running locally on apple silicon
+      - name: Run tests
+        run: make test
 
   release:
     name: Release
@@ -42,16 +42,13 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - name: Checkout
-      uses: actions/checkout@v4
+      - name: Checkout
+        uses: actions/checkout@v4
 
-    - name: Semantic Release
-      uses: cycjimmy/semantic-release-action@v4
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
-      with:
-        branch: main
-        extra_plugins: |
-          @semantic-release/git
-          @semantic-release/changelog
+      - name: Semantic Release
+        uses: cycjimmy/semantic-release-action@v4
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+        with:
+          branch: main
