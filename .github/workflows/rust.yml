@@ -20,7 +20,6 @@ jobs:
         LD_LIBRARY_PATH: /usr/local/lib
         LIGHTGBM_LIB_DIR: /usr/local/lib
         LIBTORCH: /usr/local/libtorch
-        PATH: /usr/bin/node:$PATH
 
     steps:
     - name: Checkout
