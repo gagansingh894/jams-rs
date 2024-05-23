@@ -16,21 +16,33 @@ jobs:
     container:
       image: rust:1.78
       options: --user root
+      env:
+        LIGHTGBM_LIB_DIR: /usr/local/lib
+        LIBTORCH: /usr/local/libtorch
+        LD_LIBRARY_PATH: /usr/local/lib/libtorch/lib:/usr/local/lib
 
     steps:
     - name: Checkout
       uses: actions/checkout@v4
 
-    # todo: fix this as it is not working
-    - name: Git Semantic Version
-      uses: PaulHatch/semantic-version@v5.3.0
-      with:
-          bump_each_commit: true
-
     - name: Setup Environment
       run: bash build/setup_environment.sh
 
+    - name: Semantic Release
+      uses: cycjimmy/semantic-release-action@v4
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+      with:
+        semantic_version: 19.0.5
+        extra_plugins: |
+          @semantic-release/git
+          @semantic-release/exec
+          @semantic-release/changelog
+
     - name: Lint
       run: make lint
+
+    # todo: tests not running on linux docker but running locally on apple silicon
     - name: Run tests
       run: make test

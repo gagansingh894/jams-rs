@@ -14,16 +14,16 @@ rust-version:
 
 format:
 	@echo "Formatting all projects with cargo"
-	scripts/format.sh
+	cargo fmt --
 
 lint:
 	@echo "Linting all projects with cargo"
 	@rustup component add clippy 2> /dev/null
-	scripts/lint.sh
+	cargo clippy --all-targets -- -D errors
 
 test:
 	@echo "Testing all projects with cargo"
-	scripts/test.sh
+	cargo test
 
 check-gpu-linux:
 	sudo lshw -C display

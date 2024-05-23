@@ -52,12 +52,22 @@ download_catboost() {
 download_libtorch() {
     echo "Downloading and extracting libtorch..."
     wget -O /tmp/libtorch.zip https://download.pytorch.org/libtorch/cpu/libtorch-cxx11-abi-shared-with-deps-2.2.0%2Bcpu.zip
-    unzip /tmp/libtorch.zip -d /usr/local
+    unzip /tmp/libtorch.zip -d /usr/local/lib/
     rm /tmp/libtorch.zip
 }
 
+# Function to install Node.js and npm
+install_nodejs() {
+    echo "Adding NodeSource repository and installing Node.js..."
+    curl -fsSL https://deb.nodesource.com/setup_20.x | bash -
+    apt-get install -y nodejs
+    rm -rf /var/lib/apt/lists/*
+}
+
+
 # Main script execution
 install_dependencies
+install_nodejs
 install_bazel
 confirm_bazel_installation
 print_clang_version
@@ -68,6 +78,8 @@ download_libtorch
 # Set environment variables
 export LD_LIBRARY_PATH=/usr/local/lib
 export LIGHTGBM_LIB_DIR=/usr/local/lib
-export LIBTORCH=/usr/local/libtorch
+export LIBTORCH=/usr/local/lib/libtorch
+export PATH=/usr/bin/node:$PATH
+export LD_LIBRARY_PATH=/usr/local/lib:$LD_LIBRARY_PATH
 
 echo "Script execution completed."
