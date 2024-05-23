@@ -16,6 +16,11 @@ jobs:
     container:
       image: rust:1.78
       options: --user root
+      env:
+        LD_LIBRARY_PATH: /usr/local/lib
+        LIGHTGBM_LIB_DIR: /usr/local/lib
+        LIBTORCH: /usr/local/libtorch
+        PATH: /usr/bin/node:$PATH
 
     steps:
     - name: Checkout
@@ -38,5 +43,6 @@ jobs:
 
     - name: Lint
       run: make lint
+
     - name: Run tests
       run: make test
