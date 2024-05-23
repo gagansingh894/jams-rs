@@ -41,9 +41,8 @@ RUN wget -O /tmp/libtorch.zip https://download.pytorch.org/libtorch/cpu/libtorch
     rm /tmp/libtorch.zip
 
 # Set the environment variable to include the directory where the shared library is located
-ENV LD_LIBRARY_PATH=/usr/local/lib
 ENV LIGHTGBM_LIB_DIR=/usr/local/lib
 ENV LIBTORCH=/usr/local/lib/libtorch
-
+ENV LD_LIBRARY_PATH=/usr/local/lib/libtorch/lib:/usr/local/lib
 # Set entry point to bash
 ENTRYPOINT ["/bin/bash"]
