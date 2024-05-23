@@ -50,7 +50,7 @@ impl ModelInput {
 pub type FeatureName = String;
 
 #[derive(Deserialize, Debug, Clone)]
-pub struct Values(pub(crate) Vec<Value>);
+pub struct Values(pub Vec<Value>);
 
 impl Values {
     pub fn iter(&self) -> std::slice::Iter<'_, Value> {
