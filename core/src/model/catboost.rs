@@ -1,9 +1,7 @@
 use crate::model::predictor::{ModelInput, Output, Predictor, Value, Values};
-use std::vec;
 
 use catboost_rs;
 use ndarray::Axis;
-use rand::Rng;
 
 struct CatboostModelInput {
     numeric_features: Vec<Vec<f32>>,
