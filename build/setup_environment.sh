@@ -56,8 +56,18 @@ download_libtorch() {
     rm /tmp/libtorch.zip
 }
 
+# Function to install Node.js and npm
+install_nodejs() {
+    echo "Adding NodeSource repository and installing Node.js..."
+    curl -fsSL https://deb.nodesource.com/setup_14.x | bash -
+    apt-get install -y nodejs
+    rm -rf /var/lib/apt/lists/*
+}
+
+
 # Main script execution
 install_dependencies
+install_nodejs
 install_bazel
 confirm_bazel_installation
 print_clang_version
@@ -69,5 +79,6 @@ download_libtorch
 export LD_LIBRARY_PATH=/usr/local/lib
 export LIGHTGBM_LIB_DIR=/usr/local/lib
 export LIBTORCH=/usr/local/libtorch
+export PATH=/usr/bin/node:$PATH
 
 echo "Script execution completed."
