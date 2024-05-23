@@ -120,6 +120,7 @@ mod tests {
     use super::*;
     use crate::model::predictor::FeatureName;
     use std::collections::HashMap;
+    use rand::Rng;
 
     fn create_model_inputs(
         num_numeric_features: usize,
