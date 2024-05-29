@@ -63,7 +63,7 @@ impl Predictor for Torch {
             Ok(predictions) => {
                 predictions.print();
                 let values: Vec<Vec<f64>> = predictions.try_into().unwrap();
-                let values_flat: Vec<f64> = values.into_iter().flat_map(|v| v.into_iter().).collect();
+                let values_flat: Vec<f64> = values.into_iter().flat_map(|v| v.into_iter()).collect();
                 Ok(Output { predictions: values_flat })
             },
             Err(e) => Err(e.into()),
