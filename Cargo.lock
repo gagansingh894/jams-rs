@@ -198,6 +198,7 @@ dependencies = [
  "rand",
  "serde",
  "serde_json",
+ "tch",
  "tensorflow",
 ]
 
@@ -853,6 +854,16 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "f3cb5ba0dc43242ce17de99c180e96db90b235b8a9fdc9543c96d2209116bd9f"
 
 [[package]]
+name = "safetensors"
+version = "0.3.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "d93279b86b3de76f820a8854dd06cbc33cfa57a417b19c47f6a25280112fb1df"
+dependencies = [
+ "serde",
+ "serde_json",
+]
+
+[[package]]
 name = "schannel"
 version = "0.1.23"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -999,6 +1010,23 @@ dependencies = [
 ]
 
 [[package]]
+name = "tch"
+version = "0.15.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "7c7cb00bc2770454b515388d45be7097a3ded2eca172f3dcdb7ca4cc06c40bf1"
+dependencies = [
+ "half",
+ "lazy_static",
+ "libc",
+ "ndarray",
+ "rand",
+ "safetensors",
+ "thiserror",
+ "torch-sys",
+ "zip",
+]
+
+[[package]]
 name = "tensorflow"
 version = "0.21.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1066,6 +1094,26 @@ dependencies = [
 ]
 
 [[package]]
+name = "thiserror"
+version = "1.0.61"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "c546c80d6be4bc6a00c0f01730c08df82eaa7a7a61f11d656526506112cc1709"
+dependencies = [
+ "thiserror-impl",
+]
+
+[[package]]
+name = "thiserror-impl"
+version = "1.0.61"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "46c3384250002a6d5af4d114f2845d37b57521033f30d5c3f46c4d70e1197533"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "syn 2.0.64",
+]
+
+[[package]]
 name = "time"
 version = "0.3.36"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1083,6 +1131,18 @@ name = "time-core"
 version = "0.1.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "ef927ca75afb808a4d64dd374f00a2adf8d0fcff8e7b184af886c3c87ec4a3f3"
+
+[[package]]
+name = "torch-sys"
+version = "0.15.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "29e0244e5b148a31dd7fe961165037d1927754d024095c1013937532d7e73a22"
+dependencies = [
+ "anyhow",
+ "cc",
+ "libc",
+ "zip",
+]
 
 [[package]]
 name = "typenum"
