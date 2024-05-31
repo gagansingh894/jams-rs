@@ -39,7 +39,7 @@ jobs:
 
   release:
     name: Release
-    needs: Build
+#    needs: Build
     runs-on: ubuntu-latest
 
     steps:
