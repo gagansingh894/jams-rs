@@ -1,4 +1,4 @@
-# 1.0.0 (2024-05-31)
+# 0.4.0 (2024-05-31)
 
 
 ### Bug Fixes
@@ -49,7 +49,7 @@
 * update trait signature, implement prediction logic for regression and binary classification models ([c94e149](https://github.com/gagansingh894/jams-rs/commit/c94e1491989f26921d97b4f2bdfdfb6d2ffee348))
 * work in progress, need to fix model input type ([e23ad0e](https://github.com/gagansingh894/jams-rs/commit/e23ad0e59fba49d86b3477763f5a624773fe76f7))
 
-# 1.0.0 (2024-05-31)
+# 0.3.0 (2024-05-31)
 
 
 ### Bug Fixes
@@ -100,7 +100,7 @@
 * update trait signature, implement prediction logic for regression and binary classification models ([c94e149](https://github.com/gagansingh894/jams-rs/commit/c94e1491989f26921d97b4f2bdfdfb6d2ffee348))
 * work in progress, need to fix model input type ([e23ad0e](https://github.com/gagansingh894/jams-rs/commit/e23ad0e59fba49d86b3477763f5a624773fe76f7))
 
-# [1.1.0](https://github.com/gagansingh894/jams-rs/compare/v1.0.0...v1.1.0) (2024-05-31)
+# [0.2.0](2024-05-31)
 
 
 ### Bug Fixes
@@ -121,7 +121,7 @@
 * implement predictor for lightgbm ([cec08b1](https://github.com/gagansingh894/jams-rs/commit/cec08b120e12c292aa5d1452ef17ade0c536b041))
 * refactor test utils ([14d7b18](https://github.com/gagansingh894/jams-rs/commit/14d7b18a84c533532f8c64829861338839fbf82c))
 
-# 1.0.0 (2024-05-23)
+# 0.1.0 (2024-05-23)
 
 
 ### Bug Fixes
