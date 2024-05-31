@@ -23,6 +23,7 @@
   ],
   "tagFormat": "${version}",
   "preset": "angular",
+  "initialVersion": "0.0.0",
   "release": {
     "verifyConditions": [
       "@semantic-release/changelog",
