@@ -1,3 +1,24 @@
+# [1.1.0](https://github.com/gagansingh894/jams-rs/compare/v1.0.0...v1.1.0) (2024-05-31)
+
+
+### Bug Fixes
+
+* imports ([367ea84](https://github.com/gagansingh894/jams-rs/commit/367ea841b3c17d1444944eefc377a10adeda3d0f))
+* lint ([f790c13](https://github.com/gagansingh894/jams-rs/commit/f790c13d3830a3094d7fd89a92e8e7e465215d03))
+* lint ([0cf2827](https://github.com/gagansingh894/jams-rs/commit/0cf2827f49dfc208f221077cbd278b85b8581c13))
+* remove comment ([0c9869d](https://github.com/gagansingh894/jams-rs/commit/0c9869d32f83280ba3ec6b0ba29724962d2e5cf1))
+* simply flatten logic ([8f2fc17](https://github.com/gagansingh894/jams-rs/commit/8f2fc170b314627a69699b9f002198155803085f))
+
+
+### Features
+
+* add torch dependencies ([71be573](https://github.com/gagansingh894/jams-rs/commit/71be5739aeca91c617b6b7fdd93da73ae8640f78))
+* add torch model for tests ([3321dc4](https://github.com/gagansingh894/jams-rs/commit/3321dc412142b6bcb57b3dfdd89710a62ed82278))
+* change output to nested vector ([62a858a](https://github.com/gagansingh894/jams-rs/commit/62a858aca314f19fb013d2686809f195984848d1))
+* implement predict for torch ([be9f3ba](https://github.com/gagansingh894/jams-rs/commit/be9f3ba5495b110744c3c56f74adfb0701eb8c8a))
+* implement predictor for lightgbm ([cec08b1](https://github.com/gagansingh894/jams-rs/commit/cec08b120e12c292aa5d1452ef17ade0c536b041))
+* refactor test utils ([14d7b18](https://github.com/gagansingh894/jams-rs/commit/14d7b18a84c533532f8c64829861338839fbf82c))
+
 # 1.0.0 (2024-05-23)
 
 
