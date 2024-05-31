@@ -20,6 +20,21 @@
       }
     ],
     "@semantic-release/github"
-
-  ]
+  ],
+  "tagFormat": "${version}",
+  "preset": "angular",
+  "release": {
+    "verifyConditions": [
+      "@semantic-release/changelog",
+      "@semantic-release/git"
+    ],
+    "prepare": [
+      "@semantic-release/changelog",
+      {
+        "path": "@semantic-release/git",
+        "assets": [ "CHANGELOG.md" ],
+      }
+    ]
+  },
+  "changelogFile": "CHANGELOG.md"
 }
