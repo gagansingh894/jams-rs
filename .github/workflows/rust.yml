@@ -46,6 +46,14 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Set up Node.js
+        uses: actions/setup-node@v2
+        with:
+          node-version: '14'
+
+      - name: Install dependencies
+        run: npm install @semantic-release/exec
+
       - name: Semantic Release
         uses: cycjimmy/semantic-release-action@v4
         env:
