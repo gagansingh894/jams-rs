@@ -1,15 +1,15 @@
 {
   "branches": ["main"],
-  "repositoryUrl": "https://github.com/gagansingh894/jams-rs",
   "plugins": [
-    ["@semantic-release/commit-analyzer", { "preset": "angular" }],
-    ["@semantic-release/release-notes-generator", { "preset": "angular" }],
+    "@semantic-release/commit-analyzer",
+    "@semantic-release/release-notes-generator",
     ["@semantic-release/changelog", { "changelogFile": "CHANGELOG.md" }],
     ["@semantic-release/git", { "assets": ["CHANGELOG.md"] }],
-    ["@semantic-release/github", { "assets": ["CHANGELOG.md"] }]
+    ["@semantic-release/github", { "assets": ["CHANGELOG.md"] }],
+    ["@semantic-release/exec", {
+      "prepareCmd": "cargo metadata --format-version=1 --no-deps --manifest-path=Cargo.toml | jq -r '.packages[0].version'",
+      "publishCmd": "echo Skipping publish step"
+    }]
   ],
-  "tagFormat": "${version}",
-  "preset": "angular",
-  "initialVersion": "0.0.0",
   "changelogFile": "CHANGELOG.md"
 }
