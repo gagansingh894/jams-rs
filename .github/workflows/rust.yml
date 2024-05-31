@@ -19,7 +19,9 @@ jobs:
       options: --user root
       env:
         LIGHTGBM_LIB_DIR: /usr/local/lib
-        LIBTORCH: /usr/local/libtorch
+        LIBTORCH: /usr/local/lib/libtorch
+        LIBTORCH_INCLUDE: /usr/local/lib/libtorch
+        LIBTORCH_LIB: /usr/local/lib/libtorch
         LD_LIBRARY_PATH: /usr/local/lib/libtorch/lib:/usr/local/lib
 
     steps:
@@ -32,7 +34,6 @@ jobs:
       - name: Lint
         run: make lint
 
-      # todo: tests not running on linux docker but running locally on apple silicon
       - name: Run tests
         run: make test
 
