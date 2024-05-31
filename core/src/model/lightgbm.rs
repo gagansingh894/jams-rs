@@ -4,8 +4,6 @@ use lgbm::mat::MatLayouts;
 use lgbm::mat::MatLayouts::ColMajor;
 use lgbm::PredictType::Normal;
 use lgbm::{MatBuf, Parameters};
-use ndarray::s;
-use ndarray::Order::RowMajor;
 
 struct LightGBMModelInput {
     matbuf: MatBuf<f32, MatLayouts>,
