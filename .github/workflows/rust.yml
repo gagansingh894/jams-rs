@@ -34,7 +34,6 @@ jobs:
       - name: Lint
         run: make lint
 
-      # todo: tests not running on linux docker but running locally on apple silicon
       - name: Run tests
         run: make test
 
