@@ -54,10 +54,14 @@ jobs:
       - name: Install dependencies
         run: npm install @semantic-release/exec
 
+      - name: Read Cargo.toml version
+        id: read_version
+        run: echo "::set-output name=version::$(awk -F '[ ="]+' '$1 == "version" { print $3 }' Cargo.toml)"
+
       - name: Semantic Release
         uses: cycjimmy/semantic-release-action@v4
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+          RELEASE_VERSION: ${{ steps.read_version.outputs.version }}
         with:
           branch: main

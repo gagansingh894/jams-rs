@@ -7,7 +7,7 @@
     ["@semantic-release/git", { "assets": ["CHANGELOG.md"] }],
     ["@semantic-release/github", { "assets": ["CHANGELOG.md"] }],
     ["@semantic-release/exec", {
-      "prepareCmd": "cargo metadata --format-version=1 --no-deps --manifest-path=Cargo.toml | jq -r '.packages[0].version'",
+      "prepareCmd": "echo Skipping prepare step",
       "publishCmd": "echo Skipping publish step"
     }]
   ],
