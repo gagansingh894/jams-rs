@@ -1,0 +1,8 @@
+version: "3.8"
+services:
+  dev:
+    image: jams-rs-dev:linux-arm64
+    volumes:
+      - ./:/jams
+    environment:
+      - USER=dev
