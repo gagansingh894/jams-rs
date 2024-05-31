@@ -1,6 +1,6 @@
-use std::collections::HashMap;
-use rand::Rng;
 use crate::model::predictor::{FeatureName, ModelInput, Value, Values};
+use rand::Rng;
+use std::collections::HashMap;
 
 pub fn create_model_inputs(
     num_numeric_features: usize,
