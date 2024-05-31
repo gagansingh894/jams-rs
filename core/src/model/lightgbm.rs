@@ -1,14 +1,14 @@
 use crate::model::predictor::{ModelInput, Output, Predictor, Value, Values};
 use lgbm;
-use lgbm::{MatBuf, Parameters};
 use lgbm::mat::MatLayouts;
 use lgbm::mat::MatLayouts::ColMajor;
 use lgbm::PredictType::Normal;
-use ndarray::Order::RowMajor;
+use lgbm::{MatBuf, Parameters};
 use ndarray::s;
+use ndarray::Order::RowMajor;
 
 struct LightGBMModelInput {
-    matbuf: MatBuf<f32, MatLayouts>
+    matbuf: MatBuf<f32, MatLayouts>,
 }
 
 impl LightGBMModelInput {
@@ -40,14 +40,16 @@ impl LightGBMModelInput {
             }
         }
 
-        let (rows, cols) = (numerical_features.len(), numerical_features.first().unwrap().len());
+        let (rows, cols) = (
+            numerical_features.len(),
+            numerical_features.first().unwrap().len(),
+        );
         let flatten_values = numerical_features.into_iter().flatten().collect();
         // swapping rows and cols to meet input shape size
         let matbuf = MatBuf::from_vec(flatten_values, cols, rows, ColMajor);
 
-        Self {matbuf}
+        Self { matbuf }
     }
-
 }
 
 pub struct LightGBM {
@@ -66,29 +68,26 @@ impl Predictor for LightGBM {
     fn predict(&self, input: ModelInput) -> anyhow::Result<Output> {
         let input = LightGBMModelInput::parse(input);
         let p = Parameters::new();
-        let preds = self.booster.predict_for_mat(&input.matbuf, Normal, 0, None, &p);
+        let preds = self
+            .booster
+            .predict_for_mat(&input.matbuf, Normal, 0, None, &p);
         match preds {
-            Ok(prediction) => {
-                Ok(Output { predictions: prediction.values().into() })
-            }
-            Err(e) => {
-                Err(e.into())
-            }
+            Ok(prediction) => Ok(Output {
+                predictions: prediction.values().into(),
+            }),
+            Err(e) => Err(e.into()),
         }
     }
 }
 
 #[cfg(test)]
 mod tests {
-    use std::collections::HashMap;
-    use rand::Rng;
-    use crate::model::predictor::{FeatureName, Value, Values};
     use super::*;
+    use crate::model::predictor::{FeatureName, Value, Values};
+    use rand::Rng;
+    use std::collections::HashMap;
 
-    fn create_model_inputs(
-        num_features: usize,
-        size: usize,
-    ) -> ModelInput {
+    fn create_model_inputs(num_features: usize, size: usize) -> ModelInput {
         let mut model_input: HashMap<FeatureName, Values> = HashMap::new();
         let mut rng = rand::thread_rng();
 
@@ -218,7 +217,6 @@ mod tests {
         // assert the result is ok
         assert!(output.is_ok())
     }
-
 
     #[test]
     fn successfully_load_lightgbm_xentropy_probability_classifier_model() {

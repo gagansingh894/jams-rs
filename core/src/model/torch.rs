@@ -3,7 +3,7 @@ use crate::model::predictor::{ModelInput, Output, Predictor, Value, Values};
 use tch::CModule;
 
 struct TorchModelInput {
-    tensor: tch::Tensor
+    tensor: tch::Tensor,
 }
 
 impl TorchModelInput {
@@ -37,11 +37,8 @@ impl TorchModelInput {
 
         let tensor = tch::Tensor::from_slice2(&numerical_features).tr();
 
-        Self {
-            tensor
-        }
+        Self { tensor }
     }
-
 }
 
 pub struct Torch {
@@ -64,8 +61,10 @@ impl Predictor for Torch {
                 predictions.print();
                 let values: Vec<Vec<f64>> = predictions.try_into().unwrap();
                 let values_flat: Vec<f64> = values.into_iter().flatten().collect();
-                Ok(Output { predictions: values_flat })
-            },
+                Ok(Output {
+                    predictions: values_flat,
+                })
+            }
             Err(e) => Err(e.into()),
         }
     }
@@ -73,15 +72,12 @@ impl Predictor for Torch {
 
 #[cfg(test)]
 mod tests {
-    use std::collections::HashMap;
-    use rand::Rng;
-    use crate::model::predictor::{FeatureName, Value, Values};
     use super::*;
+    use crate::model::predictor::{FeatureName, Value, Values};
+    use rand::Rng;
+    use std::collections::HashMap;
 
-    fn create_model_inputs(
-        num_numeric_features: usize,
-        size: usize,
-    ) -> ModelInput {
+    fn create_model_inputs(num_numeric_features: usize, size: usize) -> ModelInput {
         let mut model_input: HashMap<FeatureName, Values> = HashMap::new();
         let mut rng = rand::thread_rng();
 
@@ -134,7 +130,8 @@ mod tests {
     }
 
     #[test]
-    fn successfully_make_prediction_using_pytorch_multiclass_classification_model_when_input_is_tabular_data() {
+    fn successfully_make_prediction_using_pytorch_multiclass_classification_model_when_input_is_tabular_data(
+    ) {
         let path = "tests/model_artefacts/penguin_pytorch.pt";
         let model = Torch::load(path).unwrap();
 
