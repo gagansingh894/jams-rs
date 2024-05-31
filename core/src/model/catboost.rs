@@ -109,7 +109,10 @@ impl Predictor for Catboost {
             .model
             .calc_model_prediction(input.numeric_features, input.categorical_features);
         match preds {
-            Ok(predictions) => Ok(Output { predictions }),
+            Ok(predictions) => {
+                let predictions: Vec<Vec<f64>> = predictions.into_iter().map(|v| vec![v]).collect();
+                Ok(Output { predictions })
+            }
             Err(e) => Err(e.into()),
         }
     }
@@ -118,56 +121,7 @@ impl Predictor for Catboost {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::model::predictor::FeatureName;
-    use rand::Rng;
-    use std::collections::HashMap;
-
-    fn create_model_inputs(
-        num_numeric_features: usize,
-        num_string_features: usize,
-        size: usize,
-    ) -> ModelInput {
-        let mut model_input: HashMap<FeatureName, Values> = HashMap::new();
-        let mut rng = rand::thread_rng();
-        let random_string_values: Vec<String> = vec![
-            "a".to_string(),
-            "b".to_string(),
-            "c".to_string(),
-            "d".to_string(),
-            "e".to_string(),
-        ];
-
-        // create string features
-        for i in 0..num_string_features {
-            let mut string_features: Vec<Value> = Vec::new();
-
-            for _ in 0..size {
-                let value = random_string_values
-                    .get(rng.gen_range(0..random_string_values.len()))
-                    .unwrap()
-                    .to_string();
-                string_features.push(Value::String(value));
-            }
-
-            let feature_name = format!("string_feature_{}", i);
-            model_input.insert(feature_name, Values(string_features));
-        }
-
-        // create numeric features
-        for i in 0..num_numeric_features {
-            let mut number_features: Vec<Value> = Vec::new();
-
-            for _ in 0..size {
-                let value = rng.gen::<f32>();
-                number_features.push(Value::Float(value));
-            }
-
-            let feature_name = format!("numeric_feature_{}", i);
-            model_input.insert(feature_name, Values(number_features));
-        }
-
-        ModelInput::from_hashmap(model_input).unwrap()
-    }
+    use crate::model::test_utils;
 
     #[test]
     fn successfully_load_catboost_regressor_model() {
@@ -183,7 +137,7 @@ mod tests {
         let path = "tests/model_artefacts/catboost_regressor";
         let model = Catboost::load(path).unwrap();
 
-        let model_inputs = create_model_inputs(
+        let model_inputs = test_utils::create_model_inputs(
             model.model.get_float_features_count(),
             model.model.get_cat_features_count(),
             1,
@@ -202,7 +156,7 @@ mod tests {
         let path = "tests/model_artefacts/catboost_regressor";
         let model = Catboost::load(path).unwrap();
 
-        let model_inputs = create_model_inputs(
+        let model_inputs = test_utils::create_model_inputs(
             model.model.get_float_features_count(),
             model.model.get_cat_features_count(),
             10,
@@ -230,7 +184,7 @@ mod tests {
         let path = "tests/model_artefacts/catboost_binary";
         let model = Catboost::load(path).unwrap();
 
-        let model_inputs = create_model_inputs(
+        let model_inputs = test_utils::create_model_inputs(
             model.model.get_float_features_count(),
             model.model.get_cat_features_count(),
             1,
@@ -249,7 +203,7 @@ mod tests {
         let path = "tests/model_artefacts/catboost_binary";
         let model = Catboost::load(path).unwrap();
 
-        let model_inputs = create_model_inputs(
+        let model_inputs = test_utils::create_model_inputs(
             model.model.get_float_features_count(),
             model.model.get_cat_features_count(),
             10,

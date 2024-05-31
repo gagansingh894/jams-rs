@@ -7,7 +7,7 @@ pub trait Predictor {
 }
 
 pub struct Output {
-    pub predictions: Vec<f64>,
+    pub predictions: Vec<Vec<f64>>,
 }
 
 // ModelInput is the core type which Predictor accepts.

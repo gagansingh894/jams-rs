@@ -70,9 +70,11 @@ impl Predictor for LightGBM {
             .booster
             .predict_for_mat(&input.matbuf, Normal, 0, None, &p);
         match preds {
-            Ok(prediction) => Ok(Output {
-                predictions: prediction.values().into(),
-            }),
+            Ok(predictions) => {
+                let predictions: Vec<Vec<f64>> =
+                    predictions.values().into_iter().map(|v| vec![*v]).collect();
+                Ok(Output { predictions })
+            }
             Err(e) => Err(e.into()),
         }
     }
@@ -81,29 +83,7 @@ impl Predictor for LightGBM {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::model::predictor::{FeatureName, Value, Values};
-    use rand::Rng;
-    use std::collections::HashMap;
-
-    fn create_model_inputs(num_features: usize, size: usize) -> ModelInput {
-        let mut model_input: HashMap<FeatureName, Values> = HashMap::new();
-        let mut rng = rand::thread_rng();
-
-        // create numeric features
-        for i in 0..num_features {
-            let mut number_features: Vec<Value> = Vec::new();
-
-            for _ in 0..size {
-                let value = rng.gen::<f32>();
-                number_features.push(Value::Float(value));
-            }
-
-            let feature_name = format!("numeric_feature_{}", i);
-            model_input.insert(feature_name, Values(number_features));
-        }
-
-        ModelInput::from_hashmap(model_input).unwrap()
-    }
+    use crate::model::test_utils;
 
     #[test]
     fn successfully_load_lightgbm_regressor_model() {
@@ -119,7 +99,9 @@ mod tests {
         let path = "tests/model_artefacts/lgbm_reg.txt";
         let model = LightGBM::load(path);
 
-        let model_inputs = create_model_inputs(28, 1);
+        // lightgbm models do not support string input features. They have to preprocessed if the
+        // model is using a string feature
+        let model_inputs = test_utils::create_model_inputs(28, 0, 1);
 
         // make predictions
         let output = model.unwrap().predict(model_inputs);
@@ -133,7 +115,9 @@ mod tests {
         let path = "tests/model_artefacts/lgbm_reg.txt";
         let model = LightGBM::load(path);
 
-        let model_inputs = create_model_inputs(28, 10);
+        // lightgbm models do not support string input features. They have to preprocessed if the
+        // model is using a string feature
+        let model_inputs = test_utils::create_model_inputs(28, 0, 10);
 
         // make predictions
         let output = model.unwrap().predict(model_inputs);
@@ -156,7 +140,9 @@ mod tests {
         let path = "tests/model_artefacts/lgbm_binary.txt";
         let model = LightGBM::load(path);
 
-        let model_inputs = create_model_inputs(2, 1);
+        // lightgbm models do not support string input features. They have to preprocessed if the
+        // model is using a string feature
+        let model_inputs = test_utils::create_model_inputs(2, 0, 1);
 
         // make predictions
         let output = model.unwrap().predict(model_inputs);
@@ -170,7 +156,9 @@ mod tests {
         let path = "tests/model_artefacts/lgbm_binary.txt";
         let model = LightGBM::load(path);
 
-        let model_inputs = create_model_inputs(2, 1);
+        // lightgbm models do not support string input features. They have to preprocessed if the
+        // model is using a string feature
+        let model_inputs = test_utils::create_model_inputs(2, 0, 10);
 
         // make predictions
         let output = model.unwrap().predict(model_inputs);
@@ -193,7 +181,9 @@ mod tests {
         let path = "tests/model_artefacts/lgbm_xen_binary.txt";
         let model = LightGBM::load(path);
 
-        let model_inputs = create_model_inputs(2, 1);
+        // lightgbm models do not support string input features. They have to preprocessed if the
+        // model is using a string feature
+        let model_inputs = test_utils::create_model_inputs(2, 0, 1);
 
         // make predictions
         let output = model.unwrap().predict(model_inputs);
@@ -207,7 +197,9 @@ mod tests {
         let path = "tests/model_artefacts/lgbm_xen_binary.txt";
         let model = LightGBM::load(path);
 
-        let model_inputs = create_model_inputs(2, 10);
+        // lightgbm models do not support string input features. They have to preprocessed if the
+        // model is using a string feature
+        let model_inputs = test_utils::create_model_inputs(2, 0, 10);
 
         // make predictions
         let output = model.unwrap().predict(model_inputs);
@@ -230,7 +222,9 @@ mod tests {
         let path = "tests/model_artefacts/lgbm_xen_prob.txt";
         let model = LightGBM::load(path);
 
-        let model_inputs = create_model_inputs(2, 1);
+        // lightgbm models do not support string input features. They have to preprocessed if the
+        // model is using a string feature
+        let model_inputs = test_utils::create_model_inputs(2, 0, 1);
 
         // make predictions
         let output = model.unwrap().predict(model_inputs);
@@ -244,7 +238,9 @@ mod tests {
         let path = "tests/model_artefacts/lgbm_xen_prob.txt";
         let model = LightGBM::load(path);
 
-        let model_inputs = create_model_inputs(2, 10);
+        // lightgbm models do not support string input features. They have to preprocessed if the
+        // model is using a string feature
+        let model_inputs = test_utils::create_model_inputs(2, 0, 10);
 
         // make predictions
         let output = model.unwrap().predict(model_inputs);

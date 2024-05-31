@@ -58,12 +58,8 @@ impl Predictor for Torch {
         let preds = self.model.forward_ts(&[input.tensor]);
         match preds {
             Ok(predictions) => {
-                predictions.print();
-                let values: Vec<Vec<f64>> = predictions.try_into().unwrap();
-                let values_flat: Vec<f64> = values.into_iter().flatten().collect();
-                Ok(Output {
-                    predictions: values_flat,
-                })
+                let predictions: Vec<Vec<f64>> = predictions.try_into().unwrap();
+                Ok(Output { predictions })
             }
             Err(e) => Err(e.into()),
         }
@@ -73,29 +69,7 @@ impl Predictor for Torch {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::model::predictor::{FeatureName, Value, Values};
-    use rand::Rng;
-    use std::collections::HashMap;
-
-    fn create_model_inputs(num_numeric_features: usize, size: usize) -> ModelInput {
-        let mut model_input: HashMap<FeatureName, Values> = HashMap::new();
-        let mut rng = rand::thread_rng();
-
-        // create numeric features
-        for i in 0..num_numeric_features {
-            let mut number_features: Vec<Value> = Vec::new();
-
-            for _ in 0..size {
-                let value = rng.gen::<f32>();
-                number_features.push(Value::Float(value));
-            }
-
-            let feature_name = format!("numeric_feature_{}", i);
-            model_input.insert(feature_name, Values(number_features));
-        }
-
-        ModelInput::from_hashmap(model_input).unwrap()
-    }
+    use crate::model::test_utils;
 
     #[test]
     fn successfully_load_pytorch_regression_model() {
@@ -111,7 +85,9 @@ mod tests {
         let path = "tests/model_artefacts/californiahousing_pytorch.pt";
         let model = Torch::load(path).unwrap();
 
-        let model_inputs = create_model_inputs(8, 5);
+        // lightgbm models do not support string input features. They have to preprocessed if the
+        // model is using a string feature
+        let model_inputs = test_utils::create_model_inputs(8, 0, 10);
 
         // make predictions
         let output = model.predict(model_inputs);
@@ -135,13 +111,14 @@ mod tests {
         let path = "tests/model_artefacts/penguin_pytorch.pt";
         let model = Torch::load(path).unwrap();
 
-        let model_inputs = create_model_inputs(4, 5);
+        // lightgbm models do not support string input features. They have to preprocessed if the
+        // model is using a string feature
+        let model_inputs = test_utils::create_model_inputs(4, 0, 10);
 
         // make predictions
         let output = model.predict(model_inputs);
 
         // assert
         assert!(output.is_ok());
-        println!("{:?}", output.unwrap().predictions)
     }
 }
