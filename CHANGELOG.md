@@ -1,3 +1,12 @@
+# [1.1.0](https://github.com/gagansingh894/jams-rs/compare/v1.0.2...v1.1.0) (2024-06-01)
+
+
+### Features
+
+* add logic to post process output ([2bb8ea3](https://github.com/gagansingh894/jams-rs/commit/2bb8ea39de90713c72b3ee2dc9311f466350372e))
+* add penguin tensorflow model ([2a0ad22](https://github.com/gagansingh894/jams-rs/commit/2a0ad22a7d8a3becc5505eaff89721725e4f84a7))
+* implement predictor for tensorflow ([1bfc8b1](https://github.com/gagansingh894/jams-rs/commit/1bfc8b1b0c8d98fadd162d22bb92653461317b64))
+
 ## [1.0.2](https://github.com/gagansingh894/jams-rs/compare/v1.0.1...v1.0.2) (2024-06-01)
 
 
