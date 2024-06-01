@@ -11,7 +11,7 @@ It is primarily targeted for software and data professionals for deploying their
 - Modular Design 📦
 - Supports PyTorch and Tensorflow Models 🤖
 - Support Tree Models - Catboost, LightGBM, XGBoost(in-progress) 🌳
-- Fast with HTTP & gRPC API 🚀
+- (in-progress) Fast with HTTP & gRPC API 🚀
 
 The project is divided into following crates
 
