@@ -51,17 +51,39 @@ jobs:
         with:
           node-version: '20'
 
-      - name: Install dependencies
-        run: npm install @semantic-release/exec
+      - name: Setup Rust
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
 
-      - name: Read Cargo.toml version
-        id: read_version
-        run: echo "::set-output name=version::$(awk -F '[ ="]+' '$1 == "version" { print $3 }' Cargo.toml)"
-
-      - name: Semantic Release
+      - name: Install Semantic Release Action
         uses: cycjimmy/semantic-release-action@v4
+
+      - name: Configure Semantic Release
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          RELEASE_VERSION: ${{ steps.read_version.outputs.version }}
-        with:
-          branch: main
+        run: |
+          echo '{
+            "branches": ["main"],
+            "plugins": [
+              "@semantic-release/commit-analyzer",
+              {
+                "path": "semantic-release-rust",
+                "cargoCommand": "semantic-release-rust"
+              },
+              "@semantic-release/release-notes-generator",
+              {
+                "path": "@semantic-release/changelog",
+                "changelogFile": "CHANGELOG.md"
+              },
+              "@semantic-release/git"
+            ]
+          }' > .releaserc.json
+
+      - name: Run Semantic Release
+        env:
+          RUST_BACKTRACE: 1
+          RUST_LOG: info
+          CARGO_TERM_COLOR: always
+        run: |
+          npx semantic-release
