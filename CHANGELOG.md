@@ -1,3 +1,10 @@
+## [1.0.2](https://github.com/gagansingh894/jams-rs/compare/v1.0.1...v1.0.2) (2024-06-01)
+
+
+### Bug Fixes
+
+* remove file ([c7921db](https://github.com/gagansingh894/jams-rs/commit/c7921db1bbdf52b61fa9153f9b6a3b448aba4711))
+
 ## [1.0.1](https://github.com/gagansingh894/jams-rs/compare/v1.0.0...v1.0.1) (2024-06-01)
 
 
