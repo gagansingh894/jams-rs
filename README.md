@@ -3,7 +3,7 @@
 [![Build](https://github.com/gagansingh894/jams-rs/actions/workflows/build.yml/badge.svg?branch=main)](https://github.com/gagansingh894/jams-rs/actions/workflows/build.yml)
 
 
-J.A.M.S acronym for Just Another Model Server aims to provide a fast, comprehensive and modular serving solution for tree based and deep learning models written in Rust🦀
+**J.A.M.S** acronym for Just Another Model Server aims to provide a fast, comprehensive and modular serving solution for tree based and deep learning models written in Rust 🦀
 
 It is primarily targeted for software and data professionals for deploying their models in production
 
@@ -11,7 +11,7 @@ It is primarily targeted for software and data professionals for deploying their
 - Modular Design 📦
 - Supports PyTorch and Tensorflow Models 🤖
 - Support Tree Models - Catboost, LightGBM, XGBoost(in-progress) 🌳
-- (in-progress) Fast with HTTP & gRPC API 🚀
+- (in-progress) HTTP & gRPC API 🚀
 
 The project is divided into following crates
 
