@@ -1,3 +1,10 @@
+## [1.0.1](https://github.com/gagansingh894/jams-rs/compare/v1.0.0...v1.0.1) (2024-06-01)
+
+
+### Bug Fixes
+
+* uncomment bypass build ([a5cc3a0](https://github.com/gagansingh894/jams-rs/commit/a5cc3a011ea40a117339eb62d6fb798b057ce5e1))
+
 # 1.0.0 (2024-06-01)
 
 
