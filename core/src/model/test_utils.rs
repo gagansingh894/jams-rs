@@ -64,7 +64,6 @@ pub fn create_model_inputs_with_names(
         "e".to_string(),
     ];
 
-
     // create string features
     for feature_name in string_features_names {
         let mut string_features: Vec<Value> = Vec::new();

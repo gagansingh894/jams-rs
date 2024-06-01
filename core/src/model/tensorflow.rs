@@ -1,5 +1,4 @@
-use anyhow::anyhow;
-use crate::model::predictor::{FeatureName, ModelInput, Output, Predictor, Value, Values};
+use crate::model::predictor::{ModelInput, Output, Predictor, Value, Values};
 use tensorflow::{
     DataType, Graph, Operation, SavedModelBundle, SessionOptions, SessionRunArgs, SignatureDef,
     Tensor, DEFAULT_SERVING_SIGNATURE_DEF_KEY,
@@ -12,7 +11,11 @@ struct TensorflowModelInput {
 }
 
 impl TensorflowModelInput {
-    fn parse(input: ModelInput, signature_def: &SignatureDef, graph: &Graph) -> anyhow::Result<Self> {
+    fn parse(
+        input: ModelInput,
+        signature_def: &SignatureDef,
+        graph: &Graph,
+    ) -> anyhow::Result<Self> {
         let signature_def_num_values = signature_def.inputs().len();
         if signature_def_num_values == 0 {
             anyhow::bail!("model graph has no inputs")
@@ -24,7 +27,11 @@ impl TensorflowModelInput {
     }
 }
 
-fn parse_sequential(input: ModelInput, signature_def: &SignatureDef, graph: &Graph) -> anyhow::Result<TensorflowModelInput> {
+fn parse_sequential(
+    input: ModelInput,
+    signature_def: &SignatureDef,
+    graph: &Graph,
+) -> anyhow::Result<TensorflowModelInput> {
     let mut int_features: Vec<Vec<i32>> = Vec::new();
     let mut float_features: Vec<Vec<f32>> = Vec::new();
     let mut string_features: Vec<Vec<String>> = Vec::new();
@@ -61,7 +68,6 @@ fn parse_sequential(input: ModelInput, signature_def: &SignatureDef, graph: &Gra
     let flatten_int: Vec<i32> = int_features.into_iter().flatten().collect();
     let flatten_string: Vec<String> = string_features.into_iter().flatten().collect();
 
-
     let mut int_tensors: Vec<(Operation, Tensor<i32>)> = Vec::new();
     let mut float_tensors: Vec<(Operation, Tensor<f32>)> = Vec::new();
     let mut string_tensors: Vec<(Operation, Tensor<String>)> = Vec::new();
@@ -83,9 +89,8 @@ fn parse_sequential(input: ModelInput, signature_def: &SignatureDef, graph: &Gra
             }
             DataType::Float => {
                 // swapping num_rows and num_cols to satisfy shape
-                let tensor =
-                    Tensor::<f32>::new(&[float_num_cols as u64, float_num_rows as u64])
-                        .with_values(&flatten_float)?;
+                let tensor = Tensor::<f32>::new(&[float_num_cols as u64, float_num_rows as u64])
+                    .with_values(&flatten_float)?;
                 float_tensors.push((input_op, tensor));
             }
             DataType::String => {
@@ -100,9 +105,17 @@ fn parse_sequential(input: ModelInput, signature_def: &SignatureDef, graph: &Gra
             }
         }
     }
-    Ok(TensorflowModelInput{int_tensors, float_tensors, string_tensors})
+    Ok(TensorflowModelInput {
+        int_tensors,
+        float_tensors,
+        string_tensors,
+    })
 }
-fn parse_functional(model_inputs: ModelInput, signature_def: &SignatureDef, graph: &Graph) -> anyhow::Result<TensorflowModelInput> {
+fn parse_functional(
+    model_inputs: ModelInput,
+    signature_def: &SignatureDef,
+    graph: &Graph,
+) -> anyhow::Result<TensorflowModelInput> {
     let mut int_tensors: Vec<(Operation, Tensor<i32>)> = Vec::new();
     let mut float_tensors: Vec<(Operation, Tensor<f32>)> = Vec::new();
     let mut string_tensors: Vec<(Operation, Tensor<String>)> = Vec::new();
@@ -114,48 +127,61 @@ fn parse_functional(model_inputs: ModelInput, signature_def: &SignatureDef, grap
             .get_input(input.0)
             .expect("specified tensor name not found");
         let input_name = &input_info.name().name;
-        let model_input_feature_name =  input_name
+        let model_input_feature_name = input_name
             .strip_prefix(format!("{}_", DEFAULT_SERVING_SIGNATURE_DEF_KEY).as_str())
             .unwrap()
             .to_owned();
 
         match input_info.dtype() {
             DataType::Int32 => {
-                let values = model_inputs.get(&model_input_feature_name).unwrap().to_owned();
-                let values_length =  values.iter().len() as u64;
-                let input_op = graph
-                .operation_by_name_required(input_name)
-                .unwrap();
+                let values = model_inputs
+                    .get(&model_input_feature_name)
+                    .unwrap()
+                    .to_owned();
+                let values_length = values.iter().len() as u64;
+                let input_op = graph.operation_by_name_required(input_name).unwrap();
 
-                let tensor = Tensor::<i32>::new(&[values_length, 1]).with_values(&values.to_ints()).unwrap();
+                let tensor = Tensor::<i32>::new(&[values_length, 1])
+                    .with_values(&values.to_ints())
+                    .unwrap();
                 int_tensors.push((input_op, tensor));
             }
             DataType::Float => {
-                let values = model_inputs.get(&model_input_feature_name).unwrap().to_owned();
-                let values_length =  values.iter().len() as u64;
-                let input_op = graph
-                    .operation_by_name_required(input_name)
-                    .unwrap();
+                let values = model_inputs
+                    .get(&model_input_feature_name)
+                    .unwrap()
+                    .to_owned();
+                let values_length = values.iter().len() as u64;
+                let input_op = graph.operation_by_name_required(input_name).unwrap();
 
-                let tensor = Tensor::<f32>::new(&[values_length, 1]).with_values(&values.to_floats()).unwrap();
+                let tensor = Tensor::<f32>::new(&[values_length, 1])
+                    .with_values(&values.to_floats())
+                    .unwrap();
                 float_tensors.push((input_op, tensor));
             }
             DataType::String => {
-                let values = model_inputs.get(&model_input_feature_name).unwrap().to_owned();
-                let values_length =  values.iter().len() as u64;
-                let input_op = graph
-                    .operation_by_name_required(input_name)
-                    .unwrap();
+                let values = model_inputs
+                    .get(&model_input_feature_name)
+                    .unwrap()
+                    .to_owned();
+                let values_length = values.iter().len() as u64;
+                let input_op = graph.operation_by_name_required(input_name).unwrap();
 
-                let tensor = Tensor::<String>::new(&[values_length, 1]).with_values(&values.to_strings()).unwrap();
+                let tensor = Tensor::<String>::new(&[values_length, 1])
+                    .with_values(&values.to_strings())
+                    .unwrap();
                 string_tensors.push((input_op, tensor));
             }
             _ => {
                 anyhow::bail!("type not supported")
-        }
+            }
         }
     }
-    Ok(TensorflowModelInput{int_tensors, float_tensors, string_tensors})
+    Ok(TensorflowModelInput {
+        int_tensors,
+        float_tensors,
+        string_tensors,
+    })
 }
 
 // get_shape is a helper functions to return shape of 2D vec
@@ -319,7 +345,8 @@ mod tests {
     }
 
     #[test]
-    fn successfully_load_tensorflow_multi_classification_functional_model_with_multiple_inputs_and_input_is_tabular_data() {
+    fn successfully_load_tensorflow_multi_classification_functional_model_with_multiple_inputs_and_input_is_tabular_data(
+    ) {
         let model_dir = "tests/model_artefacts/penguin_tensorflow_functional";
         let model = Tensorflow::load(model_dir).unwrap();
 
@@ -332,10 +359,8 @@ mod tests {
             "island".to_string(),
         ];
 
-        let model_inputs = test_utils::create_model_inputs_with_names(
-            numeric_feature_names,
-            vec![],
-            10);
+        let model_inputs =
+            test_utils::create_model_inputs_with_names(numeric_feature_names, vec![], 10);
 
         // make predictions
         let output = model.predict(model_inputs);
@@ -343,5 +368,4 @@ mod tests {
         // assert
         assert!(output.is_ok());
     }
-
 }
