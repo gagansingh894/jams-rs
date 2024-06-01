@@ -186,14 +186,24 @@ impl Predictor for Tensorflow {
             .run(&mut run_args)
             .expect("failed to execute tensor graph");
 
-        // prepare output
-        let output = run_args.fetch::<f32>(output_fetch).unwrap().to_vec();
-
-        // explicitly drop
-        drop(run_args);
+        // retrieve and process the output
+        let output: Tensor<f32> = run_args
+            .fetch(output_fetch)
+            .expect("failed to fetch output");
+        let processed_output: Vec<Vec<f32>> = output
+            .chunks(output.dims()[1] as usize)
+            .map(|row| row.to_vec())
+            .collect();
 
         // convert to Output
-        let predictions: Vec<Vec<f64>> = output.into_iter().map(|v| vec![v as f64]).collect();
+        let predictions: Vec<Vec<f64>> = processed_output
+            .iter() // Iterate over each row (Vec<f32>)
+            .map(|row| {
+                row.iter() // Iterate over each element (f32) in the row
+                    .map(|&value| value as f64) // Convert f32 to f64
+                    .collect() // Collect into Vec<f64>
+            })
+            .collect(); // Collect into Vec<Vec<f64>>;
         Ok(Output { predictions })
     }
 }
@@ -228,10 +238,25 @@ mod tests {
 
     #[test]
     fn successfully_load_tensorflow_multi_classification_model() {
-        let model_dir = "tests/model_artefacts/mnist_tensorflow";
+        let model_dir = "tests/model_artefacts/penguin_tensorflow";
         let model = Tensorflow::load(model_dir);
 
         // assert the result is Ok
         assert!(model.is_ok())
+    }
+
+    #[test]
+    fn successfully_make_prediction_using_tensorflow_multi_class_classification_model_when_input_is_tabular_data(
+    ) {
+        let model_dir = "tests/model_artefacts/penguin_tensorflow";
+        let model = Tensorflow::load(model_dir).unwrap();
+
+        let model_inputs = test_utils::create_model_inputs(6, 0, 10);
+
+        // make predictions
+        let output = model.predict(model_inputs);
+
+        // assert
+        assert!(output.is_ok());
     }
 }
