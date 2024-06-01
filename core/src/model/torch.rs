@@ -85,8 +85,8 @@ mod tests {
         let path = "tests/model_artefacts/californiahousing_pytorch.pt";
         let model = Torch::load(path).unwrap();
 
-        // lightgbm models do not support string input features. They have to preprocessed if the
-        // model is using a string feature
+        // torch models do not support string input features. They have to preprocessed if the
+        // model is using string features
         let model_inputs = test_utils::create_model_inputs(8, 0, 10);
 
         // make predictions
@@ -111,8 +111,8 @@ mod tests {
         let path = "tests/model_artefacts/penguin_pytorch.pt";
         let model = Torch::load(path).unwrap();
 
-        // lightgbm models do not support string input features. They have to preprocessed if the
-        // model is using a string feature
+        // torch models do not support string input features. They have to preprocessed if the
+        // model is using string features
         let model_inputs = test_utils::create_model_inputs(4, 0, 10);
 
         // make predictions
