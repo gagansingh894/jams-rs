@@ -15,7 +15,10 @@ pub struct Output {
 pub struct ModelInput(HashMap<FeatureName, Values>);
 
 impl ModelInput {
-    pub fn get_values(self) -> Vec<Values> {
+    pub fn get(&self, key: &FeatureName) -> Option<&Values> {
+        self.0.get(key)
+    }
+    pub fn values(self) -> Vec<Values> {
         self.inner().into_values().collect()
     }
 

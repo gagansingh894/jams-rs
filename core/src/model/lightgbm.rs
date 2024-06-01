@@ -14,7 +14,7 @@ impl LightGBMModelInput {
         let mut numerical_features: Vec<Vec<f32>> = Vec::new();
 
         // extract the values from hashmap
-        let input_matrix: Vec<Values> = input.get_values();
+        let input_matrix: Vec<Values> = input.values();
 
         for values in input_matrix {
             // get the value type
