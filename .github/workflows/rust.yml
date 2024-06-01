@@ -57,7 +57,9 @@ jobs:
           toolchain: stable
 
       - name: Install Semantic Release Rust Plugin
-        run: npm install semantic-release-rust
+        run: |
+          npm install -g npm@latest
+          npm install semantic-release-rust
 
       - name: Install Semantic Release Action
         uses: cycjimmy/semantic-release-action@v4
