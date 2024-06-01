@@ -311,13 +311,21 @@ mod tests {
         let model_dir = "tests/model_artefacts/autompg_tensorflow";
         let model = Tensorflow::load(model_dir).unwrap();
 
-        let model_inputs = test_utils::create_model_inputs(9, 0, 10);
+        let size = 10;
+        let model_inputs = test_utils::create_model_inputs(9, 0, size);
 
         // make predictions
         let output = model.predict(model_inputs);
 
         // assert
         assert!(output.is_ok());
+        let predictions = output.unwrap().predictions;
+
+        // asserts the output length of predictions is equal to input length
+        assert_eq!(predictions.len(), size);
+        // since the predictions is of type Vec<Vec<f64>>, we will assert that inner vec is of
+        // length 1 i.e [[1], [2], [3]]. This is because this is a regression model with single output
+        assert_eq!(predictions.first().unwrap().len(), 1);
     }
 
     #[test]
@@ -335,13 +343,22 @@ mod tests {
         let model_dir = "tests/model_artefacts/penguin_tensorflow";
         let model = Tensorflow::load(model_dir).unwrap();
 
-        let model_inputs = test_utils::create_model_inputs(6, 0, 10);
+        let size = 10;
+        let model_inputs = test_utils::create_model_inputs(6, 0, size);
 
         // make predictions
         let output = model.predict(model_inputs);
 
         // assert
         assert!(output.is_ok());
+        let predictions = output.unwrap().predictions;
+
+        // asserts the output length of predictions is equal to input length
+        assert_eq!(predictions.len(), size);
+        // since the predictions is of type Vec<Vec<f64>>, we will assert that inner vec is of
+        // length 3 i.e [[1,2,3], [1,2,3], [1,2,3]]. This is because this is multi class classification
+        // model with 3 classes
+        assert_eq!(predictions.first().unwrap().len(), 3);
     }
 
     #[test]
@@ -359,13 +376,22 @@ mod tests {
             "island".to_string(),
         ];
 
+        let size = 10;
         let model_inputs =
-            test_utils::create_model_inputs_with_names(numeric_feature_names, vec![], 10);
+            test_utils::create_model_inputs_with_names(numeric_feature_names, vec![], size);
 
         // make predictions
         let output = model.predict(model_inputs);
 
         // assert
         assert!(output.is_ok());
+        let predictions = output.unwrap().predictions;
+
+        // asserts the output length of predictions is equal to input length
+        assert_eq!(predictions.len(), size);
+        // since the predictions is of type Vec<Vec<f64>>, we will assert that inner vec is of
+        // length 3 i.e [[1,2,3], [1,2,3], [1,2,3]]. This is because this is multi class classification
+        // model with 3 classes
+        assert_eq!(predictions.first().unwrap().len(), 3);
     }
 }
