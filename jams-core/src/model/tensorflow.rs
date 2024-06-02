@@ -297,7 +297,7 @@ mod tests {
 
     #[test]
     fn successfully_load_tensorflow_regression_model() {
-        let model_dir = "tests/model_artefacts/autompg_tensorflow";
+        let model_dir = "tests/model_storage/local_model_store/tensorflow-my_awesome_autompg_model";
         let model = Tensorflow::load(model_dir);
 
         // assert the result is Ok
@@ -306,7 +306,7 @@ mod tests {
 
     #[test]
     fn successfully_make_prediction_using_tensorflow_regression_model_when_input_is_tabular_data() {
-        let model_dir = "tests/model_artefacts/autompg_tensorflow";
+        let model_dir = "tests/model_storage/local_model_store/tensorflow-my_awesome_autompg_model";
         let model = Tensorflow::load(model_dir).unwrap();
 
         let size = 10;
@@ -328,7 +328,7 @@ mod tests {
 
     #[test]
     fn successfully_load_tensorflow_multi_classification_model() {
-        let model_dir = "tests/model_artefacts/penguin_tensorflow";
+        let model_dir = "tests/model_storage/local_model_store/tensorflow-my_awesome_sequential_model";
         let model = Tensorflow::load(model_dir);
 
         // assert the result is Ok
@@ -338,7 +338,7 @@ mod tests {
     #[test]
     fn successfully_make_prediction_using_tensorflow_multi_class_classification_model_when_input_is_tabular_data(
     ) {
-        let model_dir = "tests/model_artefacts/penguin_tensorflow";
+        let model_dir = "tests/model_storage/local_model_store/tensorflow-my_awesome_sequential_model";
         let model = Tensorflow::load(model_dir).unwrap();
 
         let size = 10;
@@ -362,7 +362,7 @@ mod tests {
     #[test]
     fn successfully_load_tensorflow_multi_classification_functional_model_with_multiple_inputs_and_input_is_tabular_data(
     ) {
-        let model_dir = "tests/model_artefacts/penguin_tensorflow_functional";
+        let model_dir = "tests/model_storage/local_model_store/tensorflow-my_awesome_penguin_model";
         let model = Tensorflow::load(model_dir).unwrap();
 
         let numeric_feature_names = vec![
