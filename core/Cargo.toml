@@ -6,6 +6,19 @@ exclude = ["./tests"] # excluding since this only has sample models for testing
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
+[features]
+catboost = []
+lightgbm = []
+tensorflow = []
+torch = []
+xgboost = []
+# Default features
+default = ["catboost", "lightgbm", "tensorflow", "torch"]
+
+[lib]
+name = "jams_core"
+crate-type = ["lib"]
+
 [dependencies]
 tensorflow = "0.21.0"
 lgbm = "0.0.2"
