@@ -198,7 +198,7 @@ pub struct Tensorflow {
 
 impl Tensorflow {
     pub fn load(model_dir: &str) -> anyhow::Result<Self> {
-        const MODEL_TAG: &str = "jams-serve";
+        const MODEL_TAG: &str = "serve";
         let mut graph = Graph::new();
         let bundle =
             SavedModelBundle::load(&SessionOptions::new(), [MODEL_TAG], &mut graph, model_dir)
