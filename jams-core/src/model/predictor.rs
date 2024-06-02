@@ -1,7 +1,7 @@
 use serde::Deserialize;
 use std::collections::HashMap;
 
-pub trait Predictor {
+pub trait Predictor: Send + Sync + 'static {
     // todo: work out how to output multiclass output
     fn predict(&self, input: ModelInput) -> anyhow::Result<Output>;
 }
