@@ -73,7 +73,8 @@ mod tests {
 
     #[test]
     fn successfully_load_pytorch_regression_model() {
-        let path = "tests/model_storage/local_model_store/pytorch-my_awesome_californiahousing_model.pt";
+        let path =
+            "tests/model_storage/local_model_store/pytorch-my_awesome_californiahousing_model.pt";
         let model = Torch::load(path);
 
         // assert the result is Ok
@@ -82,7 +83,8 @@ mod tests {
 
     #[test]
     fn successfully_make_prediction_using_pytorch_regression_model_when_input_is_tabular_data() {
-        let path = "tests/model_storage/local_model_store/pytorch-my_awesome_californiahousing_model.pt";
+        let path =
+            "tests/model_storage/local_model_store/pytorch-my_awesome_californiahousing_model.pt";
         let model = Torch::load(path).unwrap();
 
         // torch models do not support string input features. They have to preprocessed if the

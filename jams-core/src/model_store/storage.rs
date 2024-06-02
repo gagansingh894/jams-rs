@@ -1,5 +1,5 @@
-use std::sync::Arc;
 use crate::model::predictor::Predictor;
+use std::sync::Arc;
 
 pub type ModelName = String;
 
