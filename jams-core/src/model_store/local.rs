@@ -66,8 +66,11 @@ impl Storage for LocalModelStore {
         Ok(())
     }
 
-    fn get_model(&self, _: ModelName) -> Arc<dyn Predictor> {
-        todo!()
+    fn get_model(&self, model_name: ModelName) ->  Option<Arc<dyn Predictor>> {
+        Some(self.models
+            .get(model_name.as_str())
+            .expect("failed to get model")
+            .to_owned())
     }
 }
 
@@ -85,6 +88,20 @@ mod tests {
 
         // assert
         assert!(result.is_ok());
-        println!("{:?}", local_model_store.models.len());
+        assert_ne!(local_model_store.models.len(), 0);
+    }
+
+    #[test]
+    fn successfully_get_model_from_local_model_store() {
+        let model_dir = "tests/model_storage/local_model_store";
+        let local_model_store = LocalModelStore::new(model_dir.to_string()).unwrap();
+
+        // load models
+        let result = local_model_store.fetch_models();
+        let model = local_model_store.get_model("my_awesome_autompg_model".to_string());
+
+        // assert
+        assert!(result.is_ok());
+        assert!(model.is_some());
     }
 }
