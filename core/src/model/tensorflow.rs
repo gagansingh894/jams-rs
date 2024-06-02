@@ -185,7 +185,7 @@ fn parse_functional(
 }
 
 // get_shape is a helper functions to return shape of 2D vec
-fn get_shape<T>(input: &Vec<Vec<T>>) -> (usize, usize) {
+fn get_shape<T>(input: &[Vec<T>]) -> (usize, usize) {
     if !input.is_empty() {
         return (input.len(), input[0].len());
     }

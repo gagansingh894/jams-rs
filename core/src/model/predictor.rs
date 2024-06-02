@@ -22,6 +22,7 @@ impl ModelInput {
         self.inner().into_values().collect()
     }
 
+    #[allow(clippy::should_implement_trait)]
     pub fn from_str(json: &str) -> anyhow::Result<ModelInput> {
         let value: serde_json::Value = serde_json::from_str(json)?;
         let model_input = parse_json_serde_value(value)?;
@@ -45,6 +46,7 @@ impl ModelInput {
         self.0.iter()
     }
 
+    #[allow(clippy::should_implement_trait)]
     pub fn into_iter(self) -> std::collections::hash_map::IntoIter<FeatureName, Values> {
         self.0.into_iter()
     }
