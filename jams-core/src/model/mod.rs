@@ -16,3 +16,4 @@ mod xgboost;
 // Always included modules
 pub mod predictor;
 mod test_utils;
+pub mod frameworks;
