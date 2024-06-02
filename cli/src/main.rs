@@ -1,5 +1,5 @@
 use clap::{Args, Parser, Subcommand};
-use core::model::predictor::Predictor;
+use jams_core::model::predictor::Predictor;
 use std::fs;
 
 #[derive(Parser, Debug)]
