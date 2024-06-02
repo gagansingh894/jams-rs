@@ -1,8 +1,8 @@
 #[cfg(test)]
 pub mod utils {
-    use std::collections::HashMap;
-    use rand::Rng;
     use crate::model::predictor::{FeatureName, ModelInput, Value, Values};
+    use rand::Rng;
+    use std::collections::HashMap;
 
     #[cfg(test)]
     pub fn create_model_inputs(
@@ -98,4 +98,3 @@ pub mod utils {
         ModelInput::from_hashmap(model_input).unwrap()
     }
 }
-
