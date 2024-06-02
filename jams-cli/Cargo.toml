@@ -1,7 +1,16 @@
 [package]
 name = "jams-cli"
+description = "jams-cli is an easy-to-use CLI application for making predictions."
 version = "0.1.0"
 edition = "2021"
+repository = "https://github.com/gagansingh894/jams-rs/tree/main/jams-cli"
+license = "Apache-2.0"
+keywords = ["machine-learning", "deep-learning"]
+
+
+[[bin]]
+name = "jams-cli"
+path = "src/main.rs"
 
 [dependencies]
 clap = { version = "4.5", features = ["derive"] }
