@@ -67,7 +67,6 @@ impl Storage for LocalModelStore {
                 anyhow::bail!("unexpected model framework encountered")
             }
         }
-        println!("jerere");
         Ok(())
      }
 
@@ -77,6 +76,7 @@ impl Storage for LocalModelStore {
 }
 
 
+#[cfg(test)]
 mod tests {
     use super::*;
 
