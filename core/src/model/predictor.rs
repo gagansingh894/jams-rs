@@ -6,6 +6,7 @@ pub trait Predictor {
     fn predict(&self, input: ModelInput) -> anyhow::Result<Output>;
 }
 
+#[derive(Debug)]
 pub struct Output {
     pub predictions: Vec<Vec<f64>>,
 }
