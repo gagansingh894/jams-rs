@@ -44,7 +44,6 @@ impl Storage for LocalModelStore {
                     None => model_name.strip_prefix(prefix_pytorch.as_str()).unwrap(),
                     Some(v) => v,
                 };
-
                 let model = model::torch::Torch::load(full_path).unwrap();
                 self.models.insert(model_name.to_string(), Arc::new(model));
             } else if file_name.to_str().unwrap().to_string().contains(CATBOOST) {
