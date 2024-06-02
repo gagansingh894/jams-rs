@@ -31,8 +31,5 @@ jobs:
       - name: Setup Environment
         run: bash build/setup_environment.sh
 
-      - name: Install cargo-tarpaulin
-        run: cargo install cargo-tarpaulin
-
       - name: Lint
         run: make lint
