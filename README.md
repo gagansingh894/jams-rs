@@ -18,9 +18,9 @@ It is primarily targeted for software and data professionals for deploying their
 
 The project is divided into following crates
 
-- jams-core
+- jams-core ![](https://img.shields.io/crates/v/jams-core)
 - jams-serve
-- jams-cli
+- jams-cli ![](https://img.shields.io/crates/v/jams-cli)
 
 (🚧)`jams-core` provides thin abstraction around common machine learning and deep learning models as well as databases like redis, dynamodb which can be used as real time feature stores. You can think of each component as a LEGO block which can be used to build a system depending on the requirements
 
