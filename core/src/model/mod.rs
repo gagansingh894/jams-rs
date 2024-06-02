@@ -1,7 +1,18 @@
+#[cfg(feature = "catboost")]
 pub mod catboost;
+
+#[cfg(feature = "lightgbm")]
 pub mod lightgbm;
-pub mod predictor;
+
+#[cfg(feature = "tensorflow")]
 pub mod tensorflow;
-mod test_utils;
+
+#[cfg(feature = "torch")]
 pub mod torch;
+
+#[cfg(feature = "xgboost")]
 mod xgboost;
+
+// Always included modules
+pub mod predictor;
+mod test_utils;
