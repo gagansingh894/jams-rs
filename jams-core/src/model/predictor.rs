@@ -11,7 +11,7 @@ pub struct Output {
     pub predictions: Vec<Vec<f64>>,
 }
 
-// ModelInput is the core type which Predictor accepts.
+// ModelInput is the jams-core type which Predictor accepts.
 #[derive(Deserialize, Debug, Clone)]
 pub struct ModelInput(HashMap<FeatureName, Values>);
 
