@@ -10,8 +10,8 @@ It is primarily targeted for software and data professionals for deploying their
 
 ## Features
 - Modular Design 📦
-- Supports PyTorch and Tensorflow Models 🤖
-- Support Tree Models - Catboost, LightGBM, (🚧) XGBoost 🌳
+- Supports PyTorch and Tensorflow Models via FFI Bindings 🤖
+- Support Tree Models - Catboost, LightGBM, (🚧) XGBoost via FFI Bindings 🌳
 - (🚧) HTTP & gRPC API 🚀
 - (🚧) CLI ⌨️ 
 
