@@ -27,6 +27,7 @@ enum Commands {
     LightGBM(CommandArgs),
 }
 
+#[cfg(not(tarpaulin_include))]
 fn main() -> anyhow::Result<()> {
     let args = Cli::parse();
     match args.cmd {
@@ -92,6 +93,7 @@ fn main() -> anyhow::Result<()> {
     }
 }
 
+#[cfg(not(tarpaulin_include))]
 fn predict(
     model: impl Predictor,
     input: Option<String>,
