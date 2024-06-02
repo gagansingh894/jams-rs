@@ -16,7 +16,7 @@ struct CommandArgs {
     #[arg(long)]
     input: Option<String>,
     #[arg(long)]
-    input_path: Option<String>
+    input_path: Option<String>,
 }
 
 #[derive(Subcommand, Debug, Clone)]
@@ -24,27 +24,27 @@ enum Commands {
     Tensorflow(CommandArgs),
     Torch(CommandArgs),
     Catboost(CommandArgs),
-    LightGBM(CommandArgs)
+    LightGBM(CommandArgs),
 }
 
 fn main() -> anyhow::Result<()> {
     let args = Cli::parse();
     match args.cmd {
-        Commands::Tensorflow(cmd_args)  => {
+        Commands::Tensorflow(cmd_args) => {
             // load the tensorflow model
             let model = match cmd_args.model_path {
                 None => {
                     anyhow::bail!("model path not specified")
                 }
                 Some(path) => core::model::tensorflow::Tensorflow::load(path.as_str())
-                    .expect("failed to load model")
+                    .expect("failed to load model"),
             };
-            let predictions =
-                predict(model, cmd_args.input, cmd_args.input_path).expect("failed to make predictions");
+            let predictions = predict(model, cmd_args.input, cmd_args.input_path)
+                .expect("failed to make predictions");
             println!("{:?}", predictions);
             Ok(())
         }
-        Commands::Torch(cmd_args)  => {
+        Commands::Torch(cmd_args) => {
             // load the torch model
             let model = match cmd_args.model_path {
                 None => {
@@ -54,8 +54,8 @@ fn main() -> anyhow::Result<()> {
                     core::model::torch::Torch::load(path.as_str()).expect("failed to load model")
                 }
             };
-            let predictions =
-                predict(model, cmd_args.input, cmd_args.input_path).expect("failed to make predictions");
+            let predictions = predict(model, cmd_args.input, cmd_args.input_path)
+                .expect("failed to make predictions");
             println!("{:?}", predictions);
             Ok(())
         }
@@ -69,8 +69,8 @@ fn main() -> anyhow::Result<()> {
                     .expect("failed to load model"),
             };
 
-            let predictions =
-                predict(model, cmd_args.input, cmd_args.input_path).expect("failed to make predictions");
+            let predictions = predict(model, cmd_args.input, cmd_args.input_path)
+                .expect("failed to make predictions");
             println!("{:?}", predictions);
             Ok(())
         }
@@ -84,8 +84,8 @@ fn main() -> anyhow::Result<()> {
                     .expect("failed to load model"),
             };
 
-            let predictions =
-                predict(model, cmd_args.input, cmd_args.input_path).expect("failed to make predictions");
+            let predictions = predict(model, cmd_args.input, cmd_args.input_path)
+                .expect("failed to make predictions");
             println!("{:?}", predictions);
             Ok(())
         }
@@ -113,14 +113,4 @@ fn predict(
             model.predict(model_inputs)?
         }
     })
-}
-
-fn show_commands() {
-    println!(
-        r#"COMMANDS:
-tensorflow <KEY> <> <> - Gets the value of a given key and displays it. If no key given, retrieves all values and displays them.
-set <KEY> <VALUE> - Sets the value of a given key.
-    Flags: --is-true
-"#
-    );
 }
