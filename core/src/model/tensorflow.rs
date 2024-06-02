@@ -120,8 +120,6 @@ fn parse_functional(
     let mut float_tensors: Vec<(Operation, Tensor<f32>)> = Vec::new();
     let mut string_tensors: Vec<(Operation, Tensor<String>)> = Vec::new();
 
-    println!("{:?}", signature_def.inputs());
-
     for input in signature_def.inputs().iter() {
         let input_info = signature_def
             .get_input(input.0)
