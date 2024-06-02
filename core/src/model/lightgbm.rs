@@ -72,7 +72,7 @@ impl Predictor for LightGBM {
         match preds {
             Ok(predictions) => {
                 let predictions: Vec<Vec<f64>> =
-                    predictions.values().into_iter().map(|v| vec![*v]).collect();
+                    predictions.values().iter().map(|v| vec![*v]).collect();
                 Ok(Output { predictions })
             }
             Err(e) => Err(e.into()),

@@ -66,17 +66,17 @@ impl Values {
     }
 
     pub fn from_strings(strings: Vec<String>) -> Self {
-        let values = strings.into_iter().map(|s| Value::String(s)).collect();
+        let values = strings.into_iter().map(Value::String).collect();
         Values(values)
     }
 
     pub fn from_ints(ints: Vec<i32>) -> Self {
-        let values = ints.into_iter().map(|i| Value::Int(i)).collect();
+        let values = ints.into_iter().map(Value::Int).collect();
         Values(values)
     }
 
     pub fn from_floats(floats: Vec<f32>) -> Self {
-        let values = floats.into_iter().map(|f| Value::Float(f)).collect();
+        let values = floats.into_iter().map(Value::Float).collect();
         Values(values)
     }
 

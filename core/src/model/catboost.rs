@@ -54,7 +54,7 @@ fn create_catboost_model_inputs(
     if !categorical_features.is_empty() {
         for (i, mut row) in categorical_nd.axis_iter_mut(Axis(0)).enumerate() {
             for (j, col) in row.iter_mut().enumerate() {
-                *col = categorical_features[i][j].clone();
+                col.clone_from(&categorical_features[i][j]);
             }
         }
     }
@@ -82,7 +82,7 @@ fn create_catboost_model_inputs(
     })
 }
 
-fn get_shape<T>(vector: &Vec<Vec<T>>) -> (usize, usize) {
+fn get_shape<T>(vector: &[Vec<T>]) -> (usize, usize) {
     if vector.is_empty() {
         (1, 1)
     } else {

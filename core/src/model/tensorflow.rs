@@ -203,7 +203,7 @@ impl Tensorflow {
         const MODEL_TAG: &str = "serve";
         let mut graph = Graph::new();
         let bundle =
-            SavedModelBundle::load(&SessionOptions::new(), &[MODEL_TAG], &mut graph, model_dir)
+            SavedModelBundle::load(&SessionOptions::new(), [MODEL_TAG], &mut graph, model_dir)
                 .expect("failed to load tensorflow model");
         let signature_def = bundle
             .meta_graph_def()
