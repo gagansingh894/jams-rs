@@ -10,7 +10,7 @@ struct LightGBMModelInput {
 }
 
 impl LightGBMModelInput {
-    fn parse(input: ModelInput) -> Self {
+    fn parse(input: ModelInput) -> anyhow::Result<Self> {
         let mut numerical_features: Vec<Vec<f32>> = Vec::new();
 
         // extract the values from hashmap
@@ -24,7 +24,7 @@ impl LightGBMModelInput {
             // int and float are pushed to separate of type Vec<f32>
             match first {
                 Value::String(_) => {
-                    panic!("not supported string as input features")
+                    anyhow::bail!("not supported string as input features")
                 }
                 Value::Int(_) => {
                     let ints = values.to_ints();
@@ -46,7 +46,7 @@ impl LightGBMModelInput {
         // swapping rows and cols to meet input shape size
         let matbuf = MatBuf::from_vec(flatten_values, cols, rows, ColMajor);
 
-        Self { matbuf }
+        Ok(Self { matbuf })
     }
 }
 
@@ -64,7 +64,7 @@ impl LightGBM {
 
 impl Predictor for LightGBM {
     fn predict(&self, input: ModelInput) -> anyhow::Result<Output> {
-        let input = LightGBMModelInput::parse(input);
+        let input = LightGBMModelInput::parse(input)?;
         let p = Parameters::new();
         let preds = self
             .booster
@@ -102,7 +102,7 @@ mod tests {
         // lightgbm models do not support string input features. They have to preprocessed if the
         // model is using a string feature
         let size = 1;
-        let model_inputs = test_utils::create_model_inputs(28, 0, size);
+        let model_inputs = test_utils::utils::create_model_inputs(28, 0, size);
 
         // make predictions
         let output = model.predict(model_inputs);
@@ -127,7 +127,7 @@ mod tests {
         // lightgbm models do not support string input features. They have to preprocessed if the
         // model is using a string feature
         let size = 10;
-        let model_inputs = test_utils::create_model_inputs(28, 0, size);
+        let model_inputs = test_utils::utils::create_model_inputs(28, 0, size);
 
         // make predictions
         let output = model.predict(model_inputs);
@@ -161,7 +161,7 @@ mod tests {
         // lightgbm models do not support string input features. They have to preprocessed if the
         // model is using a string feature
         let size = 1;
-        let model_inputs = test_utils::create_model_inputs(2, 0, size);
+        let model_inputs = test_utils::utils::create_model_inputs(2, 0, size);
 
         // make predictions
         let output = model.predict(model_inputs);
@@ -187,7 +187,7 @@ mod tests {
         // lightgbm models do not support string input features. They have to preprocessed if the
         // model is using a string feature
         let size = 10;
-        let model_inputs = test_utils::create_model_inputs(2, 0, size);
+        let model_inputs = test_utils::utils::create_model_inputs(2, 0, size);
 
         // make predictions
         let output = model.predict(model_inputs);
@@ -222,7 +222,7 @@ mod tests {
         // lightgbm models do not support string input features. They have to preprocessed if the
         // model is using a string feature
         let size = 1;
-        let model_inputs = test_utils::create_model_inputs(2, 0, size);
+        let model_inputs = test_utils::utils::create_model_inputs(2, 0, size);
 
         // make predictions
         let output = model.predict(model_inputs);
@@ -248,7 +248,7 @@ mod tests {
         // lightgbm models do not support string input features. They have to preprocessed if the
         // model is using a string feature
         let size = 10;
-        let model_inputs = test_utils::create_model_inputs(2, 0, size);
+        let model_inputs = test_utils::utils::create_model_inputs(2, 0, size);
 
         // make predictions
         let output = model.predict(model_inputs);
@@ -283,7 +283,7 @@ mod tests {
         // lightgbm models do not support string input features. They have to preprocessed if the
         // model is using a string feature
         let size = 1;
-        let model_inputs = test_utils::create_model_inputs(2, 0, size);
+        let model_inputs = test_utils::utils::create_model_inputs(2, 0, size);
 
         // make predictions
         let output = model.predict(model_inputs);
@@ -309,7 +309,7 @@ mod tests {
         // lightgbm models do not support string input features. They have to preprocessed if the
         // model is using a string feature
         let size = 10;
-        let model_inputs = test_utils::create_model_inputs(2, 0, size);
+        let model_inputs = test_utils::utils::create_model_inputs(2, 0, size);
 
         // make predictions
         let output = model.predict(model_inputs);

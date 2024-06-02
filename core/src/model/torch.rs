@@ -7,7 +7,7 @@ struct TorchModelInput {
 }
 
 impl TorchModelInput {
-    fn parse(input: ModelInput) -> Self {
+    fn parse(input: ModelInput) -> anyhow::Result<Self> {
         let mut numerical_features: Vec<Vec<f32>> = Vec::new();
 
         // extract the values from hashmap
@@ -21,7 +21,7 @@ impl TorchModelInput {
             // int and float are pushed to separate of type Vec<f32>
             match first {
                 Value::String(_) => {
-                    panic!("not supported string tensors")
+                    anyhow::bail!("not supported string tensors")
                 }
                 Value::Int(_) => {
                     let ints = values.to_ints();
@@ -37,7 +37,7 @@ impl TorchModelInput {
 
         let tensor = tch::Tensor::from_slice2(&numerical_features).tr();
 
-        Self { tensor }
+        Ok(Self { tensor })
     }
 }
 
@@ -54,7 +54,7 @@ impl Torch {
 
 impl Predictor for Torch {
     fn predict(&self, input: ModelInput) -> anyhow::Result<Output> {
-        let input = TorchModelInput::parse(input);
+        let input = TorchModelInput::parse(input)?;
         let preds = self.model.forward_ts(&[input.tensor]);
         match preds {
             Ok(predictions) => {
@@ -88,7 +88,7 @@ mod tests {
         // torch models do not support string input features. They have to preprocessed if the
         // model is using string features
         let size = 10;
-        let model_inputs = test_utils::create_model_inputs(8, 0, size);
+        let model_inputs = test_utils::utils::create_model_inputs(8, 0, size);
 
         // make predictions
         let output = model.predict(model_inputs);
@@ -122,7 +122,7 @@ mod tests {
         // torch models do not support string input features. They have to preprocessed if the
         // model is using string features
         let size = 10;
-        let model_inputs = test_utils::create_model_inputs(4, 0, size);
+        let model_inputs = test_utils::utils::create_model_inputs(4, 0, size);
 
         // make predictions
         let output = model.predict(model_inputs);

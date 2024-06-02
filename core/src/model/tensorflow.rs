@@ -312,7 +312,7 @@ mod tests {
         let model = Tensorflow::load(model_dir).unwrap();
 
         let size = 10;
-        let model_inputs = test_utils::create_model_inputs(9, 0, size);
+        let model_inputs = test_utils::utils::create_model_inputs(9, 0, size);
 
         // make predictions
         let output = model.predict(model_inputs);
@@ -344,7 +344,7 @@ mod tests {
         let model = Tensorflow::load(model_dir).unwrap();
 
         let size = 10;
-        let model_inputs = test_utils::create_model_inputs(6, 0, size);
+        let model_inputs = test_utils::utils::create_model_inputs(6, 0, size);
 
         // make predictions
         let output = model.predict(model_inputs);
@@ -378,7 +378,7 @@ mod tests {
 
         let size = 10;
         let model_inputs =
-            test_utils::create_model_inputs_with_names(numeric_feature_names, vec![], size);
+            test_utils::utils::create_model_inputs_with_names(numeric_feature_names, vec![], size);
 
         // make predictions
         let output = model.predict(model_inputs);

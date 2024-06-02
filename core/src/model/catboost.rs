@@ -9,7 +9,7 @@ struct CatboostModelInput {
 }
 
 impl CatboostModelInput {
-    fn parse(input: ModelInput) -> Self {
+    fn parse(input: ModelInput) -> anyhow::Result<Self> {
         let mut categorical_features: Vec<Vec<String>> = Vec::new();
         let mut numerical_features: Vec<Vec<f32>> = Vec::new();
 
@@ -45,7 +45,7 @@ impl CatboostModelInput {
 fn create_catboost_model_inputs(
     categorical_features: Vec<Vec<String>>,
     numeric_features: Vec<Vec<f32>>,
-) -> CatboostModelInput {
+) -> anyhow::Result<CatboostModelInput> {
     // parse the 2d vecs to ndarrau
     let mut categorical_nd = ndarray::Array2::<String>::default(get_shape(&categorical_features));
     let mut numeric_nd = ndarray::Array2::<f32>::default(get_shape(&numeric_features));
@@ -68,7 +68,7 @@ fn create_catboost_model_inputs(
         }
     }
 
-    CatboostModelInput {
+    Ok(CatboostModelInput {
         numeric_features: numeric_nd
             .t()
             .outer_iter()
@@ -79,7 +79,7 @@ fn create_catboost_model_inputs(
             .outer_iter()
             .map(|row| row.to_vec())
             .collect(),
-    }
+    })
 }
 
 fn get_shape<T>(vector: &Vec<Vec<T>>) -> (usize, usize) {
@@ -104,7 +104,7 @@ impl Catboost {
 
 impl Predictor for Catboost {
     fn predict(&self, input: ModelInput) -> anyhow::Result<Output> {
-        let input = CatboostModelInput::parse(input);
+        let input = CatboostModelInput::parse(input)?;
         let preds = self
             .model
             .calc_model_prediction(input.numeric_features, input.categorical_features);
@@ -138,7 +138,7 @@ mod tests {
         let model = Catboost::load(path).unwrap();
 
         let size = 1;
-        let model_inputs = test_utils::create_model_inputs(
+        let model_inputs = test_utils::utils::create_model_inputs(
             model.model.get_float_features_count(),
             model.model.get_cat_features_count(),
             size,
@@ -165,7 +165,7 @@ mod tests {
         let model = Catboost::load(path).unwrap();
 
         let size = 10;
-        let model_inputs = test_utils::create_model_inputs(
+        let model_inputs = test_utils::utils::create_model_inputs(
             model.model.get_float_features_count(),
             model.model.get_cat_features_count(),
             size,
@@ -201,7 +201,7 @@ mod tests {
         let model = Catboost::load(path).unwrap();
 
         let size = 1;
-        let model_inputs = test_utils::create_model_inputs(
+        let model_inputs = test_utils::utils::create_model_inputs(
             model.model.get_float_features_count(),
             model.model.get_cat_features_count(),
             size,
@@ -229,7 +229,7 @@ mod tests {
         let model = Catboost::load(path).unwrap();
 
         let size = 10;
-        let model_inputs = test_utils::create_model_inputs(
+        let model_inputs = test_utils::utils::create_model_inputs(
             model.model.get_float_features_count(),
             model.model.get_cat_features_count(),
             size,
