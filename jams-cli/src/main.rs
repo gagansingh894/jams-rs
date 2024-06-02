@@ -12,10 +12,13 @@ struct Cli {
 #[derive(Args, Debug, Clone)]
 struct CommandArgs {
     #[arg(long)]
+    #[doc = "Path to the model file"]
     model_path: Option<String>,
     #[arg(long)]
+    #[doc = "Input data for prediction"]
     input: Option<String>,
     #[arg(long)]
+    #[doc = "Path to a file containing input data"]
     input_path: Option<String>,
 }
 
@@ -25,6 +28,7 @@ enum Commands {
     Torch(CommandArgs),
     Catboost(CommandArgs),
     LightGBM(CommandArgs),
+    Explain,
 }
 
 #[cfg(not(tarpaulin_include))]
@@ -32,6 +36,7 @@ fn main() -> anyhow::Result<()> {
     let args = Cli::parse();
     match args.cmd {
         Commands::Tensorflow(cmd_args) => {
+            explain_flags(&cmd_args);
             // load the tensorflow model
             let model = match cmd_args.model_path {
                 None => {
@@ -46,14 +51,14 @@ fn main() -> anyhow::Result<()> {
             Ok(())
         }
         Commands::Torch(cmd_args) => {
+            explain_flags(&cmd_args);
             // load the torch model
             let model = match cmd_args.model_path {
                 None => {
                     anyhow::bail!("model path not specified")
                 }
-                Some(path) => {
-                    jams_core::model::torch::Torch::load(path.as_str()).expect("failed to load model")
-                }
+                Some(path) => jams_core::model::torch::Torch::load(path.as_str())
+                    .expect("failed to load model"),
             };
             let predictions = predict(model, cmd_args.input, cmd_args.input_path)
                 .expect("failed to make predictions");
@@ -61,6 +66,7 @@ fn main() -> anyhow::Result<()> {
             Ok(())
         }
         Commands::Catboost(cmd_args) => {
+            explain_flags(&cmd_args);
             // load the catboost model
             let model = match cmd_args.model_path {
                 None => {
@@ -90,6 +96,10 @@ fn main() -> anyhow::Result<()> {
             println!("{:?}", predictions);
             Ok(())
         }
+        Commands::Explain => {
+            explain_commands();
+            Ok(())
+        }
     }
 }
 
@@ -106,7 +116,8 @@ fn predict(
             }
             Some(path) => {
                 let data = fs::read_to_string(path).expect("unable to read file");
-                let model_inputs = jams_core::model::predictor::ModelInput::from_str(data.as_str())?;
+                let model_inputs =
+                    jams_core::model::predictor::ModelInput::from_str(data.as_str())?;
                 model.predict(model_inputs)?
             }
         },
@@ -115,4 +126,32 @@ fn predict(
             model.predict(model_inputs)?
         }
     })
+}
+
+fn explain_flags(args: &CommandArgs) {
+    println!("Flags Explanation:");
+    if let Some(model_path) = &args.model_path {
+        println!("  --model_path: Path to the model file - {}", model_path);
+    }
+    if let Some(input) = &args.input {
+        println!(
+            "  --input: Input data in json format for prediction - {}",
+            input
+        );
+    }
+    if let Some(input_path) = &args.input_path {
+        println!(
+            "  --input_path: Path to a json file containing input data - {}",
+            input_path
+        );
+    }
+}
+
+fn explain_commands() {
+    println!("Available Commands:");
+    println!("  tensorflow: Run Tensorflow model predictions");
+    println!("  torch: Run Torch model predictions");
+    println!("  catboost: Run Catboost model predictions");
+    println!("  lightgbm: Run LightGBM model predictions");
+    println!("  explain: Display explanations of commands and flags");
 }
