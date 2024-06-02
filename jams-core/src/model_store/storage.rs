@@ -9,5 +9,5 @@ pub trait Storage {
     fn fetch_models(&self) -> anyhow::Result<()>;
 
     /// Retrieves a specific machine learning/deep learning model by its name.
-    fn get_model(&self, _: ModelName) -> Arc<dyn Predictor>;
+    fn get_model(&self, _: ModelName) -> Option<Arc<dyn Predictor>>;
 }
