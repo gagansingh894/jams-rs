@@ -2,6 +2,7 @@ use crate::model::predictor::{FeatureName, ModelInput, Value, Values};
 use rand::Rng;
 use std::collections::HashMap;
 
+#[cfg(test)]
 pub fn create_model_inputs(
     num_numeric_features: usize,
     num_string_features: usize,
@@ -49,6 +50,7 @@ pub fn create_model_inputs(
     ModelInput::from_hashmap(model_input).unwrap()
 }
 
+#[cfg(test)]
 pub fn create_model_inputs_with_names(
     numeric_features_names: Vec<String>,
     string_features_names: Vec<String>,

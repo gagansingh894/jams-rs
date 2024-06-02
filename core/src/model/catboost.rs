@@ -137,10 +137,11 @@ mod tests {
         let path = "tests/model_artefacts/catboost_regressor";
         let model = Catboost::load(path).unwrap();
 
+        let size = 1;
         let model_inputs = test_utils::create_model_inputs(
             model.model.get_float_features_count(),
             model.model.get_cat_features_count(),
-            1,
+            size,
         );
 
         // make predictions
@@ -148,7 +149,14 @@ mod tests {
 
         // assert
         assert!(output.is_ok());
-        assert_eq!(output.unwrap().predictions.len(), 1)
+        let predictions = output.unwrap().predictions;
+
+        // asserts the output length of predictions is equal to input length
+        assert_eq!(predictions.len(), size);
+        // since the predictions is of type Vec<Vec<f64>>, we will assert that inner vec is of
+        // length 1 i.e [[1]]. This is because this is a regression model with single output
+        // and batch size of 1
+        assert_eq!(predictions.first().unwrap().len(), size);
     }
 
     #[test]
@@ -156,10 +164,11 @@ mod tests {
         let path = "tests/model_artefacts/catboost_regressor";
         let model = Catboost::load(path).unwrap();
 
+        let size = 10;
         let model_inputs = test_utils::create_model_inputs(
             model.model.get_float_features_count(),
             model.model.get_cat_features_count(),
-            10,
+            size,
         );
 
         // make predictions
@@ -167,7 +176,14 @@ mod tests {
 
         // assert
         assert!(output.is_ok());
-        assert_eq!(output.unwrap().predictions.len(), 10)
+        let predictions = output.unwrap().predictions;
+
+        // asserts the output length of predictions is equal to input length
+        assert_eq!(predictions.len(), size);
+        // since the predictions is of type Vec<Vec<f64>>, we will assert that inner vec is of
+        // length 1 i.e [[1], [2], [3]]. This is because this is a regression model with single output
+        // and batch size of 10
+        assert_eq!(predictions.first().unwrap().len(), 1);
     }
 
     #[test]
@@ -184,10 +200,11 @@ mod tests {
         let path = "tests/model_artefacts/catboost_binary";
         let model = Catboost::load(path).unwrap();
 
+        let size = 1;
         let model_inputs = test_utils::create_model_inputs(
             model.model.get_float_features_count(),
             model.model.get_cat_features_count(),
-            1,
+            size,
         );
 
         // make predictions
@@ -195,7 +212,15 @@ mod tests {
 
         // assert
         assert!(output.is_ok());
-        assert_eq!(output.unwrap().predictions.len(), 1)
+        let predictions = output.unwrap().predictions;
+
+        // asserts the output length of predictions is equal to input length
+        assert_eq!(predictions.len(), size);
+        // since the predictions is of type Vec<Vec<f64>>, we will assert that inner vec is of
+        // length 1 i.e [[0.5]]. This is because this is a binary classification model with single output
+        // and the output is probability value whose value lies between 0 and 1. The user can set
+        // its own threshold.
+        assert_eq!(predictions.first().unwrap().len(), 1);
     }
 
     #[test]
@@ -203,10 +228,11 @@ mod tests {
         let path = "tests/model_artefacts/catboost_binary";
         let model = Catboost::load(path).unwrap();
 
+        let size = 10;
         let model_inputs = test_utils::create_model_inputs(
             model.model.get_float_features_count(),
             model.model.get_cat_features_count(),
-            10,
+            size,
         );
 
         // make predictions
@@ -214,7 +240,15 @@ mod tests {
 
         // assert
         assert!(output.is_ok());
-        assert_eq!(output.unwrap().predictions.len(), 10)
+        let predictions = output.unwrap().predictions;
+
+        // asserts the output length of predictions is equal to input length
+        assert_eq!(predictions.len(), size);
+        // since the predictions is of type Vec<Vec<f64>>, we will assert that inner vec is of
+        // length 1 i.e [[0,4], [0.1], [0.2]]. This is because this is a binary classification model with single output
+        // and the output is probability value whose value lies between 0 and 1. The user can set
+        // its own threshold.
+        assert_eq!(predictions.first().unwrap().len(), 1);
     }
 
     #[test]

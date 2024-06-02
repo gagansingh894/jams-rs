@@ -97,33 +97,51 @@ mod tests {
     #[test]
     fn successfully_make_single_prediction_using_lightgbm_regressor_model() {
         let path = "tests/model_artefacts/lgbm_reg.txt";
-        let model = LightGBM::load(path);
+        let model = LightGBM::load(path).unwrap();
 
         // lightgbm models do not support string input features. They have to preprocessed if the
         // model is using a string feature
-        let model_inputs = test_utils::create_model_inputs(28, 0, 1);
+        let size = 1;
+        let model_inputs = test_utils::create_model_inputs(28, 0, size);
 
         // make predictions
-        let output = model.unwrap().predict(model_inputs);
+        let output = model.predict(model_inputs);
 
         // assert the result is ok
-        assert!(output.is_ok())
+        assert!(output.is_ok());
+        let predictions = output.unwrap().predictions;
+
+        // asserts the output length of predictions is equal to input length
+        assert_eq!(predictions.len(), size);
+        // since the predictions is of type Vec<Vec<f64>>, we will assert that inner vec is of
+        // length 1 i.e [[1]]. This is because this is a regression model with single output
+        // and batch size of 1
+        assert_eq!(predictions.first().unwrap().len(), 1);
     }
 
     #[test]
     fn successfully_make_batch_predictions_using_lightgbm_regressor_model() {
         let path = "tests/model_artefacts/lgbm_reg.txt";
-        let model = LightGBM::load(path);
+        let model = LightGBM::load(path).unwrap();
 
         // lightgbm models do not support string input features. They have to preprocessed if the
         // model is using a string feature
-        let model_inputs = test_utils::create_model_inputs(28, 0, 10);
+        let size = 10;
+        let model_inputs = test_utils::create_model_inputs(28, 0, size);
 
         // make predictions
-        let output = model.unwrap().predict(model_inputs);
+        let output = model.predict(model_inputs);
 
         // assert the result is ok
-        assert!(output.is_ok())
+        assert!(output.is_ok());
+        let predictions = output.unwrap().predictions;
+
+        // asserts the output length of predictions is equal to input length
+        assert_eq!(predictions.len(), size);
+        // since the predictions is of type Vec<Vec<f64>>, we will assert that inner vec is of
+        // length 1 i.e [[1], [2], [3]]. This is because this is a regression model with single output
+        // and batch size of 10
+        assert_eq!(predictions.first().unwrap().len(), 1);
     }
 
     #[test]
@@ -138,33 +156,53 @@ mod tests {
     #[test]
     fn successfully_make_single_prediction_using_lightgbm_binary_classifier_model() {
         let path = "tests/model_artefacts/lgbm_binary.txt";
-        let model = LightGBM::load(path);
+        let model = LightGBM::load(path).unwrap();
 
         // lightgbm models do not support string input features. They have to preprocessed if the
         // model is using a string feature
-        let model_inputs = test_utils::create_model_inputs(2, 0, 1);
+        let size = 1;
+        let model_inputs = test_utils::create_model_inputs(2, 0, size);
 
         // make predictions
-        let output = model.unwrap().predict(model_inputs);
+        let output = model.predict(model_inputs);
 
         // assert the result is ok
-        assert!(output.is_ok())
+        assert!(output.is_ok());
+        let predictions = output.unwrap().predictions;
+
+        // asserts the output length of predictions is equal to input length
+        assert_eq!(predictions.len(), size);
+        // since the predictions is of type Vec<Vec<f64>>, we will assert that inner vec is of
+        // length 1 i.e [[0,4]]. This is because this is a binary classification model with single output
+        // and the output is probability value whose value lies between 0 and 1. The user can set
+        // its own threshold.
+        assert_eq!(predictions.first().unwrap().len(), 1);
     }
 
     #[test]
     fn successfully_make_batch_predictions_using_lightgbm_binary_classifier_model() {
         let path = "tests/model_artefacts/lgbm_binary.txt";
-        let model = LightGBM::load(path);
+        let model = LightGBM::load(path).unwrap();
 
         // lightgbm models do not support string input features. They have to preprocessed if the
         // model is using a string feature
-        let model_inputs = test_utils::create_model_inputs(2, 0, 10);
+        let size = 10;
+        let model_inputs = test_utils::create_model_inputs(2, 0, size);
 
         // make predictions
-        let output = model.unwrap().predict(model_inputs);
+        let output = model.predict(model_inputs);
 
         // assert the result is ok
-        assert!(output.is_ok())
+        assert!(output.is_ok());
+        let predictions = output.unwrap().predictions;
+
+        // asserts the output length of predictions is equal to input length
+        assert_eq!(predictions.len(), size);
+        // since the predictions is of type Vec<Vec<f64>>, we will assert that inner vec is of
+        // length 1 i.e [[0,4], [0.1], [0.2]]. This is because this is a binary classification model with single output
+        // and the output is probability value whose value lies between 0 and 1. The user can set
+        // its own threshold.
+        assert_eq!(predictions.first().unwrap().len(), 1);
     }
 
     #[test]
@@ -179,33 +217,53 @@ mod tests {
     #[test]
     fn successfully_make_single_prediction_using_lightgbm_xentropy_binary_classifier_model() {
         let path = "tests/model_artefacts/lgbm_xen_binary.txt";
-        let model = LightGBM::load(path);
+        let model = LightGBM::load(path).unwrap();
 
         // lightgbm models do not support string input features. They have to preprocessed if the
         // model is using a string feature
-        let model_inputs = test_utils::create_model_inputs(2, 0, 1);
+        let size = 1;
+        let model_inputs = test_utils::create_model_inputs(2, 0, size);
 
         // make predictions
-        let output = model.unwrap().predict(model_inputs);
+        let output = model.predict(model_inputs);
 
         // assert the result is ok
-        assert!(output.is_ok())
+        assert!(output.is_ok());
+        let predictions = output.unwrap().predictions;
+
+        // asserts the output length of predictions is equal to input length
+        assert_eq!(predictions.len(), size);
+        // since the predictions is of type Vec<Vec<f64>>, we will assert that inner vec is of
+        // length 1 i.e [[0,4]]. This is because this is a binary classification model with single output
+        // and the output is probability value whose value lies between 0 and 1. The user can set
+        // its own threshold.
+        assert_eq!(predictions.first().unwrap().len(), 1);
     }
 
     #[test]
     fn successfully_make_batch_predictions_using_lightgbm_xentropy_binary_classifier_model() {
         let path = "tests/model_artefacts/lgbm_xen_binary.txt";
-        let model = LightGBM::load(path);
+        let model = LightGBM::load(path).unwrap();
 
         // lightgbm models do not support string input features. They have to preprocessed if the
         // model is using a string feature
-        let model_inputs = test_utils::create_model_inputs(2, 0, 10);
+        let size = 10;
+        let model_inputs = test_utils::create_model_inputs(2, 0, size);
 
         // make predictions
-        let output = model.unwrap().predict(model_inputs);
+        let output = model.predict(model_inputs);
 
         // assert the result is ok
-        assert!(output.is_ok())
+        assert!(output.is_ok());
+        let predictions = output.unwrap().predictions;
+
+        // asserts the output length of predictions is equal to input length
+        assert_eq!(predictions.len(), size);
+        // since the predictions is of type Vec<Vec<f64>>, we will assert that inner vec is of
+        // length 1 i.e [[0,4], [0.1], [0.2]]. This is because this is a binary classification model with single output
+        // and the output is probability value whose value lies between 0 and 1. The user can set
+        // its own threshold.
+        assert_eq!(predictions.first().unwrap().len(), 1);
     }
 
     #[test]
@@ -220,32 +278,52 @@ mod tests {
     #[test]
     fn successfully_make_single_prediction_using_lightgbm_xentropy_prob_classifier_model() {
         let path = "tests/model_artefacts/lgbm_xen_prob.txt";
-        let model = LightGBM::load(path);
+        let model = LightGBM::load(path).unwrap();
 
         // lightgbm models do not support string input features. They have to preprocessed if the
         // model is using a string feature
-        let model_inputs = test_utils::create_model_inputs(2, 0, 1);
+        let size = 1;
+        let model_inputs = test_utils::create_model_inputs(2, 0, size);
 
         // make predictions
-        let output = model.unwrap().predict(model_inputs);
+        let output = model.predict(model_inputs);
 
         // assert the result is ok
-        assert!(output.is_ok())
+        assert!(output.is_ok());
+        let predictions = output.unwrap().predictions;
+
+        // asserts the output length of predictions is equal to input length
+        assert_eq!(predictions.len(), size);
+        // since the predictions is of type Vec<Vec<f64>>, we will assert that inner vec is of
+        // length 1 i.e [[0,4]]. This is because this is a binary classification model with single output
+        // and the output is probability value whose value lies between 0 and 1. The user can set
+        // its own threshold.
+        assert_eq!(predictions.first().unwrap().len(), 1);
     }
 
     #[test]
     fn successfully_make_batch_predictions_using_lightgbm_xentropy_prob_classifier_model() {
         let path = "tests/model_artefacts/lgbm_xen_prob.txt";
-        let model = LightGBM::load(path);
+        let model = LightGBM::load(path).unwrap();
 
         // lightgbm models do not support string input features. They have to preprocessed if the
         // model is using a string feature
-        let model_inputs = test_utils::create_model_inputs(2, 0, 10);
+        let size = 10;
+        let model_inputs = test_utils::create_model_inputs(2, 0, size);
 
         // make predictions
-        let output = model.unwrap().predict(model_inputs);
+        let output = model.predict(model_inputs);
 
         // assert the result is ok
-        assert!(output.is_ok())
+        assert!(output.is_ok());
+        let predictions = output.unwrap().predictions;
+
+        // asserts the output length of predictions is equal to input length
+        assert_eq!(predictions.len(), size);
+        // since the predictions is of type Vec<Vec<f64>>, we will assert that inner vec is of
+        // length 1 i.e [[0,4], [0.1], [0.2]]. This is because this is a binary classification model with single output
+        // and the output is probability value whose value lies between 0 and 1. The user can set
+        // its own threshold.
+        assert_eq!(predictions.first().unwrap().len(), 1);
     }
 }
