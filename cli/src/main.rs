@@ -37,7 +37,7 @@ fn main() -> anyhow::Result<()> {
                 None => {
                     anyhow::bail!("model path not specified")
                 }
-                Some(path) => core::model::tensorflow::Tensorflow::load(path.as_str())
+                Some(path) => jams_core::model::tensorflow::Tensorflow::load(path.as_str())
                     .expect("failed to load model"),
             };
             let predictions = predict(model, cmd_args.input, cmd_args.input_path)
@@ -52,7 +52,7 @@ fn main() -> anyhow::Result<()> {
                     anyhow::bail!("model path not specified")
                 }
                 Some(path) => {
-                    core::model::torch::Torch::load(path.as_str()).expect("failed to load model")
+                    jams_core::model::torch::Torch::load(path.as_str()).expect("failed to load model")
                 }
             };
             let predictions = predict(model, cmd_args.input, cmd_args.input_path)
@@ -66,7 +66,7 @@ fn main() -> anyhow::Result<()> {
                 None => {
                     anyhow::bail!("model path not specified")
                 }
-                Some(path) => core::model::catboost::Catboost::load(path.as_str())
+                Some(path) => jams_core::model::catboost::Catboost::load(path.as_str())
                     .expect("failed to load model"),
             };
 
@@ -81,7 +81,7 @@ fn main() -> anyhow::Result<()> {
                 None => {
                     anyhow::bail!("model path not specified")
                 }
-                Some(path) => core::model::lightgbm::LightGBM::load(path.as_str())
+                Some(path) => jams_core::model::lightgbm::LightGBM::load(path.as_str())
                     .expect("failed to load model"),
             };
 
@@ -98,7 +98,7 @@ fn predict(
     model: impl Predictor,
     input: Option<String>,
     input_path: Option<String>,
-) -> anyhow::Result<core::model::predictor::Output> {
+) -> anyhow::Result<jams_core::model::predictor::Output> {
     Ok(match input {
         None => match input_path {
             None => {
@@ -106,12 +106,12 @@ fn predict(
             }
             Some(path) => {
                 let data = fs::read_to_string(path).expect("unable to read file");
-                let model_inputs = core::model::predictor::ModelInput::from_str(data.as_str())?;
+                let model_inputs = jams_core::model::predictor::ModelInput::from_str(data.as_str())?;
                 model.predict(model_inputs)?
             }
         },
         Some(input) => {
-            let model_inputs = core::model::predictor::ModelInput::from_str(input.as_str())?;
+            let model_inputs = jams_core::model::predictor::ModelInput::from_str(input.as_str())?;
             model.predict(model_inputs)?
         }
     })
