@@ -5,6 +5,7 @@ use crate::model_store::storage::{ModelName, Storage};
 use dashmap::DashMap;
 use std::fs;
 use std::sync::Arc;
+use dashmap::mapref::one::Ref;
 
 pub struct LocalModelStore {
     pub models: DashMap<ModelName, Arc<dyn Predictor>>,
@@ -65,11 +66,8 @@ impl Storage for LocalModelStore {
         Ok(())
     }
 
-    fn get_model(&self, model_name: ModelName) ->  Option<Arc<dyn Predictor>> {
-        Some(self.models
-            .get(model_name.as_str())
-            .expect("failed to get model")
-            .to_owned())
+    fn get_model(&self, model_name: ModelName) ->  Option<Ref<ModelName, Arc<dyn Predictor>>> {
+        self.models.get(model_name.as_str())
     }
 }
 
