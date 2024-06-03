@@ -2,10 +2,10 @@ use crate::model;
 use crate::model::frameworks::{CATBOOST, LIGHTGBM, PYTORCH, TENSORFLOW, TORCH};
 use crate::model::predictor::Predictor;
 use crate::model_store::storage::{ModelName, Storage};
+use dashmap::mapref::one::Ref;
 use dashmap::DashMap;
 use std::fs;
 use std::sync::Arc;
-use dashmap::mapref::one::Ref;
 
 pub struct LocalModelStore {
     pub models: DashMap<ModelName, Arc<dyn Predictor>>,
@@ -66,7 +66,7 @@ impl Storage for LocalModelStore {
         Ok(())
     }
 
-    fn get_model(&self, model_name: ModelName) ->  Option<Ref<ModelName, Arc<dyn Predictor>>> {
+    fn get_model(&self, model_name: ModelName) -> Option<Ref<ModelName, Arc<dyn Predictor>>> {
         self.models.get(model_name.as_str())
     }
 }

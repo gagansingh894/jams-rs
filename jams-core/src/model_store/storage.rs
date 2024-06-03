@@ -1,6 +1,6 @@
 use crate::model::predictor::Predictor;
-use std::sync::Arc;
 use dashmap::mapref::one::Ref;
+use std::sync::Arc;
 
 pub type ModelName = String;
 
