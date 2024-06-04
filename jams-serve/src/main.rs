@@ -1,6 +1,8 @@
 mod router;
 mod service;
 
+use std::env;
+use std::env::VarError;
 use crate::router::build_router;
 use clap::{Args, Parser, Subcommand};
 
@@ -52,8 +54,16 @@ async fn start_server(args: CommandArgs) {
     let model_dir = match args.model_dir {
         Some(dir) => dir,
         None => {
-            eprintln!("Error: 'model-dir' argument is required.");
-            return;
+            // search for environment variable
+            match env::var("MODEL_STORE_DIR") {
+                Ok(model_dir) => {
+                    model_dir
+                }
+                Err(_) => {
+                    eprintln!("Error: either set MODEL_STORE_DIR  or use 'model-dir' argument.");
+                    return;
+                }
+            }
         }
     };
 
