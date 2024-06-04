@@ -34,7 +34,7 @@ cargo install jams-cli
 
 ## Examples
 
-There are multiple python scripts in [examples folder]() which would allow you to generate different models and their
+There are multiple python scripts in [examples folder](https://github.com/gagansingh894/jams-rs/tree/main/jams-cli/examples) which would allow you to generate different models and their
 corresponding sample json input. Below are some examples
 
 ### Tensorflow
