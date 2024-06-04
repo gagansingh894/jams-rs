@@ -2,8 +2,10 @@
 .idea
 
 !/jams-cli/examples/*.py
+!/jams-cli/examples/datasets
+!/jams-cli/examples/requirements-linux.txt
+!/jams-cli/examples/requirements-macos.txt
 /jams-cli/examples/*.json
 /jams-cli/examples/*.txt
 /jams-cli/examples/*.pt
-!/jams-cli/examples/datasets
 /jams-cli/examples/*
