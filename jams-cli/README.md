@@ -51,7 +51,7 @@ jams-cli tensorflow --model-path=tensorflow_penguin_functional --input-path=tens
 2. This will create two files _ a model file and input json file
 3. Run the following command and pass in the path for model file and input file
 ```
-jams-cli torch --model-path=penguin_pytorch.pt --input-path=torch_input.json 
+jams-cli torch --model-path=torch_penguin.pt --input-path=torch_input.json
 ```
 
 
