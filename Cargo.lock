@@ -932,23 +932,7 @@ version = "0.1.11"
 dependencies = [
  "anyhow",
  "clap 4.5.4",
- "jams-core 0.1.6 (registry+https://github.com/rust-lang/crates.io-index)",
-]
-
-[[package]]
-name = "jams-core"
-version = "0.1.6"
-dependencies = [
- "anyhow",
- "catboost-rs 0.1.0",
- "dashmap",
- "lgbm",
- "ndarray",
- "rand",
- "serde",
- "serde_json",
- "tch",
- "tensorflow",
+ "jams-core 0.1.6",
 ]
 
 [[package]]
@@ -970,12 +954,28 @@ dependencies = [
 ]
 
 [[package]]
+name = "jams-core"
+version = "0.1.7"
+dependencies = [
+ "anyhow",
+ "catboost-rs 0.1.0",
+ "dashmap",
+ "lgbm",
+ "ndarray",
+ "rand",
+ "serde",
+ "serde_json",
+ "tch",
+ "tensorflow",
+]
+
+[[package]]
 name = "jams-serve"
 version = "0.1.0"
 dependencies = [
  "anyhow",
  "axum",
- "jams-core 0.1.6",
+ "jams-core 0.1.7",
  "log",
  "serde",
  "tokio",
