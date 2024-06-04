@@ -1,11 +1,12 @@
 [package]
 name = "jams-cli"
 description = "jams-cli is an easy-to-use CLI application for making predictions."
-version = "0.1.4"
+version = "0.1.5"
 edition = "2021"
 homepage = "https://github.com/gagansingh894/jams-rs"
 repository = "https://github.com/gagansingh894/jams-rs/tree/main/jams-cli"
 license = "Apache-2.0"
+exclude = ["./examples"]
 keywords = ["machine-learning", "deep-learning"]
 
 [build]
