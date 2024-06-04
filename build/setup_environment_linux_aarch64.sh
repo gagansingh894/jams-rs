@@ -1,4 +1,5 @@
 #!/bin/bash
+#todo: in progress
 
 # Function to install necessary dependencies
 install_dependencies() {

@@ -13,8 +13,7 @@ pub struct LocalModelStore {
 }
 
 impl LocalModelStore {
-    #[allow(dead_code)]
-    fn new(model_dir: String) -> anyhow::Result<Self> {
+    pub fn new(model_dir: String) -> anyhow::Result<Self> {
         let models: DashMap<ModelName, Arc<dyn Predictor>> = DashMap::new();
         Ok(LocalModelStore { models, model_dir })
     }
@@ -69,6 +68,11 @@ impl Storage for LocalModelStore {
     fn get_model(&self, model_name: ModelName) -> Option<Ref<ModelName, Arc<dyn Predictor>>> {
         self.models.get(model_name.as_str())
     }
+
+    fn get_model_names(&self) -> anyhow::Result<Vec<String>> {
+        let model_names: Vec<String> = self.models.iter().map(|f| f.key().to_string()).collect();
+        Ok(model_names)
+    }
 }
 
 #[cfg(test)]
@@ -100,5 +104,20 @@ mod tests {
         // assert
         assert!(result.is_ok());
         assert!(model.is_some());
+    }
+
+    #[test]
+    fn successfully_get_model_names_from_local_model_store() {
+        let model_dir = "tests/model_storage/local_model_store";
+        let local_model_store = LocalModelStore::new(model_dir.to_string()).unwrap();
+
+        // load models
+        let result = local_model_store.fetch_models();
+        let model_names = local_model_store.get_model_names();
+
+        // assert
+        assert!(result.is_ok());
+        assert!(model_names.is_ok());
+        assert_ne!(model_names.unwrap().len(), 0);
     }
 }
