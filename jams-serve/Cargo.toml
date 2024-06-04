@@ -2,6 +2,28 @@
 name = "jams-serve"
 version = "0.1.0"
 edition = "2021"
+description = "jams-serve provides a http and gRPC API for jams-core."
+homepage = "https://github.com/gagansingh894/jams-rs"
+repository = "https://github.com/gagansingh894/jams-rs/tree/main/jams-serve"
+license = "Apache-2.0"
+keywords = ["machine-learning", "deep-learning"]
+
+[build]
+# Specify rustflags for release build
+rustflags = ["-C", "link-arg=-Wl,-rpath,/usr/local/lib"]
+build = "build.rs"
+
+[[bin]]
+name = "jams-serve"
+path = "src/main.rs"
+
 
 [dependencies]
+axum = "0.7"
 jams-core = {path = "../jams-core" }
+anyhow = "1"
+tracing-subscriber = "0.3"
+tokio = { version = "1", features = ["rt", "rt-multi-thread", "macros"] }
+log = "0.4.21"
+tracing = "0.1.40"
+serde = { version = "1.0.203", features = ["derive"] }
