@@ -6,7 +6,7 @@ use std::fs;
 #[command(author, version, about, long_about = None)]
 struct Cli {
     #[command(subcommand)]
-    cmd: Commands,
+    cmd: Option<Commands>,
 }
 
 #[derive(Args, Debug, Clone)]
@@ -28,14 +28,13 @@ enum Commands {
     Torch(CommandArgs),
     Catboost(CommandArgs),
     Lightgbm(CommandArgs),
-    Explain,
 }
 
 #[cfg(not(tarpaulin_include))]
 fn main() -> anyhow::Result<()> {
     let args = Cli::parse();
     match args.cmd {
-        Commands::Tensorflow(cmd_args) => {
+        Some(Commands::Tensorflow(cmd_args)) => {
             explain_flags(&cmd_args);
             // load the tensorflow model
             let model = match cmd_args.model_path {
@@ -50,7 +49,7 @@ fn main() -> anyhow::Result<()> {
             println!("{:?}", predictions);
             Ok(())
         }
-        Commands::Torch(cmd_args) => {
+        Some(Commands::Torch(cmd_args)) => {
             explain_flags(&cmd_args);
             // load the torch model
             let model = match cmd_args.model_path {
@@ -65,7 +64,7 @@ fn main() -> anyhow::Result<()> {
             println!("{:?}", predictions);
             Ok(())
         }
-        Commands::Catboost(cmd_args) => {
+        Some(Commands::Catboost(cmd_args)) => {
             explain_flags(&cmd_args);
             // load the catboost model
             let model = match cmd_args.model_path {
@@ -81,7 +80,7 @@ fn main() -> anyhow::Result<()> {
             println!("{:?}", predictions);
             Ok(())
         }
-        Commands::Lightgbm(cmd_args) => {
+        Some(Commands::Lightgbm(cmd_args)) => {
             // load the lightGBM model
             let model = match cmd_args.model_path {
                 None => {
@@ -96,7 +95,7 @@ fn main() -> anyhow::Result<()> {
             println!("{:?}", predictions);
             Ok(())
         }
-        Commands::Explain => {
+        None => {
             explain_commands();
             Ok(())
         }
@@ -153,5 +152,5 @@ fn explain_commands() {
     println!("  torch: Run Torch model predictions");
     println!("  catboost: Run Catboost model predictions");
     println!("  lightgbm: Run LightGBM model predictions");
-    println!("  explain: Display explanations of commands and flags");
+    println!("  <command> -h: Display explanations of commands and flags");
 }
