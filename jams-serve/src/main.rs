@@ -44,7 +44,7 @@ async fn main() -> anyhow::Result<()> {
         Commands::Start(args) => {
             start_server(args).await;
             Ok(())
-        },
+        }
     }
 }
 
