@@ -14,7 +14,7 @@ use std::sync::Arc;
 /// Torch, CatBoost, and LightGBM.
 ///
 /// # Fields
-/// - `models` (DashMap<ModelName, Arc<dyn Predictor>>): A thread-safe map of model names to their respective predictor instances.
+/// - `models` (DashMap<ModelName, Arc&ltdyn Predictor&gt>): A thread-safe map of model names to their respective predictor instances.
 /// - `model_dir` (String): The directory where models are stored.
 pub struct LocalModelStore {
     pub models: DashMap<ModelName, Arc<dyn Predictor>>,

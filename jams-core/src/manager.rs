@@ -8,7 +8,7 @@ use std::sync::Arc;
 /// It interacts with the model storage to fetch models and execute predictions.
 ///
 /// # Fields
-/// - `model_store` (Arc<dyn Storage>): A shared reference to the model storage.
+/// - `model_store` (Arc&ltdyn Storage&gt): A shared reference to the model storage.
 pub struct Manager {
     model_store: Arc<dyn Storage>,
 }
@@ -19,7 +19,7 @@ impl Manager {
     /// This method initializes the `Manager` by fetching the available models from the model storage.
     ///
     /// # Arguments
-    /// - `model_store` (Arc<dyn Storage>): A shared reference to the model storage.
+    /// - `model_store` (Arc&ltdyn Storageglt): A shared reference to the model storage.
     ///
     /// # Returns
     /// - `Ok(Manager)`: If the models were successfully fetched.
