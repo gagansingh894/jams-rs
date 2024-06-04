@@ -10,7 +10,6 @@ pub fn build_router(model_dir: String) -> anyhow::Result<Router> {
     tracing_subscriber::fmt::init();
 
     // setup model store
-    // let model_dir = "assets/model_storage/local_model_store".to_string();
     let model_store = LocalModelStore::new(model_dir).expect("failed to create model store");
     let manager = Manager::new(Arc::new(model_store)).expect("failed to initialize manage");
 
