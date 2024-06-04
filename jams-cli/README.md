@@ -68,7 +68,7 @@ jams-cli catboost --model-path=catboost_titanic --input-path=catboost_input.json
 2. This will create two files - a model file and input json file
 3. Run the following command(example) and pass in the path for model file and input file
 ```
-jams-cli light-gbm --model-path=lightgbm_iris.txt --input-path=lightgbm_input.json
+jams-cli lightgbm --model-path=lightgbm_iris.txt --input-path=lightgbm_input.json
 
 ```
 
