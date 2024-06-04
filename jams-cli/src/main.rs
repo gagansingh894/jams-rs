@@ -27,7 +27,7 @@ enum Commands {
     Tensorflow(CommandArgs),
     Torch(CommandArgs),
     Catboost(CommandArgs),
-    LightGBM(CommandArgs),
+    Lightgbm(CommandArgs),
     Explain,
 }
 
