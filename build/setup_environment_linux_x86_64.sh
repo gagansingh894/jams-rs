@@ -67,12 +67,12 @@ download_tensorflow() {
     wget -q --no-check-certificate "$DOWNLOAD_URL"
 
     echo "Extracting $FILENAME to $INSTALL_DIR..."
-    sudo mkdir -p "$INSTALL_DIR"
-    sudo tar -C "$INSTALL_DIR" -xzf "$FILENAME"
+    mkdir -p "$INSTALL_DIR"
+    tar -C "$INSTALL_DIR" -xzf "$FILENAME"
     rm "$FILENAME"
 
     echo "Running ldconfig to update library cache..."
-    sudo ldconfig "$INSTALL_DIR"
+    ldconfig "$INSTALL_DIR"
 
     echo "TensorFlow installation completed."
 }
