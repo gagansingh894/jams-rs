@@ -1,4 +1,4 @@
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 
 /// Trait for making predictions using a model.
@@ -15,7 +15,7 @@ pub trait Predictor: Send + Sync + 'static {
 }
 
 /// Struct representing the output of a prediction.
-#[derive(Debug)]
+#[derive(Debug, Serialize)]
 pub struct Output {
     /// The predictions made by the model.
     pub predictions: Vec<Vec<f64>>,
