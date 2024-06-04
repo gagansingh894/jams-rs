@@ -27,7 +27,7 @@ enum Commands {
     Tensorflow(CommandArgs),
     Torch(CommandArgs),
     Catboost(CommandArgs),
-    LightGBM(CommandArgs),
+    Lightgbm(CommandArgs),
     Explain,
 }
 
@@ -81,7 +81,7 @@ fn main() -> anyhow::Result<()> {
             println!("{:?}", predictions);
             Ok(())
         }
-        Commands::LightGBM(cmd_args) => {
+        Commands::Lightgbm(cmd_args) => {
             // load the lightGBM model
             let model = match cmd_args.model_path {
                 None => {

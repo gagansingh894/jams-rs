@@ -56,6 +56,27 @@ download_libtorch() {
     rm /tmp/libtorch.zip
 }
 
+# Function to download and download TensorFlow library
+download_tensorflow() {
+    # Variables
+    FILENAME="libtensorflow-cpu-linux-x86_64-2.15.0.tar.gz"
+    DOWNLOAD_URL="https://storage.googleapis.com/tensorflow/libtensorflow/${FILENAME}"
+    INSTALL_DIR="/usr/local/lib/libtensorflow"
+
+    echo "Downloading TensorFlow from $DOWNLOAD_URL..."
+    wget -q --no-check-certificate "$DOWNLOAD_URL"
+
+    echo "Extracting $FILENAME to $INSTALL_DIR..."
+    mkdir -p "$INSTALL_DIR"
+    tar -C "$INSTALL_DIR" -xzf "$FILENAME"
+    rm "$FILENAME"
+
+    echo "Running ldconfig to update library cache..."
+    ldconfig "$INSTALL_DIR"
+
+    echo "TensorFlow installation completed."
+}
+
 # Function to install Node.js and npm
 install_nodejs() {
     echo "Adding NodeSource repository and installing Node.js..."
@@ -63,7 +84,6 @@ install_nodejs() {
     apt-get install -y nodejs
     rm -rf /var/lib/apt/lists/*
 }
-
 
 # Main script execution
 install_dependencies
@@ -74,12 +94,17 @@ print_clang_version
 download_lightgbm
 download_catboost
 download_libtorch
+download_tensorflow
 
-# Set environment variables
-export LD_LIBRARY_PATH=/usr/local/lib
-export LIGHTGBM_LIB_DIR=/usr/local/lib
-export LIBTORCH=/usr/local/lib/libtorch
-export PATH=/usr/bin/node:$PATH
-export LD_LIBRARY_PATH=/usr/local/lib:$LD_LIBRARY_PATH
+# add environment variables
+# user might need to run these manually or add them to shell profile(.bashrc, .zshrc)
+export COMMON_LIBS_PATH=/usr/local/lib
+export LIGHTGBM_LIB_DIR=$COMMON_LIBS_PATH
+export LIBTORCH=$COMMON_LIBS_PATH/libtorch
+export LIBTORCH_INCLUDE=$COMMON_LIBS_PATH/libtorch
+export LIBTORCH_LIB=$COMMON_LIBS_PATH/libtorch
+export LD_LIBRARY_PATH=$COMMON_LIBS_PATH:$COMMON_LIBS_PATH/libtorch/lib
+export LIBRARY_PATH=$LIBRARY_PATH:$COMMON_LIBS_PATH/libtensorflow
+export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$COMMON_LIBS_PATH/libtensorflow/lib
 
 echo "Script execution completed."
