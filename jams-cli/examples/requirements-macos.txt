@@ -1,0 +1,12 @@
+catboost==1.2.3
+tensorflow-macos==2.14.0
+tensorflow-metal
+tensorflow-datasets==4.9.1
+lightgbm==4.0.0
+torch==2.2.0
+torchvision
+torchaudio
+pandas
+scikit-learn
+xgboost==2.0.3
+seaborn
