@@ -57,14 +57,17 @@ async fn start_server(args: CommandArgs) {
         }
     };
 
+    let port = args.port.unwrap_or(3000);
+
     let app = build_router(model_dir).expect("failed to build router");
-    // run our app with hyper, listening globally on port 3000
-    let listener = tokio::net::TcpListener::bind("0.0.0.0:3000")
+    // run our app with hyper, listening globally on specified port
+    let address = format!("0.0.0.0:{}", port);
+    let listener = tokio::net::TcpListener::bind(address)
         .await
         .expect("failed to create TCP listener ❌");
 
     // log that the server is running
-    tracing::info!("server is running on http://0.0.0.0:3000 ✅ \n");
+    tracing::info!("{}", format!("server is running on http://0.0.0.0:{} ✅ \n", port));
 
     // run on hyper
     axum::serve(listener, app)
