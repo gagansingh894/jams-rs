@@ -1,7 +1,7 @@
 [package]
 name = "jams-cli"
 description = "jams-cli is an easy-to-use CLI application for making predictions."
-version = "0.1.12"
+version = "0.1.11"
 edition = "2021"
 homepage = "https://github.com/gagansingh894/jams-rs"
 repository = "https://github.com/gagansingh894/jams-rs/tree/main/jams-cli"
