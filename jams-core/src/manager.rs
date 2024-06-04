@@ -2,14 +2,30 @@ use crate::model::predictor::ModelInput;
 use crate::model_store::storage::{ModelName, Storage};
 use std::sync::Arc;
 
-#[allow(dead_code)]
+/// Manages model storage and prediction requests.
+///
+/// The `Manager` struct is responsible for managing access to stored models and handling prediction requests.
+/// It interacts with the model storage to fetch models and execute predictions.
+///
+/// # Fields
+/// - `model_store` (Arc<dyn Storage>): A shared reference to the model storage.
 pub struct Manager {
     model_store: Arc<dyn Storage>,
 }
 
 impl Manager {
-    #[allow(dead_code)]
-    fn new(model_store: Arc<dyn Storage>) -> anyhow::Result<Self> {
+    /// Creates a new `Manager` instance.
+    ///
+    /// This method initializes the `Manager` by fetching the available models from the model storage.
+    ///
+    /// # Arguments
+    /// - `model_store` (Arc<dyn Storage>): A shared reference to the model storage.
+    ///
+    /// # Returns
+    /// - `Ok(Manager)`: If the models were successfully fetched.
+    /// - `Err(anyhow::Error)`: If there was an error fetching the models.
+    ///
+    pub fn new(model_store: Arc<dyn Storage>) -> anyhow::Result<Self> {
         match model_store.fetch_models() {
             Ok(_) => {
                 println!("successfully fetched models")
@@ -21,8 +37,20 @@ impl Manager {
         Ok(Manager { model_store })
     }
 
-    #[allow(dead_code)]
-    fn predict(&self, model_name: ModelName, input_json: &str) -> anyhow::Result<()> {
+    /// Predicts using the specified model and input data.
+    ///
+    /// This method fetches the specified model from the storage, parses the input data,
+    /// and executes the prediction.
+    ///
+    /// # Arguments
+    /// - `model_name` (ModelName): The name of the model to use for the prediction.
+    /// - `input_json` (&str): The input data for the prediction, formatted as a JSON string.
+    ///
+    /// # Returns
+    /// - `Ok(())`: If the prediction was successfully made.
+    /// - `Err(anyhow::Error)`: If there was an error fetching the model, parsing the input, or making the prediction.
+    ///
+    pub fn predict(&self, model_name: ModelName, input_json: &str) -> anyhow::Result<String> {
         let model = self.model_store.get_model(model_name.clone());
         match model {
             None => {
@@ -33,7 +61,7 @@ impl Manager {
                 match ModelInput::from_str(input_json) {
                     Ok(input) => {
                         let _ = model.predict(input)?;
-                        Ok(())
+                        Ok("dummy preds - to be parsed to json".to_string())
                     }
                     Err(e) => {
                         anyhow::bail!("failed to make predictions: {}", e.to_string());

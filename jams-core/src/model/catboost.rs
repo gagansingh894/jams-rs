@@ -1,15 +1,28 @@
 use crate::model::predictor::{ModelInput, Output, Predictor, Value, Values};
+use anyhow::anyhow;
 
 use catboost_rs;
 use ndarray::Axis;
 
-struct CatboostModelInput {
-    numeric_features: Vec<Vec<f32>>,
-    categorical_features: Vec<Vec<String>>,
+/// Struct representing input data for a Catboost model.
+pub struct CatboostModelInput {
+    /// Numeric features as a 2D vector.
+    pub numeric_features: Vec<Vec<f32>>,
+    /// Categorical features as a 2D vector of strings.
+    pub categorical_features: Vec<Vec<String>>,
 }
 
 impl CatboostModelInput {
-    fn parse(input: ModelInput) -> anyhow::Result<Self> {
+    /// Parses the input `ModelInput` into `CatboostModelInput`.
+    ///
+    /// # Arguments
+    ///
+    /// * `input` - The `ModelInput` containing input values.
+    ///
+    /// # Errors
+    ///
+    /// Returns an `Err` if there is an issue parsing the input data.
+    pub fn parse(input: ModelInput) -> anyhow::Result<Self> {
         let mut categorical_features: Vec<Vec<String>> = Vec::new();
         let mut numerical_features: Vec<Vec<f32>> = Vec::new();
 
@@ -42,6 +55,16 @@ impl CatboostModelInput {
     }
 }
 
+/// Creates a `CatboostModelInput` struct from categorical and numeric feature vectors.
+///
+/// # Arguments
+///
+/// * `categorical_features` - 2D vector containing categorical feature values.
+/// * `numeric_features` - 2D vector containing numeric feature values.
+///
+/// # Errors
+///
+/// Returns an `Err` if there is an issue with the shape or content of the input vectors.
 fn create_catboost_model_inputs(
     categorical_features: Vec<Vec<String>>,
     numeric_features: Vec<Vec<f32>>,
@@ -82,27 +105,55 @@ fn create_catboost_model_inputs(
     })
 }
 
+/// Returns the shape (rows, cols) of a 2D vector.
+///
+/// # Arguments
+///
+/// * `vector` - Reference to a vector of vectors.
+///
+/// # Returns
+///
+/// A tuple representing the number of rows and columns in the input vector.
 fn get_shape<T>(vector: &[Vec<T>]) -> (usize, usize) {
-    if vector.is_empty() {
-        (1, 1)
-    } else {
-        (vector.len(), vector.first().unwrap().len())
+    if !vector.is_empty() {
+        return (vector.len(), vector.first().unwrap().len());
     }
+    (1, 1)
 }
 
+/// Struct representing a Catboost model.
 pub struct Catboost {
+    /// The loaded Catboost model.
     model: catboost_rs::Model,
 }
 
 impl Catboost {
+    /// Loads a Catboost model from the specified path.
+    ///
+    /// # Arguments
+    ///
+    /// * `path` - A string slice that holds the path to the Catboost model file (.cbm).
+    ///
+    /// # Errors
+    ///
+    /// Returns an `Err` if loading the Catboost model fails.
     pub fn load(path: &str) -> anyhow::Result<Self> {
-        let model =
-            catboost_rs::Model::load(path).expect("failed to load catboost model from .cbm file");
+        let model = catboost_rs::Model::load(path)
+            .map_err(|e| anyhow!("Failed to load Catboost model: {}", e))?;
         Ok(Catboost { model })
     }
 }
 
 impl Predictor for Catboost {
+    /// Predicts output based on the given input using the Catboost model.
+    ///
+    /// # Arguments
+    ///
+    /// * `input` - The input data for prediction.
+    ///
+    /// # Errors
+    ///
+    /// Returns an `Err` if there is an issue with parsing the input or making predictions.
     fn predict(&self, input: ModelInput) -> anyhow::Result<Output> {
         let input = CatboostModelInput::parse(input)?;
         let preds = self
@@ -117,7 +168,6 @@ impl Predictor for Catboost {
         }
     }
 }
-
 #[cfg(test)]
 mod tests {
     use super::*;

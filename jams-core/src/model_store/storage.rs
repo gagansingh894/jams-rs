@@ -5,7 +5,7 @@ use std::sync::Arc;
 pub type ModelName = String;
 
 /// Trait representing a storage system for machine learning models.
-pub trait Storage {
+pub trait Storage: Send + Sync + 'static {
     /// Fetches all available models from the storage.
     fn fetch_models(&self) -> anyhow::Result<()>;
 
