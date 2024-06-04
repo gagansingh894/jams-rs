@@ -60,11 +60,26 @@ impl Manager {
                 // parse input
                 match ModelInput::from_str(input_json) {
                     Ok(input) => {
-                        let _ = model.predict(input)?;
-                        Ok("dummy preds - to be parsed to json".to_string())
+                        // make predictions
+                        let output = match model.predict(input) {
+                            Ok(output) => {output}
+                            Err(e) => {
+                                anyhow::bail!("failed to make predictions: {}", e.to_string());
+                            }
+                        };
+
+                        // parse output
+                        match serde_json::to_string(&output) {
+                            Ok(json) => {
+                                Ok(json)
+                            }
+                            Err(e) => {
+                                anyhow::bail!("failed to parse predictions: {}", e.to_string());
+                            }
+                        }
                     }
                     Err(e) => {
-                        anyhow::bail!("failed to make predictions: {}", e.to_string());
+                        anyhow::bail!("failed to parse input: {}", e.to_string());
                     }
                 }
             }
