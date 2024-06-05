@@ -2,11 +2,23 @@ use crate::model::predictor::{ModelInput, Output, Predictor, Value, Values};
 
 use tch::CModule;
 
+/// Struct representing the input for a Torch model.
+///
+/// # Fields
+/// * `tensor` - The tensor representation of the model input.
 struct TorchModelInput {
     tensor: tch::Tensor,
 }
 
 impl TorchModelInput {
+    /// Parses a `ModelInput` into a `TorchModelInput`.
+    ///
+    /// # Arguments
+    /// * `input` - The `ModelInput` to be parsed.
+    ///
+    /// # Returns
+    /// * `Ok(TorchModelInput)` - If parsing was successful.
+    /// * `Err(anyhow::Error)` - If there was an error during parsing.
     fn parse(input: ModelInput) -> anyhow::Result<Self> {
         let mut numerical_features: Vec<Vec<f32>> = Vec::new();
 
@@ -41,11 +53,23 @@ impl TorchModelInput {
     }
 }
 
+/// Struct representing a Torch model.
+///
+/// # Fields
+/// * `model` - The compiled Torch model.
 pub struct Torch {
     model: CModule,
 }
 
 impl Torch {
+    /// Loads a Torch model from the specified file path.
+    ///
+    /// # Arguments
+    /// * `path` - The file path to the Torch model.
+    ///
+    /// # Returns
+    /// * `Ok(Torch)` - If the model was successfully loaded.
+    /// * `Err(anyhow::Error)` - If there was an error during loading.
     pub fn load(path: &str) -> anyhow::Result<Self> {
         let model = CModule::load(path).expect("failed to load pytorch model from file");
         Ok(Torch { model })
@@ -53,6 +77,14 @@ impl Torch {
 }
 
 impl Predictor for Torch {
+    /// Predicts the output for the given model input.
+    ///
+    /// # Arguments
+    /// * `input` - The input data for the model.
+    ///
+    /// # Returns
+    /// * `Ok(Output)` - The prediction output.
+    /// * `Err(anyhow::Error)` - If there was an error during prediction.
     fn predict(&self, input: ModelInput) -> anyhow::Result<Output> {
         let input = TorchModelInput::parse(input)?;
         let preds = self.model.forward_ts(&[input.tensor]);

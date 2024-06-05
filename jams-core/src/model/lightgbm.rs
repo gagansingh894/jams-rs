@@ -5,12 +5,30 @@ use lgbm::mat::MatLayouts::ColMajor;
 use lgbm::PredictType::Normal;
 use lgbm::{MatBuf, Parameters};
 
-struct LightGBMModelInput {
-    matbuf: MatBuf<f32, MatLayouts>,
+/// Struct representing the input data format for a LightGBM model.
+///
+/// This struct encapsulates numerical features parsed from a `ModelInput`.
+/// It prepares these features into a format suitable for feeding into a LightGBM model.
+pub struct LightGBMModelInput {
+    /// Matrix buffer containing numerical features in column-major order.
+    pub matbuf: MatBuf<f32, MatLayouts>,
 }
 
 impl LightGBMModelInput {
-    fn parse(input: ModelInput) -> anyhow::Result<Self> {
+    /// Parses the input `ModelInput` into a `LightGBMModelInput`.
+    ///
+    /// This method extracts numerical features from the `ModelInput` and converts them
+    /// into a format suitable for a LightGBM model, represented by a `MatBuf`.
+    ///
+    /// # Arguments
+    ///
+    /// * `input` - The `ModelInput` containing the input values.
+    ///
+    /// # Errors
+    ///
+    /// Returns an `Err` if the input contains unsupported string values or if there are
+    /// issues converting or organizing the numerical features.
+    pub fn parse(input: ModelInput) -> anyhow::Result<Self> {
         let mut numerical_features: Vec<Vec<f32>> = Vec::new();
 
         // extract the values from hashmap
@@ -38,31 +56,57 @@ impl LightGBMModelInput {
             }
         }
 
+        // determine the number of rows and columns in the matrix
         let (rows, cols) = (
             numerical_features.len(),
             numerical_features.first().unwrap().len(),
         );
+
+        // flatten and convert numerical features into a single vector
         let flatten_values = numerical_features.into_iter().flatten().collect();
-        // swapping rows and cols to meet input shape size
+
+        // create a MatBuf in column-major order
         let matbuf = MatBuf::from_vec(flatten_values, cols, rows, ColMajor);
 
         Ok(Self { matbuf })
     }
 }
 
+/// Struct representing a predictor using a LightGBM model.
+///
+/// This struct encapsulates a LightGBM model booster, allowing for loading and prediction.
 pub struct LightGBM {
-    booster: lgbm::Booster,
+    /// The LightGBM model booster.
+    pub booster: lgbm::Booster,
 }
 
 impl LightGBM {
+    /// Loads a LightGBM model from the specified file path.
+    ///
+    /// # Arguments
+    ///
+    /// * `path` - A string slice that holds the path to the LightGBM model file.
+    ///
+    /// # Errors
+    ///
+    /// Returns an `Err` if there is an issue loading the LightGBM model from the file.
     pub fn load(path: &str) -> anyhow::Result<Self> {
         let model = lgbm::Booster::from_file(path.as_ref())
-            .expect("failed to load lightGBM model fro  file");
+            .expect("failed to load LightGBM model from file");
         Ok(LightGBM { booster: model.0 })
     }
 }
 
 impl Predictor for LightGBM {
+    /// Performs prediction using the loaded LightGBM model.
+    ///
+    /// # Arguments
+    ///
+    /// * `input` - The `ModelInput` containing the input values for prediction.
+    ///
+    /// # Errors
+    ///
+    /// Returns an `Err` if there is an issue parsing the input or performing the prediction.
     fn predict(&self, input: ModelInput) -> anyhow::Result<Output> {
         let input = LightGBMModelInput::parse(input)?;
         let p = Parameters::new();
@@ -71,6 +115,7 @@ impl Predictor for LightGBM {
             .predict_for_mat(&input.matbuf, Normal, 0, None, &p);
         match preds {
             Ok(predictions) => {
+                // Convert predictions into Vec<Vec<f64>> format
                 let predictions: Vec<Vec<f64>> =
                     predictions.values().iter().map(|v| vec![*v]).collect();
                 Ok(Output { predictions })

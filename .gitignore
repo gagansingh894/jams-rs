@@ -1,6 +1,8 @@
 /target
 .idea
 
+/jams-serve/assets
+
 !/jams-cli/examples/*.py
 !/jams-cli/examples/datasets
 !/jams-cli/examples/requirements-linux.txt

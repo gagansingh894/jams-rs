@@ -4,21 +4,38 @@ use tensorflow::{
     Tensor, DEFAULT_SERVING_SIGNATURE_DEF_KEY,
 };
 
-struct TensorflowModelInput {
-    int_tensors: Vec<(Operation, Tensor<i32>)>,
-    float_tensors: Vec<(Operation, Tensor<f32>)>,
-    string_tensors: Vec<(Operation, Tensor<String>)>,
+/// Struct representing the input tensors for a TensorFlow model.
+///
+/// This struct encapsulates tensors grouped by their data type (`i32`, `f32`, `String`),
+/// along with corresponding TensorFlow operations.
+pub struct TensorflowModelInput {
+    /// Integer tensors along with their corresponding TensorFlow operations.
+    pub int_tensors: Vec<(Operation, Tensor<i32>)>,
+    /// Float tensors along with their corresponding TensorFlow operations.
+    pub float_tensors: Vec<(Operation, Tensor<f32>)>,
+    /// String tensors along with their corresponding TensorFlow operations.
+    pub string_tensors: Vec<(Operation, Tensor<String>)>,
 }
 
 impl TensorflowModelInput {
-    fn parse(
+    /// Parses a `ModelInput` into a `TensorflowModelInput` based on the TensorFlow model's signature definition and graph.
+    ///
+    /// # Arguments
+    /// * `input` - The `ModelInput` containing the input data.
+    /// * `signature_def` - The TensorFlow `SignatureDef` that describes the model's input signature.
+    /// * `graph` - The TensorFlow `Graph` containing the model.
+    ///
+    /// # Returns
+    /// * `Ok(TensorflowModelInput)` - If parsing was successful.
+    /// * `Err(anyhow::Error)` - If there was an error during parsing.
+    pub fn parse(
         input: ModelInput,
         signature_def: &SignatureDef,
         graph: &Graph,
     ) -> anyhow::Result<Self> {
         let signature_def_num_values = signature_def.inputs().len();
         if signature_def_num_values == 0 {
-            anyhow::bail!("model graph has no inputs")
+            anyhow::bail!("Model graph has no inputs");
         } else if signature_def_num_values == 1 {
             parse_sequential(input, signature_def, graph)
         } else {
@@ -27,6 +44,16 @@ impl TensorflowModelInput {
     }
 }
 
+/// Parses a `ModelInput` into a `TensorflowModelInput` when the TensorFlow model has a single input signature.
+///
+/// # Arguments
+/// * `input` - The `ModelInput` containing the input data.
+/// * `signature_def` - The TensorFlow `SignatureDef` that describes the model's input signature.
+/// * `graph` - The TensorFlow `Graph` containing the model.
+///
+/// # Returns
+/// * `Ok(TensorflowModelInput)` - If parsing was successful.
+/// * `Err(anyhow::Error)` - If there was an error during parsing.
 fn parse_sequential(
     input: ModelInput,
     signature_def: &SignatureDef,
@@ -36,15 +63,15 @@ fn parse_sequential(
     let mut float_features: Vec<Vec<f32>> = Vec::new();
     let mut string_features: Vec<Vec<String>> = Vec::new();
 
-    // extract the values from hashmap
+    // Extract the values from hashmap
     let input_matrix: Vec<Values> = input.values();
 
     for values in input_matrix {
-        // get the value type
+        // Get the value type
         let first = values.0.first().unwrap();
 
-        // strings values are pushed to separate vector of type Vec<String>
-        // int and float are pushed to separate of type Vec<f32>
+        // Strings values are pushed to separate vector of type Vec<String>
+        // Int and float are pushed to separate of type Vec<f32>
         match first {
             Value::String(_) => {
                 string_features.push(values.to_strings());
@@ -58,12 +85,12 @@ fn parse_sequential(
         }
     }
 
-    // calculate dimensions of the 2D vector
+    // Calculate dimensions of the 2D vector
     let (int_num_rows, int_num_cols) = get_shape(&int_features);
     let (float_num_rows, float_num_cols) = get_shape(&float_features);
     let (string_num_rows, string_num_cols) = get_shape(&string_features);
 
-    // flatten features
+    // Flatten features
     let flatten_float: Vec<f32> = float_features.into_iter().flatten().collect();
     let flatten_int: Vec<i32> = int_features.into_iter().flatten().collect();
     let flatten_string: Vec<String> = string_features.into_iter().flatten().collect();
@@ -72,36 +99,36 @@ fn parse_sequential(
     let mut float_tensors: Vec<(Operation, Tensor<f32>)> = Vec::new();
     let mut string_tensors: Vec<(Operation, Tensor<String>)> = Vec::new();
 
-    // create tensors
+    // Create tensors
     for input in signature_def.inputs().iter() {
         let input_info = signature_def
             .get_input(input.0)
-            .expect("specified tensor name not found");
+            .expect("Specified tensor name not found");
         let input_op = graph
             .operation_by_name_required(&input_info.name().name)
             .unwrap();
         match input_info.dtype() {
             DataType::Int32 => {
-                // swapping num_rows and num_cols to satisfy shape
+                // Swapping num_rows and num_cols to satisfy shape
                 let tensor = Tensor::<i32>::new(&[int_num_cols as u64, int_num_rows as u64])
                     .with_values(&flatten_int)?;
                 int_tensors.push((input_op, tensor));
             }
             DataType::Float => {
-                // swapping num_rows and num_cols to satisfy shape
+                // Swapping num_rows and num_cols to satisfy shape
                 let tensor = Tensor::<f32>::new(&[float_num_cols as u64, float_num_rows as u64])
                     .with_values(&flatten_float)?;
                 float_tensors.push((input_op, tensor));
             }
             DataType::String => {
-                // swapping num_rows and num_cols to satisfy shape
+                // Swapping num_rows and num_cols to satisfy shape
                 let tensor =
                     Tensor::<String>::new(&[string_num_cols as u64, string_num_rows as u64])
                         .with_values(&flatten_string)?;
                 string_tensors.push((input_op, tensor));
             }
             _ => {
-                anyhow::bail!("type not supported")
+                anyhow::bail!("Type not supported")
             }
         }
     }
@@ -111,6 +138,17 @@ fn parse_sequential(
         string_tensors,
     })
 }
+
+/// Parses a `ModelInput` into a `TensorflowModelInput` when the TensorFlow model has multiple input signatures.
+///
+/// # Arguments
+/// * `model_inputs` - The `ModelInput` containing the input data.
+/// * `signature_def` - The TensorFlow `SignatureDef` that describes the model's input signature.
+/// * `graph` - The TensorFlow `Graph` containing the model.
+///
+/// # Returns
+/// * `Ok(TensorflowModelInput)` - If parsing was successful.
+/// * `Err(anyhow::Error)` - If there was an error during parsing.
 fn parse_functional(
     model_inputs: ModelInput,
     signature_def: &SignatureDef,
@@ -123,7 +161,7 @@ fn parse_functional(
     for input in signature_def.inputs().iter() {
         let input_info = signature_def
             .get_input(input.0)
-            .expect("specified tensor name not found");
+            .expect("Specified tensor name not found");
         let input_name = &input_info.name().name;
         let model_input_feature_name = input_name
             .strip_prefix(format!("{}_", DEFAULT_SERVING_SIGNATURE_DEF_KEY).as_str())
@@ -171,7 +209,7 @@ fn parse_functional(
                 string_tensors.push((input_op, tensor));
             }
             _ => {
-                anyhow::bail!("type not supported")
+                anyhow::bail!("Type not supported")
             }
         }
     }
@@ -182,7 +220,15 @@ fn parse_functional(
     })
 }
 
-// get_shape is a helper functions to return shape of 2D vec
+/// Returns the shape (rows, cols) of a 2D vector.
+///
+/// # Arguments
+///
+/// * `vector` - Reference to a vector of vectors.
+///
+/// # Returns
+///
+/// A tuple representing the number of rows and columns in the input vector.
 fn get_shape<T>(input: &[Vec<T>]) -> (usize, usize) {
     if !input.is_empty() {
         return (input.len(), input[0].len());
@@ -190,23 +236,35 @@ fn get_shape<T>(input: &[Vec<T>]) -> (usize, usize) {
     (0, 0)
 }
 
+/// Struct representing a TensorFlow model and its associated components.
 pub struct Tensorflow {
+    /// TensorFlow graph containing the model structure and operations.
     graph: Graph,
+    /// SavedModelBundle containing the loaded model.
     bundle: SavedModelBundle,
+    /// SignatureDef describing the model's input and output signatures.
     signature_def: SignatureDef,
 }
 
 impl Tensorflow {
+    /// Loads a TensorFlow model from the specified directory.
+    ///
+    /// # Arguments
+    /// * `model_dir` - Directory path where the TensorFlow model is saved.
+    ///
+    /// # Returns
+    /// * `Ok(Tensorflow)` - If the model loading was successful.
+    /// * `Err(anyhow::Error)` - If there was an error loading the model.
     pub fn load(model_dir: &str) -> anyhow::Result<Self> {
         const MODEL_TAG: &str = "serve";
         let mut graph = Graph::new();
         let bundle =
             SavedModelBundle::load(&SessionOptions::new(), [MODEL_TAG], &mut graph, model_dir)
-                .expect("failed to load tensorflow model");
+                .expect("Failed to load TensorFlow model");
         let signature_def = bundle
             .meta_graph_def()
             .get_signature(DEFAULT_SERVING_SIGNATURE_DEF_KEY)
-            .expect("failed to get signature")
+            .expect("Failed to get model signature")
             .to_owned();
         Ok(Tensorflow {
             graph,
@@ -217,12 +275,19 @@ impl Tensorflow {
 }
 
 impl Predictor for Tensorflow {
+    /// Performs prediction using the TensorFlow model.
+    ///
+    /// # Arguments
+    /// * `input` - Input data for prediction, encapsulated in a `ModelInput`.
+    ///
+    /// # Returns
+    /// * `Ok(Output)` - If prediction was successful, containing the predicted output.
+    /// * `Err(anyhow::Error)` - If there was an error during prediction.
     fn predict(&self, input: ModelInput) -> anyhow::Result<Output> {
-        // parse input
+        // Parse input into TensorFlow model input format
         let input = TensorflowModelInput::parse(input, &self.signature_def, &self.graph)?;
 
-        // create new variables
-        // todo: check if this can be avoided
+        // Create separate vectors for tensor values
         let float_tensors: Vec<Tensor<f32>> =
             input.float_tensors.iter().map(|(_, t)| t.clone()).collect();
         let int_tensors: Vec<Tensor<i32>> =
@@ -233,10 +298,10 @@ impl Predictor for Tensorflow {
             .map(|(_, t)| t.clone())
             .collect();
 
-        // create a new session
+        // Create session run arguments
         let mut run_args = SessionRunArgs::new();
 
-        // update tensor graph for prediction
+        // Add input tensors to the session run arguments
         for (i, float_feature) in input.float_tensors.iter().enumerate() {
             run_args.add_feed(&float_feature.0, 0, &float_tensors[i]);
         }
@@ -249,9 +314,7 @@ impl Predictor for Tensorflow {
             run_args.add_feed(&string_feature.0, 0, &string_tensors[i]);
         }
 
-        // prepare output tensor
-        // the len should be at least 1
-        // todo: update to support multiple outputs
+        // Prepare output tensor
         let outputs_tensor_names: Vec<String> = self
             .signature_def
             .outputs()
@@ -262,30 +325,27 @@ impl Predictor for Tensorflow {
         let output_op = self.graph.operation_by_name_required(name).unwrap();
         let output_fetch = run_args.request_fetch(&output_op, 0);
 
-        // run the graph
+        // Execute the TensorFlow graph
         self.bundle
             .session
             .run(&mut run_args)
-            .expect("failed to execute tensor graph");
+            .expect("Failed to execute TensorFlow graph");
 
-        // retrieve and process the output
+        // Retrieve and process the output tensor
         let output: Tensor<f32> = run_args
             .fetch(output_fetch)
-            .expect("failed to fetch output");
+            .expect("Failed to fetch output tensor");
         let processed_output: Vec<Vec<f32>> = output
             .chunks(output.dims()[1] as usize)
             .map(|row| row.to_vec())
             .collect();
 
-        // convert to Output
+        // Convert processed output to the expected format
         let predictions: Vec<Vec<f64>> = processed_output
-            .iter() // Iterate over each row (Vec<f32>)
-            .map(|row| {
-                row.iter() // Iterate over each element (f32) in the row
-                    .map(|&value| value as f64) // Convert f32 to f64
-                    .collect() // Collect into Vec<f64>
-            })
-            .collect(); // Collect into Vec<Vec<f64>>;
+            .iter()
+            .map(|row| row.iter().map(|&value| value as f64).collect())
+            .collect();
+
         Ok(Output { predictions })
     }
 }
