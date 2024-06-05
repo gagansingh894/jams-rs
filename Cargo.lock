@@ -951,23 +951,7 @@ version = "0.1.11"
 dependencies = [
  "anyhow",
  "clap 4.5.4",
- "jams-core 0.1.11 (registry+https://github.com/rust-lang/crates.io-index)",
-]
-
-[[package]]
-name = "jams-core"
-version = "0.1.11"
-dependencies = [
- "anyhow",
- "catboost-rs 0.1.0",
- "dashmap",
- "lgbm",
- "ndarray",
- "rand",
- "serde",
- "serde_json",
- "tch",
- "tensorflow",
+ "jams-core 0.1.11",
 ]
 
 [[package]]
@@ -989,13 +973,30 @@ dependencies = [
 ]
 
 [[package]]
+name = "jams-core"
+version = "0.1.12"
+dependencies = [
+ "anyhow",
+ "catboost-rs 0.1.0",
+ "dashmap",
+ "lgbm",
+ "log",
+ "ndarray",
+ "rand",
+ "serde",
+ "serde_json",
+ "tch",
+ "tensorflow",
+]
+
+[[package]]
 name = "jams-serve"
-version = "0.1.4"
+version = "0.1.5"
 dependencies = [
  "anyhow",
  "axum",
  "clap 4.5.4",
- "jams-core 0.1.11 (registry+https://github.com/rust-lang/crates.io-index)",
+ "jams-core 0.1.11",
  "log",
  "rayon",
  "serde",
@@ -1728,6 +1729,15 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "0fda2ff0d084019ba4d7c6f371c95d8fd75ce3524c3cb8fb653a3023f6323e64"
 
 [[package]]
+name = "signal-hook-registry"
+version = "1.4.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "a9e9e0b4211b72e7b8b6e85c807d36c212bdb33ea8587f7569562a84df5465b1"
+dependencies = [
+ "libc",
+]
+
+[[package]]
 name = "smallvec"
 version = "1.13.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2012,6 +2022,7 @@ dependencies = [
  "mio",
  "num_cpus",
  "pin-project-lite",
+ "signal-hook-registry",
  "socket2",
  "tokio-macros",
  "windows-sys 0.48.0",
