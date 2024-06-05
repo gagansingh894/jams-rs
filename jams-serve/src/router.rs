@@ -5,6 +5,7 @@ use jams_core::manager::Manager;
 use jams_core::model_store::local::LocalModelStore;
 use rayon::{ThreadPool, ThreadPoolBuilder};
 use std::sync::Arc;
+use tokio::signal;
 
 pub struct AppState {
     pub manager: Arc<Manager>,
@@ -41,4 +42,27 @@ pub fn build_router(model_dir: String) -> anyhow::Result<Router> {
         .route("/healthcheck", get(healthcheck))
         .nest("/api", api_routes)
         .with_state(shared_state))
+}
+
+pub async fn shutdown_signal() {
+    let ctrl_c = async {
+        signal::ctrl_c()
+            .await
+            .expect("Failed to install Ctrl+C handler");
+    };
+
+    #[cfg(unix)]
+    let terminate = async {
+        signal::unix::signal(signal::unix::SignalKind::terminate())
+            .expect("Failed to install signal handler")
+            .recv()
+            .await;
+    };
+
+    #[cfg(not(unix))]
+    let terminate = std::future::pending::<()>();
+    tokio::select! {
+        _ = ctrl_c => {},
+        _ = terminate => {},
+    }
 }
