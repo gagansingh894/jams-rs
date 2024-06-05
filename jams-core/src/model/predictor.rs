@@ -245,37 +245,40 @@ fn parse_json_serde_value(json: serde_json::Value) -> anyhow::Result<HashMap<Fea
         let feature_name: FeatureName = key.to_string();
 
         // validate value is an array
-        let vec = values
-            .as_array()
-            .expect("failed to cast serde json value to array");
-        let first = vec
-            .first()
-            .expect("failed to get the first element from the array");
+        let vec = match values.as_array() {
+            None => {
+                anyhow::bail!("Failed to cast serde json value to array.");
+            }
+            Some(vec) => vec,
+        };
+
+        let first = match vec.first() {
+            None => {
+                anyhow::bail!("Failed to get the first element from the array");
+            }
+            Some(first) => first,
+        };
 
         if first.is_i64() {
-            // todo: can fail, simplifying with unwrap
             let feature_values = vec
                 .iter()
                 .map(|v| Value::Int(v.as_i64().unwrap() as i32))
                 .collect();
             model_input.insert(feature_name, Values(feature_values));
         } else if first.is_f64() {
-            // todo: can fail, simplifying with unwrap
             let feature_values = vec
                 .iter()
                 .map(|v| Value::Float(v.as_f64().unwrap() as f32))
                 .collect();
             model_input.insert(feature_name, Values(feature_values));
         } else if first.is_string() {
-            // todo: can fail, simplifying with unwrap
             let feature_values = vec
                 .iter()
                 .map(|v| Value::String(v.as_str().unwrap().to_owned()))
                 .collect();
             model_input.insert(feature_name, Values(feature_values));
         } else {
-            // todo: error out
-            println!("unexpected format");
+            anyhow::bail!("Unsupported format in input json");
         }
     }
 
