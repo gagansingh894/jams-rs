@@ -62,7 +62,7 @@ impl Manager {
                     Ok(input) => {
                         // make predictions
                         let output = match model.predict(input) {
-                            Ok(output) => {output}
+                            Ok(output) => output,
                             Err(e) => {
                                 anyhow::bail!("failed to make predictions: {}", e.to_string());
                             }
@@ -70,9 +70,7 @@ impl Manager {
 
                         // parse output
                         match serde_json::to_string(&output) {
-                            Ok(json) => {
-                                Ok(json)
-                            }
+                            Ok(json) => Ok(json),
                             Err(e) => {
                                 anyhow::bail!("failed to parse predictions: {}", e.to_string());
                             }

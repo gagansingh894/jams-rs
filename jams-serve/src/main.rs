@@ -1,10 +1,9 @@
 mod router;
 mod service;
 
-use std::env;
-use std::env::VarError;
 use crate::router::build_router;
 use clap::{Args, Parser, Subcommand};
+use std::env;
 
 /// CLI for starting an J.A.M.S
 #[derive(Parser, Debug)]
@@ -56,9 +55,7 @@ async fn start_server(args: CommandArgs) {
         None => {
             // search for environment variable
             match env::var("MODEL_STORE_DIR") {
-                Ok(model_dir) => {
-                    model_dir
-                }
+                Ok(model_dir) => model_dir,
                 Err(_) => {
                     eprintln!("Error: either set MODEL_STORE_DIR  or use 'model-dir' argument.");
                     return;
@@ -77,7 +74,10 @@ async fn start_server(args: CommandArgs) {
         .expect("failed to create TCP listener ❌");
 
     // log that the server is running
-    tracing::info!("{}", format!("server is running on http://0.0.0.0:{} ✅ \n", port));
+    tracing::info!(
+        "{}",
+        format!("server is running on http://0.0.0.0:{} ✅ \n", port)
+    );
 
     // run on hyper
     axum::serve(listener, app)
