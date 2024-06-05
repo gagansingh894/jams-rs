@@ -249,14 +249,14 @@ fn parse_json_serde_value(json: serde_json::Value) -> anyhow::Result<HashMap<Fea
             None => {
                 anyhow::bail!("Failed to cast serde json value to array.");
             }
-            Some(vec) => {vec}
+            Some(vec) => vec,
         };
 
-        let first = match vec.first(){
+        let first = match vec.first() {
             None => {
                 anyhow::bail!("Failed to get the first element from the array");
             }
-            Some(first) => {first}
+            Some(first) => first,
         };
 
         if first.is_i64() {

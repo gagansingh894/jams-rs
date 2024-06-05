@@ -154,8 +154,6 @@ pub async fn predict(
     }
 }
 
-
-
 /// Asynchronously predicts an outcome using a shared manager and sends the result or error
 /// message through a channel.
 ///
