@@ -102,5 +102,8 @@ J.A.M.S - Just Another Model Server
     axum::serve(listener, app)
         .with_graceful_shutdown(shutdown_signal())
         .await
-        .expect("Failed to start server ❌ \n")
+        .expect("Failed to start server ❌ \n");
+
+    // shutdown signal received
+    tracing::error!("Shutdown signal received ⚠️")
 }
