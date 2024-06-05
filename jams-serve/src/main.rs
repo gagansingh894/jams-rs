@@ -34,6 +34,10 @@ struct CommandArgs {
     /// Port number (default: 3000)
     #[clap(long)]
     port: Option<u16>,
+
+    /// Toggle DEBUG logs on/off
+    #[clap(long)]
+    use_debug_level: Option<bool>,
 }
 
 #[cfg(not(tarpaulin_include))]
@@ -84,8 +88,9 @@ J.A.M.S - Just Another Model Server
     };
 
     let port = args.port.unwrap_or(3000);
+    let use_debug_level = args.use_debug_level.unwrap_or(false);
 
-    let app = build_router(model_dir).expect("Failed to build router");
+    let app = build_router(model_dir, use_debug_level).expect("Failed to build router");
     // run our app with hyper, listening globally on specified port
     let address = format!("0.0.0.0:{}", port);
     let listener = tokio::net::TcpListener::bind(address)
