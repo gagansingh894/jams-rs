@@ -13,6 +13,7 @@ J.A.M.S - Just Another Model Server
 
 [![License](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](https://opensource.org/licenses/Apache-2.0) 
 [![Build](https://github.com/gagansingh894/jams-rs/actions/workflows/build.yml/badge.svg?branch=main)](https://github.com/gagansingh894/jams-rs/actions/workflows/build.yml)
+![Codecov](https://img.shields.io/codecov/c/github/gagansingh894/jams-rs)
 
 
 
