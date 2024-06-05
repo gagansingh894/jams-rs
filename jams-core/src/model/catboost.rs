@@ -31,7 +31,12 @@ impl CatboostModelInput {
 
         for values in input_matrix {
             // get the value type
-            let first = values.0.first().unwrap();
+            let first = match values.0.first() {
+                None => {
+                    anyhow::bail!("The values vector is empty")
+                }
+                Some(v) => v,
+            };
 
             // strings values are pushed to separate vector of type Vec<String>
             // int and float are pushed to separate of type Vec<f32>
@@ -70,8 +75,8 @@ fn create_catboost_model_inputs(
     numeric_features: Vec<Vec<f32>>,
 ) -> anyhow::Result<CatboostModelInput> {
     // parse the 2d vecs to ndarrau
-    let mut categorical_nd = ndarray::Array2::<String>::default(get_shape(&categorical_features));
-    let mut numeric_nd = ndarray::Array2::<f32>::default(get_shape(&numeric_features));
+    let mut categorical_nd = ndarray::Array2::<String>::default(get_shape(&categorical_features)?);
+    let mut numeric_nd = ndarray::Array2::<f32>::default(get_shape(&numeric_features)?);
 
     // populate if values are present
     if !categorical_features.is_empty() {
@@ -114,11 +119,16 @@ fn create_catboost_model_inputs(
 /// # Returns
 ///
 /// A tuple representing the number of rows and columns in the input vector.
-fn get_shape<T>(vector: &[Vec<T>]) -> (usize, usize) {
-    if !vector.is_empty() {
-        return (vector.len(), vector.first().unwrap().len());
+fn get_shape<T>(vector: &[Vec<T>]) -> anyhow::Result<(usize, usize)> {
+    match vector.is_empty() {
+        true => Ok((1, 1)),
+        false => match vector.first() {
+            None => {
+                anyhow::bail!("The values vector is empty")
+            }
+            Some(inner_vec) => Ok((vector.len(), inner_vec.len())),
+        },
     }
-    (1, 1)
 }
 
 /// Struct representing a Catboost model.
@@ -139,7 +149,7 @@ impl Catboost {
     /// Returns an `Err` if loading the Catboost model fails.
     pub fn load(path: &str) -> anyhow::Result<Self> {
         let model = catboost_rs::Model::load(path)
-            .map_err(|e| anyhow!("Failed to load Catboost model: {}", e))?;
+            .map_err(|e| anyhow!("Failed to load Catboost model from file {}: {}", path, e))?;
         Ok(Catboost { model })
     }
 }
@@ -164,7 +174,10 @@ impl Predictor for Catboost {
                 let predictions: Vec<Vec<f64>> = predictions.into_iter().map(|v| vec![v]).collect();
                 Ok(Output { predictions })
             }
-            Err(e) => Err(e.into()),
+            Err(e) => anyhow::bail!(
+                "Failed to make predictions using Catboost model: {}",
+                e.to_string()
+            ),
         }
     }
 }

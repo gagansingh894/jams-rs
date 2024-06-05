@@ -54,42 +54,107 @@ impl Storage for LocalModelStore {
     /// - `Err(anyhow::Error)`: If there was an error fetching or loading the models.
     ///
     fn fetch_models(&self) -> anyhow::Result<()> {
-        let dir = fs::read_dir(&self.model_dir).unwrap();
+        let dir = match fs::read_dir(&self.model_dir) {
+            Ok(dir) => dir,
+            Err(e) => {
+                anyhow::bail!("Failed to read dir: {}", e)
+            }
+        };
+
         for file in dir {
-            let file = file.unwrap();
-            let file_path = file.path();
-            let file_name = file.file_name();
-            let full_path = file_path.to_str().unwrap();
-            if file_name.to_str().unwrap().to_string().contains(TENSORFLOW) {
+            let file = match file {
+                Ok(file) => file,
+                Err(e) => {
+                    anyhow::bail!("Failed to read file: {}", e)
+                }
+            };
+            let (file_path, file_name) = (file.path(), file.file_name());
+            let full_path = match file_path.into_os_string().into_string() {
+                Ok(full_path) => full_path,
+                Err(_) => {
+                    anyhow::bail!("Failed to convert OsString to String")
+                }
+            };
+            let file_name = match file_name.to_str() {
+                None => {
+                    anyhow::bail!("Failed to convert OsString to str")
+                }
+                Some(file_name) => file_name,
+            };
+
+            if file_name.contains(TENSORFLOW) {
                 let prefix = format!("{}-", TENSORFLOW);
-                let model_name = file_name.to_str().unwrap().to_string();
-                let model_name = model_name.strip_prefix(prefix.as_str()).unwrap();
-                let model = model::tensorflow::Tensorflow::load(full_path).unwrap();
-                self.models.insert(model_name.to_string(), Arc::new(model));
-            } else if file_name.to_str().unwrap().to_string().contains(TORCH) {
-                let prefix_torch = format!("{}-", TORCH);
-                let prefix_pytorch = format!("{}-", PYTORCH);
-                let model_name = file_name.to_str().unwrap().to_string();
-                let model_name = match model_name.strip_prefix(prefix_torch.as_str()) {
-                    None => model_name.strip_prefix(prefix_pytorch.as_str()).unwrap(),
-                    Some(v) => v,
-                };
-                let model = model::torch::Torch::load(full_path).unwrap();
-                self.models.insert(model_name.to_string(), Arc::new(model));
-            } else if file_name.to_str().unwrap().to_string().contains(CATBOOST) {
+                match file_name.to_string().strip_prefix(&prefix) {
+                    None => {
+                        anyhow::bail!(
+                            "Failed to strip prefix {} from file name {}",
+                            prefix,
+                            file_name
+                        )
+                    }
+                    Some(model_name) => {
+                        let model =
+                            model::tensorflow::Tensorflow::load(full_path.as_str()).unwrap();
+                        self.models.insert(model_name.to_string(), Arc::new(model));
+                    }
+                }
+            } else if file_name.contains(TORCH) {
+                // Torch and PyTorch are same models. PyTorch is a python wrapper around Torch
+                let prefix = format!("{}-", TORCH);
+                match file_name.to_string().strip_prefix(&prefix) {
+                    None => {
+                        let prefix = format!("{}-", PYTORCH);
+                        match file_name.to_string().strip_prefix(&prefix) {
+                            None => {
+                                anyhow::bail!(
+                                    "Failed to strip prefix {} from file name {}",
+                                    prefix,
+                                    file_name
+                                )
+                            }
+                            Some(model_name) => {
+                                let model = model::torch::Torch::load(full_path.as_str()).unwrap();
+                                self.models.insert(model_name.to_string(), Arc::new(model));
+                            }
+                        }
+                    }
+                    Some(model_name) => {
+                        let model = model::torch::Torch::load(full_path.as_str()).unwrap();
+                        self.models.insert(model_name.to_string(), Arc::new(model));
+                    }
+                }
+            } else if file_name.contains(CATBOOST) {
                 let prefix = format!("{}-", CATBOOST);
-                let model_name = file_name.to_str().unwrap().to_string();
-                let model_name = model_name.strip_prefix(prefix.as_str()).unwrap();
-                let model = model::catboost::Catboost::load(full_path).unwrap();
-                self.models.insert(model_name.to_string(), Arc::new(model));
-            } else if file_name.to_str().unwrap().to_string().contains(LIGHTGBM) {
+                match file_name.to_string().strip_prefix(&prefix) {
+                    None => {
+                        anyhow::bail!(
+                            "Failed to strip prefix {} from file name {}",
+                            prefix,
+                            file_name
+                        )
+                    }
+                    Some(model_name) => {
+                        let model = model::catboost::Catboost::load(full_path.as_str()).unwrap();
+                        self.models.insert(model_name.to_string(), Arc::new(model));
+                    }
+                }
+            } else if file_name.contains(LIGHTGBM) {
                 let prefix = format!("{}-", LIGHTGBM);
-                let model_name = file_name.to_str().unwrap().to_string();
-                let model_name = model_name.strip_prefix(prefix.as_str()).unwrap();
-                let model = model::lightgbm::LightGBM::load(full_path).unwrap();
-                self.models.insert(model_name.to_string(), Arc::new(model));
+                match file_name.to_string().strip_prefix(&prefix) {
+                    None => {
+                        anyhow::bail!(
+                            "Failed to strip prefix {} from file name {}",
+                            prefix,
+                            file_name
+                        )
+                    }
+                    Some(model_name) => {
+                        let model = model::lightgbm::LightGBM::load(full_path.as_str()).unwrap();
+                        self.models.insert(model_name.to_string(), Arc::new(model));
+                    }
+                }
             } else {
-                anyhow::bail!("unexpected model framework encountered")
+                anyhow::bail!("Unexpected model framework encountered")
             }
         }
         Ok(())
