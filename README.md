@@ -1,7 +1,19 @@
-# J.A.M.S 
+```
+    ___           ________           _____ ______            ________
+   |\  \         |\   __  \         |\   _ \  _   \         |\   ____\
+   \ \  \        \ \  \|\  \        \ \  \\\__\ \  \        \ \  \___|_
+ __ \ \  \        \ \   __  \        \ \  \\|__| \  \        \ \_____  \
+|\  \\_\  \  ___   \ \  \ \  \  ___   \ \  \    \ \  \  ___   \|____|\  \
+\ \________\|\__\   \ \__\ \__\|\__\   \ \__\    \ \__\|\__\    ____\_\  \
+ \|________|\|__|    \|__|\|__|\|__|    \|__|     \|__|\|__|   |\_________\
+                                                               \|_________|
+
+J.A.M.S - Just Another Model Server
+```
 
 [![License](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](https://opensource.org/licenses/Apache-2.0) 
 [![Build](https://github.com/gagansingh894/jams-rs/actions/workflows/build.yml/badge.svg?branch=main)](https://github.com/gagansingh894/jams-rs/actions/workflows/build.yml)
+
 
 
 **J.A.M.S** acronym for Just Another Model Server aims to provide a fast, comprehensive and modular serving solution for tree based and deep learning models written in Rust 🦀
