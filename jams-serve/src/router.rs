@@ -6,15 +6,21 @@ use jams_core::model_store::local::LocalModelStore;
 use rayon::{ThreadPool, ThreadPoolBuilder};
 use std::sync::Arc;
 use tokio::signal;
+use tower_http::trace::TraceLayer;
 
 pub struct AppState {
     pub manager: Arc<Manager>,
     pub cpu_pool: ThreadPool,
 }
 
-pub fn build_router(model_dir: String) -> anyhow::Result<Router> {
+pub fn build_router(model_dir: String, use_debug_log: bool) -> anyhow::Result<Router> {
     // initialize tracing
-    tracing_subscriber::fmt::init();
+    let mut log_level = tracing::Level::INFO;
+    if use_debug_log {
+        log_level = tracing::Level::TRACE
+    }
+
+    tracing_subscriber::fmt().with_max_level(log_level).init();
 
     // setup rayon thread pool for cpu intensive task
     let cpu_pool = ThreadPoolBuilder::new()
@@ -41,7 +47,8 @@ pub fn build_router(model_dir: String) -> anyhow::Result<Router> {
         .route("/", get(root))
         .route("/healthcheck", get(healthcheck))
         .nest("/api", api_routes)
-        .with_state(shared_state))
+        .with_state(shared_state)
+        .layer(TraceLayer::new_for_http()))
 }
 
 pub async fn shutdown_signal() {
