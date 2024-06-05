@@ -68,7 +68,12 @@ fn parse_sequential(
 
     for values in input_matrix {
         // Get the value type
-        let first = values.0.first().unwrap();
+        let first = match values.0.first() {
+            None => {
+                anyhow::bail!("The values vector is empty")
+            }
+            Some(v) => v,
+        };
 
         // Strings values are pushed to separate vector of type Vec<String>
         // Int and float are pushed to separate of type Vec<f32>
@@ -86,9 +91,9 @@ fn parse_sequential(
     }
 
     // Calculate dimensions of the 2D vector
-    let (int_num_rows, int_num_cols) = get_shape(&int_features);
-    let (float_num_rows, float_num_cols) = get_shape(&float_features);
-    let (string_num_rows, string_num_cols) = get_shape(&string_features);
+    let (int_num_rows, int_num_cols) = get_shape(&int_features)?;
+    let (float_num_rows, float_num_cols) = get_shape(&float_features)?;
+    let (string_num_rows, string_num_cols) = get_shape(&string_features)?;
 
     // Flatten features
     let flatten_float: Vec<f32> = float_features.into_iter().flatten().collect();
@@ -159,54 +164,85 @@ fn parse_functional(
     let mut string_tensors: Vec<(Operation, Tensor<String>)> = Vec::new();
 
     for input in signature_def.inputs().iter() {
-        let input_info = signature_def
-            .get_input(input.0)
-            .expect("Specified tensor name not found");
+        let input_info = match signature_def.get_input(input.0) {
+            Ok(input_info) => input_info,
+            Err(_) => {
+                anyhow::bail!("Specified tensor with name {} not found", input.0)
+            }
+        };
         let input_name = &input_info.name().name;
-        let model_input_feature_name = input_name
+        let input_op = match graph.operation_by_name_required(input_name) {
+            Ok(op) => op,
+            Err(_) => {
+                anyhow::bail!("Failed to get input operation {}", input_name)
+            }
+        };
+        let model_input_feature_name = match input_name
             .strip_prefix(format!("{}_", DEFAULT_SERVING_SIGNATURE_DEF_KEY).as_str())
-            .unwrap()
-            .to_owned();
+        {
+            None => {
+                anyhow::bail!("Failed to strip prefix")
+            }
+            Some(v) => v.to_owned(),
+        };
 
         match input_info.dtype() {
             DataType::Int32 => {
-                let values = model_inputs
-                    .get(&model_input_feature_name)
-                    .unwrap()
-                    .to_owned();
-                let values_length = values.iter().len() as u64;
-                let input_op = graph.operation_by_name_required(input_name).unwrap();
-
-                let tensor = Tensor::<i32>::new(&[values_length, 1])
-                    .with_values(&values.to_ints())
-                    .unwrap();
-                int_tensors.push((input_op, tensor));
+                match model_inputs.get(&model_input_feature_name) {
+                    None => {
+                        anyhow::bail!("Failed to retrieve {} values", model_input_feature_name)
+                    }
+                    Some(values) => {
+                        match Tensor::<i32>::new(&[values.iter().len() as u64, 1])
+                            .with_values(&values.to_ints())
+                        {
+                            Ok(tensor) => {
+                                int_tensors.push((input_op, tensor));
+                            }
+                            Err(_) => {
+                                anyhow::bail!("Failed to populate tensor with int32 values")
+                            }
+                        };
+                    }
+                };
             }
             DataType::Float => {
-                let values = model_inputs
-                    .get(&model_input_feature_name)
-                    .unwrap()
-                    .to_owned();
-                let values_length = values.iter().len() as u64;
-                let input_op = graph.operation_by_name_required(input_name).unwrap();
-
-                let tensor = Tensor::<f32>::new(&[values_length, 1])
-                    .with_values(&values.to_floats())
-                    .unwrap();
-                float_tensors.push((input_op, tensor));
+                match model_inputs.get(&model_input_feature_name) {
+                    None => {
+                        anyhow::bail!("Failed to retrieve {} values", model_input_feature_name)
+                    }
+                    Some(values) => {
+                        match Tensor::<f32>::new(&[values.iter().len() as u64, 1])
+                            .with_values(&values.to_floats())
+                        {
+                            Ok(tensor) => {
+                                float_tensors.push((input_op, tensor));
+                            }
+                            Err(_) => {
+                                anyhow::bail!("Failed to populate tensor with float32 values")
+                            }
+                        };
+                    }
+                };
             }
             DataType::String => {
-                let values = model_inputs
-                    .get(&model_input_feature_name)
-                    .unwrap()
-                    .to_owned();
-                let values_length = values.iter().len() as u64;
-                let input_op = graph.operation_by_name_required(input_name).unwrap();
-
-                let tensor = Tensor::<String>::new(&[values_length, 1])
-                    .with_values(&values.to_strings())
-                    .unwrap();
-                string_tensors.push((input_op, tensor));
+                match model_inputs.get(&model_input_feature_name) {
+                    None => {
+                        anyhow::bail!("Failed to retrieve {} values", model_input_feature_name)
+                    }
+                    Some(values) => {
+                        match Tensor::<String>::new(&[values.iter().len() as u64, 1])
+                            .with_values(&values.to_strings())
+                        {
+                            Ok(tensor) => {
+                                string_tensors.push((input_op, tensor));
+                            }
+                            Err(_) => {
+                                anyhow::bail!("Failed to populate tensor with string values")
+                            }
+                        };
+                    }
+                };
             }
             _ => {
                 anyhow::bail!("Type not supported")
@@ -229,11 +265,16 @@ fn parse_functional(
 /// # Returns
 ///
 /// A tuple representing the number of rows and columns in the input vector.
-fn get_shape<T>(input: &[Vec<T>]) -> (usize, usize) {
-    if !input.is_empty() {
-        return (input.len(), input[0].len());
+fn get_shape<T>(vector: &[Vec<T>]) -> anyhow::Result<(usize, usize)> {
+    match vector.is_empty() {
+        true => Ok((0, 0)),
+        false => match vector.first() {
+            None => {
+                anyhow::bail!("The values vector is empty")
+            }
+            Some(inner_vec) => Ok((vector.len(), inner_vec.len())),
+        },
     }
-    (0, 0)
 }
 
 /// Struct representing a TensorFlow model and its associated components.
@@ -244,6 +285,8 @@ pub struct Tensorflow {
     bundle: SavedModelBundle,
     /// SignatureDef describing the model's input and output signatures.
     signature_def: SignatureDef,
+    /// OutputOperation describing the model's output operation. This is the last layer and should have at least one value.
+    output_operation: Operation,
 }
 
 impl Tensorflow {
@@ -258,18 +301,54 @@ impl Tensorflow {
     pub fn load(model_dir: &str) -> anyhow::Result<Self> {
         const MODEL_TAG: &str = "serve";
         let mut graph = Graph::new();
-        let bundle =
-            SavedModelBundle::load(&SessionOptions::new(), [MODEL_TAG], &mut graph, model_dir)
-                .expect("Failed to load TensorFlow model");
-        let signature_def = bundle
+        let bundle = match SavedModelBundle::load(
+            &SessionOptions::new(),
+            [MODEL_TAG],
+            &mut graph,
+            model_dir,
+        ) {
+            Ok(b) => b,
+            Err(_) => {
+                anyhow::bail!("Failed to load TensorFlow model from dir: {}", model_dir);
+            }
+        };
+
+        let signature_def = match bundle
             .meta_graph_def()
             .get_signature(DEFAULT_SERVING_SIGNATURE_DEF_KEY)
-            .expect("Failed to get model signature")
-            .to_owned();
+        {
+            Ok(s) => s.to_owned(),
+            Err(_) => {
+                anyhow::bail!(
+                    "Failed to get model signature for {}",
+                    DEFAULT_SERVING_SIGNATURE_DEF_KEY
+                )
+            }
+        };
+
+        let outputs_tensor_names: Vec<String> = signature_def
+            .outputs()
+            .values()
+            .map(|t| t.name().name.to_string())
+            .collect();
+        // TODO: multi output model support if possible, for now we only fetch the first index
+        let output_operation = match outputs_tensor_names.first() {
+            None => {
+                anyhow::bail!("Output Tensor is empty. At least 1 value is required")
+            }
+            Some(name) => match graph.operation_by_name_required(name) {
+                Ok(op) => op,
+                Err(_) => {
+                    anyhow::bail!("Failed to fetch tensor output operation: {}", name)
+                }
+            },
+        };
+
         Ok(Tensorflow {
             graph,
             bundle,
             signature_def,
+            output_operation,
         })
     }
 }
@@ -288,6 +367,7 @@ impl Predictor for Tensorflow {
         let input = TensorflowModelInput::parse(input, &self.signature_def, &self.graph)?;
 
         // Create separate vectors for tensor values
+        // Added here to make the compiler happy
         let float_tensors: Vec<Tensor<f32>> =
             input.float_tensors.iter().map(|(_, t)| t.clone()).collect();
         let int_tensors: Vec<Tensor<i32>> =
@@ -315,21 +395,15 @@ impl Predictor for Tensorflow {
         }
 
         // Prepare output tensor
-        let outputs_tensor_names: Vec<String> = self
-            .signature_def
-            .outputs()
-            .values()
-            .map(|t| t.name().name.to_string())
-            .collect();
-        let name = outputs_tensor_names.first().unwrap();
-        let output_op = self.graph.operation_by_name_required(name).unwrap();
-        let output_fetch = run_args.request_fetch(&output_op, 0);
+        let output_fetch = run_args.request_fetch(&self.output_operation, 0);
 
         // Execute the TensorFlow graph
-        self.bundle
-            .session
-            .run(&mut run_args)
-            .expect("Failed to execute TensorFlow graph");
+        match self.bundle.session.run(&mut run_args) {
+            Ok(_) => {}
+            Err(_) => {
+                anyhow::bail!("Failed to execute TensorFlow graph")
+            }
+        };
 
         // Retrieve and process the output tensor
         let output: Tensor<f32> = run_args

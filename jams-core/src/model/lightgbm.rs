@@ -42,7 +42,7 @@ impl LightGBMModelInput {
             // int and float are pushed to separate of type Vec<f32>
             match first {
                 Value::String(_) => {
-                    anyhow::bail!("not supported string as input features")
+                    anyhow::bail!("String type as input features is not supported")
                 }
                 Value::Int(_) => {
                     let ints = values.to_ints();
@@ -91,8 +91,12 @@ impl LightGBM {
     ///
     /// Returns an `Err` if there is an issue loading the LightGBM model from the file.
     pub fn load(path: &str) -> anyhow::Result<Self> {
-        let model = lgbm::Booster::from_file(path.as_ref())
-            .expect("failed to load LightGBM model from file");
+        let model = match lgbm::Booster::from_file(path.as_ref()) {
+            Ok(model) => model,
+            Err(e) => {
+                anyhow::bail!("Failed to load LightGBM model from file {}: {}", path, e);
+            }
+        };
         Ok(LightGBM { booster: model.0 })
     }
 }
@@ -120,7 +124,7 @@ impl Predictor for LightGBM {
                     predictions.values().iter().map(|v| vec![*v]).collect();
                 Ok(Output { predictions })
             }
-            Err(e) => Err(e.into()),
+            Err(e) => anyhow::bail!("Failed to make predictions using LightGBM: {}", e),
         }
     }
 }

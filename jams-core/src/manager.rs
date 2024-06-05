@@ -92,7 +92,7 @@ mod tests {
 
     #[test]
     fn successfully_create_manager_with_local_model_store() {
-        let model_dir = "tests/model_storage/local_model_store";
+        let model_dir = "./tests/model_storage/local_model_store";
         let local_model_store = LocalModelStore::new(model_dir.to_string()).unwrap();
         let manager = Manager::new(Arc::new(local_model_store));
 

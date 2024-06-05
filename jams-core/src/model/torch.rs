@@ -71,7 +71,16 @@ impl Torch {
     /// * `Ok(Torch)` - If the model was successfully loaded.
     /// * `Err(anyhow::Error)` - If there was an error during loading.
     pub fn load(path: &str) -> anyhow::Result<Self> {
-        let model = CModule::load(path).expect("failed to load pytorch model from file");
+        let model = match CModule::load(path) {
+            Ok(model) => model,
+            Err(e) => {
+                anyhow::bail!(
+                    "Failed to load pytorch model from file {}: {}",
+                    path,
+                    e.to_string()
+                )
+            }
+        };
         Ok(Torch { model })
     }
 }
@@ -93,7 +102,10 @@ impl Predictor for Torch {
                 let predictions: Vec<Vec<f64>> = predictions.try_into().unwrap();
                 Ok(Output { predictions })
             }
-            Err(e) => Err(e.into()),
+            Err(e) => anyhow::bail!(
+                "Failed to make predictions using Torch model: {}",
+                e.to_string()
+            ),
         }
     }
 }
