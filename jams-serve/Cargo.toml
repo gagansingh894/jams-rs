@@ -12,7 +12,6 @@ keywords = ["machine-learning", "deep-learning"]
 [build]
 # Specify rustflags for release build
 rustflags = ["-C", "link-arg=-Wl,-rpath,/usr/local/lib"]
-build = "build.rs"
 
 [[bin]]
 name = "jams-serve"
@@ -28,4 +27,5 @@ tracing-subscriber = "0.3"
 tokio = { version = "1", features = ["rt", "rt-multi-thread", "macros"] }
 log = "0.4.21"
 tracing = "0.1.40"
+rayon = "1.10"
 serde = { version = "1.0.203", features = ["derive"] }
