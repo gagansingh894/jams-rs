@@ -37,6 +37,18 @@ impl Manager {
         Ok(Manager { model_store })
     }
 
+    /// Retrieves the names of all models stored in the model store.
+    ///
+    /// This method fetches and returns a vector of strings representing the names
+    /// of all models currently stored in the model store.
+    ///
+    /// # Errors
+    /// Returns an error if there are issues fetching the model names from the store.
+    ///
+    pub fn get_models(&self) -> anyhow::Result<Vec<String>> {
+        self.model_store.get_model_names()
+    }
+
     /// Predicts using the specified model and input data.
     ///
     /// This method fetches the specified model from the storage, parses the input data,
