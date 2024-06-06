@@ -1,4 +1,4 @@
-use crate::service::{healthcheck, predict, root};
+use crate::service::{get_models, healthcheck, predict, root};
 use axum::routing::{get, post};
 use axum::Router;
 use jams_core::manager::Manager;
@@ -47,7 +47,9 @@ pub fn build_router(
     let shared_state = Arc::new(app_state);
 
     // API routes
-    let api_routes = Router::new().route("/predict", post(predict));
+    let api_routes = Router::new()
+        .route("/models", get(get_models))
+        .route("/predict", post(predict));
 
     tracing::info!(
         "Rayon threadpool started with {} workers ⚙️",
