@@ -1,0 +1,154 @@
+openapi: 3.0.3
+info:
+  title: J.A.M.S - Just Another Model Server
+  description: API for interacting with J.A.M.S
+  version: 0.1.0
+
+tags:
+  - name: Root
+    description: Endpoints related to the root of the API
+  - name: Healthcheck
+    description: Endpoints related to health checks
+  - name: Predict
+    description: Endpoints related to making predictions
+  - name: Models
+    description: Endpoints related to managing models
+
+paths:
+  /:
+    get:
+      summary: Root Endpoint
+      responses:
+        '200':
+          description: A simple root response
+      tags:
+        - Root
+
+  /healthcheck:
+    get:
+      summary: Health Check Endpoint
+      responses:
+        '200':
+          description: Health check response
+      tags:
+        - Healthcheck
+
+  /api/info:
+    get:
+      summary: Information about the API
+      responses:
+        '200':
+          description: Information response
+      tags:
+        - Root
+
+  /api/predict:
+    post:
+      summary: Endpoint for making predictions
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                model_name:
+                  type: string
+                  example: "example_model"
+                input:
+                  type: string
+                  example: '{"key1": ["value1"], "key2": ["value2"]}'
+              required:
+                - model_name
+                - input
+      responses:
+        '200':
+          description: Prediction response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    example: ""
+                  output:
+                    type: string
+                    example: '{"result_key": "[[result_value]]"}'
+        '500':
+          description: Internal Server Error
+      tags:
+        - Predict
+
+  /api/models:
+    get:
+      summary: Get list of models
+      responses:
+        '200':
+          description: List of models
+        '500':
+          description: Internal Server Error
+      tags:
+        - Models
+    put:
+      summary: Update or add a model
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                model_name:
+                  type: string
+                  example: "new_model"
+              required:
+                - model_name
+      responses:
+        '200':
+          description: Model updated successfully
+        '500':
+          description: Internal Server Error
+      tags:
+        - Models
+    post:
+      summary: Add a new model
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                model_name:
+                  type: string
+                  example: "new_model"
+                location:
+                  type: string
+                  example: "New York"
+              required:
+                - model_name
+                - location
+      responses:
+        '200':
+          description: Model added successfully
+        '500':
+          description: Internal Server Error
+      tags:
+        - Models
+    delete:
+      summary: Delete a model
+      parameters:
+        - name: model_name
+          in: query
+          required: true
+          schema:
+            type: string
+            example: "model_to_delete"
+      responses:
+        '200':
+          description: Model deleted successfully
+        '500':
+          description: Internal Server Error
+      tags:
+        - Models
