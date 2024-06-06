@@ -1,54 +1,6 @@
-```
-    ___           ________           _____ ______            ________
-   |\  \         |\   __  \         |\   _ \  _   \         |\   ____\
-   \ \  \        \ \  \|\  \        \ \  \\\__\ \  \        \ \  \___|_
- __ \ \  \        \ \   __  \        \ \  \\|__| \  \        \ \_____  \
-|\  \\_\  \  ___   \ \  \ \  \  ___   \ \  \    \ \  \  ___   \|____|\  \
-\ \________\|\__\   \ \__\ \__\|\__\   \ \__\    \ \__\|\__\    ____\_\  \
- \|________|\|__|    \|__|\|__|\|__|    \|__|     \|__|\|__|   |\_________\
-                                                               \|_________|
+# JAMS
 
-J.A.M.S - Just Another Model Server
-```
-
-[![License](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](https://opensource.org/licenses/Apache-2.0) 
-[![Build](https://github.com/gagansingh894/jams-rs/actions/workflows/build.yml/badge.svg?branch=main)](https://github.com/gagansingh894/jams-rs/actions/workflows/build.yml)
-![Codecov](https://img.shields.io/codecov/c/github/gagansingh894/jams-rs)
-
-
-
-**J.A.M.S** acronym for Just Another Model Server aims to provide a fast, comprehensive and modular serving solution for tree based and deep learning models written in Rust 🦀
-
-It is primarily targeted for software and data professionals for deploying their models in production
-
-## Features
-- Modular Design 📦
-- Supports PyTorch and Tensorflow Models via FFI Bindings 🤖
-- Support Tree Models - Catboost, LightGBM, (🚧) XGBoost via FFI Bindings 🌳
-- (🚧) HTTP & gRPC API 🚀
-- CLI 💻  
-
-The project is divided into the following crates
-
-- jams-core ![](https://img.shields.io/crates/v/jams-core)
-- jams-serve ![](https://img.shields.io/crates/v/jams-serve)
-- jams ![](https://img.shields.io/crates/v/jams)
-
-(🚧)`jams-core`
-is the core library
-which provides thin abstraction around common machine learning and deep learning models as well as databases like redis,
-dynamodb which can be used as real time feature stores.
-You can think of each component as a LEGO block which can be used to build a system depending on the requirements
-
-(🚧)`jams-serve` is a http and gRPC API library for jams-core.
-The API is highly configurable, allowing the user to select which components to use when setting up the model server.
-Please refer to examples for different types of setup.
-
-(🚧)`jams` is an easy-to-use CLI allowing user to make predictions by specifying model and an input string.
-
-⚠️ **DISCLAIMER: jams is currently unstable and may not run properly on your machines. I have
-tested the above on Apple Silicon and Linux x86_64 machines. Future releases will fix this**
-
+This crate provides a CLI for interacting [**J.A.M.S - Just Another Model Server**](https://github.com/gagansingh894/jams-rs).
 
 ## Setup
 This project relies on couple of shared libraries. In order to easily setup please follow the steps below
@@ -85,8 +37,8 @@ The CLI provides the following commands
 ### start
 Use this command to start the model server on `0.0.0.0:3000` with separate rayon threadpool for computing predictions
 
-The server expects a model directory containing the models. This can be either passed using the
-```--model-dir``` flag
+The server expects a model directory containing the models. This can be either passed using the 
+```--model-dir``` flag 
 
 ```
 jams start --model-dir path/to/model_dir
@@ -98,7 +50,7 @@ and run `jams start`
 export MODEL_STORE_DIR=path/to/model_dir
 ```
 
-By default, the server runs on port `3000` and `2` workers in the rayon threadpool.You can override using
+By default, the server runs on port `3000` and `2` workers in the rayon threadpool.You can override using 
 the `--port` and `--num-workers` flags respectively. The log level can also be changed to
 `DEBUG` level using `--use-debug-level=true`.
 
@@ -160,7 +112,7 @@ corresponding sample json input. Below are some examples
 
 #### Tensorflow
 1. Run tensorflow_penguin_multiclass_classification_model.py
-2. This will create two files - a model file and input json file
+2. This will create two files - a model file and input json file 
 3. Run the following command and pass in the path for model file and input file
 ```
 jams predict tensorflow --model-path=tensorflow_penguin_functional --input-path=tensorflow_input.json
@@ -203,3 +155,6 @@ to a local model dir
 4. `docker run --rm -p 3000:3000 -v <host_directory>:<container_directory> -e MODEL_STORE_DIR=your-model-dir <image_name>
    `
 
+
+**DISCLAIMER: jams is currently unstable and may not run properly on your machines. I have
+tested the above on Apple Silicon. Future releases will fix this**

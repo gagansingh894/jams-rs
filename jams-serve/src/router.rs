@@ -8,8 +8,11 @@ use std::sync::Arc;
 use tokio::signal;
 use tower_http::trace::TraceLayer;
 
+/// AppState struct holds application state.
 pub struct AppState {
+    /// The manager component wrapped in an Arc (atomic reference count) for shared ownership.
     pub manager: Arc<Manager>,
+    /// A thread pool for executing CPU-bound tasks asynchronously.
     pub cpu_pool: ThreadPool,
 }
 
@@ -30,11 +33,11 @@ pub fn build_router(
     let cpu_pool = ThreadPoolBuilder::new()
         .num_threads(worker_pool_threads)
         .build()
-        .expect("Failed to build rayon threadpool.");
+        .expect("Failed to build rayon threadpool ❌");
 
     // setup model store
-    let model_store = LocalModelStore::new(model_dir).expect("Failed to create model store.");
-    let manager = Manager::new(Arc::new(model_store)).expect("Failed to initialize manage.");
+    let model_store = LocalModelStore::new(model_dir).expect("Failed to create model store ❌");
+    let manager = Manager::new(Arc::new(model_store)).expect("Failed to initialize manager ❌");
 
     // shared state
     let app_state = AppState {

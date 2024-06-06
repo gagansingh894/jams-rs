@@ -1,6 +1,6 @@
 [package]
 name = "jams-serve"
-version = "0.1.7"
+version = "0.1.8"
 edition = "2021"
 description = "jams-serve provides a http and gRPC API for jams-core."
 homepage = "https://github.com/gagansingh894/jams-rs"
@@ -10,9 +10,9 @@ exclude = ["./assets"]
 keywords = ["machine-learning", "deep-learning"]
 
 
-[[bin]]
-name = "jams-serve"
-path = "src/main.rs"
+[lib]
+name = "jams_serve"
+crate-type = ["lib"]
 
 
 [dependencies]
