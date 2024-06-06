@@ -946,17 +946,21 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "49f1f14873335454500d59611f1cf4a4b0f786f9ac11f4312a78e4cf2566695b"
 
 [[package]]
-name = "jams-cli"
-version = "0.1.11"
+name = "jams"
+version = "0.1.0"
 dependencies = [
  "anyhow",
  "clap 4.5.4",
- "jams-core 0.1.12 (registry+https://github.com/rust-lang/crates.io-index)",
+ "jams-core 0.1.13 (registry+https://github.com/rust-lang/crates.io-index)",
+ "jams-serve 0.1.8 (registry+https://github.com/rust-lang/crates.io-index)",
+ "log",
+ "tokio",
+ "tracing",
 ]
 
 [[package]]
 name = "jams-core"
-version = "0.1.12"
+version = "0.1.13"
 dependencies = [
  "anyhow",
  "catboost-rs 0.1.0",
@@ -973,9 +977,9 @@ dependencies = [
 
 [[package]]
 name = "jams-core"
-version = "0.1.12"
+version = "0.1.13"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e6dc7c0ed2ba29893852672deac26920f947a9f0b05ae83ad005a8af38523221"
+checksum = "b9fd5e4e0f130dad24b73dba38a9fac1cec04737a602c61bba8166feada7f98c"
 dependencies = [
  "anyhow",
  "catboost-rs 0.1.8",
@@ -992,12 +996,31 @@ dependencies = [
 
 [[package]]
 name = "jams-serve"
-version = "0.1.7"
+version = "0.1.8"
 dependencies = [
  "anyhow",
  "axum",
  "clap 4.5.4",
- "jams-core 0.1.12 (registry+https://github.com/rust-lang/crates.io-index)",
+ "jams-core 0.1.13 (registry+https://github.com/rust-lang/crates.io-index)",
+ "log",
+ "rayon",
+ "serde",
+ "tokio",
+ "tower-http",
+ "tracing",
+ "tracing-subscriber",
+]
+
+[[package]]
+name = "jams-serve"
+version = "0.1.8"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "7e7d88c3cf1da0bb12d8cb671b6a469c82ded63506dfe07aa69f337c39c33d6a"
+dependencies = [
+ "anyhow",
+ "axum",
+ "clap 4.5.4",
+ "jams-core 0.1.13 (registry+https://github.com/rust-lang/crates.io-index)",
  "log",
  "rayon",
  "serde",
