@@ -16,4 +16,4 @@ This is still a work in process and is in very early stages.
 
 Below diagram provides a high level overview of the crate
 
-![Alt text](overview.png)
+![Alt text](https://github.com/gagansingh894/jams-rs/blob/main/jams-core/overview.png?raw=true)
