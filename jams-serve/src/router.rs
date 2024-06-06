@@ -13,7 +13,11 @@ pub struct AppState {
     pub cpu_pool: ThreadPool,
 }
 
-pub fn build_router(model_dir: String, use_debug_log: bool) -> anyhow::Result<Router> {
+pub fn build_router(
+    model_dir: String,
+    use_debug_log: bool,
+    worker_pool_threads: usize,
+) -> anyhow::Result<Router> {
     // initialize tracing
     let mut log_level = tracing::Level::INFO;
     if use_debug_log {
@@ -24,7 +28,7 @@ pub fn build_router(model_dir: String, use_debug_log: bool) -> anyhow::Result<Ro
 
     // setup rayon thread pool for cpu intensive task
     let cpu_pool = ThreadPoolBuilder::new()
-        .num_threads(8)
+        .num_threads(worker_pool_threads)
         .build()
         .expect("Failed to build rayon threadpool.");
 
@@ -41,6 +45,11 @@ pub fn build_router(model_dir: String, use_debug_log: bool) -> anyhow::Result<Ro
 
     // API routes
     let api_routes = Router::new().route("/predict", post(predict));
+
+    tracing::info!(
+        "Rayon threadpool started with {} workers ⚙️",
+        worker_pool_threads
+    );
 
     // build router
     Ok(Router::new()
