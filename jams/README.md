@@ -2,6 +2,8 @@
 
 This crate provides a CLI for interacting [**J.A.M.S - Just Another Model Server**](https://github.com/gagansingh894/jams-rs).
 
+![Alt text](https://github.com/gagansingh894/jams-rs/blob/main/jams/screenshot.png?raw=true)
+
 ## Setup
 This project relies on couple of shared libraries. In order to easily setup please follow the steps below
 
