@@ -951,28 +951,11 @@ version = "0.1.1"
 dependencies = [
  "anyhow",
  "clap 4.5.4",
- "jams-core 0.1.14 (registry+https://github.com/rust-lang/crates.io-index)",
- "jams-serve 0.1.8 (registry+https://github.com/rust-lang/crates.io-index)",
+ "jams-core 0.1.14",
+ "jams-serve 0.1.8",
  "log",
  "tokio",
  "tracing",
-]
-
-[[package]]
-name = "jams-core"
-version = "0.1.14"
-dependencies = [
- "anyhow",
- "catboost-rs 0.1.0",
- "dashmap",
- "lgbm",
- "log",
- "ndarray",
- "rand",
- "serde",
- "serde_json",
- "tch",
- "tensorflow",
 ]
 
 [[package]]
@@ -995,20 +978,20 @@ dependencies = [
 ]
 
 [[package]]
-name = "jams-serve"
-version = "0.1.8"
+name = "jams-core"
+version = "0.1.15"
 dependencies = [
  "anyhow",
- "axum",
- "clap 4.5.4",
- "jams-core 0.1.14 (registry+https://github.com/rust-lang/crates.io-index)",
+ "catboost-rs 0.1.0",
+ "dashmap",
+ "lgbm",
  "log",
- "rayon",
+ "ndarray",
+ "rand",
  "serde",
- "tokio",
- "tower-http",
- "tracing",
- "tracing-subscriber",
+ "serde_json",
+ "tch",
+ "tensorflow",
 ]
 
 [[package]]
@@ -1020,7 +1003,24 @@ dependencies = [
  "anyhow",
  "axum",
  "clap 4.5.4",
- "jams-core 0.1.14 (registry+https://github.com/rust-lang/crates.io-index)",
+ "jams-core 0.1.14",
+ "log",
+ "rayon",
+ "serde",
+ "tokio",
+ "tower-http",
+ "tracing",
+ "tracing-subscriber",
+]
+
+[[package]]
+name = "jams-serve"
+version = "0.1.9"
+dependencies = [
+ "anyhow",
+ "axum",
+ "clap 4.5.4",
+ "jams-core 0.1.14",
  "log",
  "rayon",
  "serde",
