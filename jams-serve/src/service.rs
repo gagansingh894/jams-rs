@@ -8,6 +8,18 @@ use std::sync::Arc;
 use tokio::sync::oneshot;
 use tokio::sync::oneshot::Sender;
 
+/// Response structure for retrieving the list of models.
+///
+/// Represents the JSON response structure returned by the API when
+/// retrieving the list of models.
+#[derive(Serialize)]
+pub struct GetModelsResponse {
+    /// Total number of models.
+    total: i32,
+    /// List of model names.
+    models: Vec<String>,
+}
+
 /// A request for making a prediction.
 ///
 /// This struct represents the data required to make a prediction using a specified model.
@@ -88,6 +100,27 @@ pub async fn root() -> (StatusCode, &'static str) {
 /// ```
 pub async fn healthcheck() -> StatusCode {
     StatusCode::OK
+}
+
+pub async fn get_models(
+    State(app_state): State<Arc<AppState>>,
+) -> (StatusCode, Json<GetModelsResponse>) {
+    match app_state.manager.get_models() {
+        Ok(models) => (
+            StatusCode::OK,
+            Json(GetModelsResponse {
+                total: models.len() as i32,
+                models,
+            }),
+        ),
+        Err(_) => (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            Json(GetModelsResponse {
+                total: 0,
+                models: vec![],
+            }),
+        ),
+    }
 }
 
 /// Prediction endpoint handler.

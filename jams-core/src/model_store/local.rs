@@ -154,7 +154,7 @@ impl Storage for LocalModelStore {
                     }
                 }
             } else {
-                anyhow::bail!("Unexpected model framework encountered")
+                log::warn!("Unexpected model framework encountered in file ⚠️. \n File: {} \n", file_name);
             }
         }
         Ok(())

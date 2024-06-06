@@ -33,15 +33,6 @@ paths:
       tags:
         - Healthcheck
 
-  /api/info:
-    get:
-      summary: Information about the API
-      responses:
-        '200':
-          description: Information response
-      tags:
-        - Root
-
   /api/predict:
     post:
       summary: Endpoint for making predictions
@@ -86,6 +77,19 @@ paths:
       responses:
         '200':
           description: List of models
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  total:
+                    type: integer
+                    example: 2
+                  models:
+                    type: array
+                    items:
+                      type: string
+                      example: "model1"
         '500':
           description: Internal Server Error
       tags:
