@@ -11,7 +11,7 @@ env:
 
 jobs:
   build:
-    name: Build
+    name: Build and Publish
     runs-on: ubuntu-latest
 
     container:
@@ -31,86 +31,20 @@ jobs:
       - name: Setup Environment
         run: bash build/setup_environment_linux_x86_64.sh
 
-      - name: Lint
-        run: make lint
-
-      - name: Run tests
-        run: make test
-
-      - name: Install cargo-llvm-cov
-        uses: taiki-e/install-action@cargo-llvm-cov
-
-      - name: Generate code coverage
-        run: cargo llvm-cov --all-features --workspace --lcov --output-path lcov.info
-
-      - name: Upload coverage to Codecov
-        uses: codecov/codecov-action@v4
-        with:
-          files: lcov.info
-
-      - name: Build the project
-        run: cargo build --release
-
-      - name: Install cargo-bump
-        run: cargo install cargo-bump
-
-      - name: Determine if jams-core changed
-        id: jams-core_changed
-        run: |
-          if git diff --name-only HEAD^ HEAD | grep -q '^jams-core/'; then
-            echo "::set-output name=changed::true"
-          else
-            echo "::set-output name=changed::false"
-          fi
-
-      - name: Bump version for jams-core
-        if: steps.jams-core_changed.outputs.changed == 'true'
-        run: cd jams-core && cargo bump patch
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Determine if jams-serve changed
-        id: jams-serve_changed
-        run: |
-          if git diff --name-only HEAD^ HEAD | grep -q '^jams-serve/'; then
-            echo "::set-output name=changed::true"
-          else
-            echo "::set-output name=changed::false"
-          fi
-
-      - name: Bump version for jams-serve
-        if: steps.jams-serve_changed.outputs.changed == 'true'
-        run: cd jams-serve && cargo bump patch
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Determine if jams changed
-        id: jams_changed
-        run: |
-          if git diff --name-only HEAD^ HEAD | grep -q '^jams/'; then
-            echo "::set-output name=changed::true"
-          else
-            echo "::set-output name=changed::false"
-          fi
-
-      - name: Bump version for jams
-        if: steps.jams_changed.outputs.changed == 'true'
-        run: cd jams && cargo bump patch
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Commit version bump
-        run: |
-          git config --global user.name "github-actions[bot]"
-          git config --global user.email "github-actions[bot]@users.noreply.github.com"
-          git add Cargo.toml
-          git commit -m "build: bump version to ${{ steps.bump.outputs.version }}"
-
-      - name: Push changes
-        run: git push
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Publish to crates.io
+      - name: Extract version from jams
         if: github.ref == 'refs/heads/main' && github.event_name == 'push'
-        run: cargo publish --token ${{ secrets.CARGO_REGISTRY_TOKEN }}
+        id: extract_version
+        run: |
+          version=$(grep '^version' jams/Cargo.toml | sed 's/version = "\(.*\)"/\1/')
+          echo "::set-output name=version::${version}"
+
+      - name: Create GitHub Release
+        if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+        uses: actions/create-release@v1
+        with:
+          tag_name: v${{ steps.extract_version.outputs.version }}
+          release_name: Release ${{ steps.extract_version.outputs.version }}
+          draft: false
+          prerelease: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
