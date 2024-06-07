@@ -14,8 +14,8 @@ name = "jams"
 path = "src/main.rs"
 
 [dependencies]
-jams-core = {path = "../jams-core"}
-jams-serve = {path = "../jams-serve"}
+jams-core = {path = "../jams-core", version = "0.1"}
+jams-serve = {path = "../jams-serve", version = "0.1"}
 clap = { version = "4.5", features = ["derive"] }
 anyhow = "1.0.86"
 tokio = "1.38.0"
