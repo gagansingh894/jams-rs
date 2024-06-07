@@ -5,8 +5,42 @@ This crate provides a CLI for interacting [**J.A.M.S - Just Another Model Server
 ![Alt text](https://github.com/gagansingh894/jams-rs/blob/main/jams/screenshot.png?raw=true)
 
 ## Setup
-This project relies on couple of shared libraries. In order to easily setup please follow the steps below
+Ensure that cargo and rust compiler are installed. Follow instructions [here](https://www.rust-lang.org/tools/install) if not installed
 
+This project relies on a couple of shared libraries. In order to easily set up, please follow the steps below
+
+
+### Mac
+1. Install [Homebrew](https://brew.sh/) if not already installed
+2. Run the following command to install lightgbm, pytorch and tensorflow
+```
+brew install lightgbm pytorch tensorflow
+```
+3. Download catboost library(.dylib) directly from Github
+```
+wget -q https://github.com/catboost/catboost/releases/download/v1.2.5/libcatboostmodel-darwin-universal2-1.2.5.dylib -O /usr/local/lib/libcatboostmodel.dylib
+```
+4. Copy lightgbm to usr/local/lib
+```
+cp /opt/homebrew/Cellar/lightgbm/4.3.0/lib/lib_lightgbm.dylib /usr/local/lib
+```
+5. Add the following environment variables
+```
+export LIBTORCH=/opt/homebrew/Cellar/pytorch/2.2.0_4
+export LIGHTGBM_LIB_PATH=/opt/homebrew/Cellar/lightgbm/4.3.0/lib/
+export DYLD_LIBRARY_PATH=/usr/local/lib:$DYLD_LIBRARY_PATH
+```
+
+**Remember to check version numbers in the path as homebrew downloads the latest stable version.**
+
+**Use brew info to get the exact path which you can use to set the environment variables**
+
+6. Run the following command to install **jams**
+```
+cargo install jams
+```
+
+### Linux
 1. Use the bash script [here](https://github.com/gagansingh894/jams-rs/blob/main/build) based on your system architecture
 
 2. Run the following commands or add them to shell profile
@@ -22,8 +56,7 @@ export LIBRARY_PATH=$LIBRARY_PATH:$COMMON_LIBS_PATH/libtensorflow
 export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$COMMON_LIBS_PATH/libtensorflow/lib
 ```
 
-3. Ensure that cargo and rust compiler are installed. Follow instructions [here](https://www.rust-lang.org/tools/install) if not installed
-4. Run the following command to install **jams-cli**
+3. Run the following command to install **jams**
 ```
 cargo install jams
 ```
