@@ -96,6 +96,7 @@ impl Storage for LocalModelStore {
                         let model =
                             model::tensorflow::Tensorflow::load(full_path.as_str()).unwrap();
                         self.models.insert(model_name.to_string(), Arc::new(model));
+                        log::info!("Successfully loaded model from path: {} ✅", full_path);
                     }
                 }
             } else if file_name.contains(TORCH) {
@@ -115,12 +116,14 @@ impl Storage for LocalModelStore {
                             Some(model_name) => {
                                 let model = model::torch::Torch::load(full_path.as_str()).unwrap();
                                 self.models.insert(model_name.to_string(), Arc::new(model));
+                                log::info!("Successfully loaded model from path: {} ✅", full_path);
                             }
                         }
                     }
                     Some(model_name) => {
                         let model = model::torch::Torch::load(full_path.as_str()).unwrap();
                         self.models.insert(model_name.to_string(), Arc::new(model));
+                        log::info!("Successfully loaded model from path: {} ✅", full_path);
                     }
                 }
             } else if file_name.contains(CATBOOST) {
@@ -136,6 +139,7 @@ impl Storage for LocalModelStore {
                     Some(model_name) => {
                         let model = model::catboost::Catboost::load(full_path.as_str()).unwrap();
                         self.models.insert(model_name.to_string(), Arc::new(model));
+                        log::info!("Successfully loaded model from path: {} ✅", full_path);
                     }
                 }
             } else if file_name.contains(LIGHTGBM) {
@@ -151,10 +155,14 @@ impl Storage for LocalModelStore {
                     Some(model_name) => {
                         let model = model::lightgbm::LightGBM::load(full_path.as_str()).unwrap();
                         self.models.insert(model_name.to_string(), Arc::new(model));
+                        log::info!("Successfully loaded model from path: {} ✅", full_path);
                     }
                 }
             } else {
-                log::warn!("Unexpected model framework encountered in file ⚠️. \n File: {} \n", file_name);
+                log::warn!(
+                    "Unexpected model framework encountered in file ⚠️. \n File: {} \n",
+                    file_name
+                );
             }
         }
         Ok(())

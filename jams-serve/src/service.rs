@@ -164,26 +164,32 @@ pub async fn predict(
     cpu_pool.spawn(move || predict_and_send(manager, payload, tx));
 
     match rx.await {
-        Ok(output) => {
-            let error_msg = "".to_string();
-            (
-                StatusCode::OK,
-                Json(PredictResponse {
-                    error: error_msg,
-                    output,
-                }),
-            )
-        }
-        Err(e) => {
-            let output = "".to_string();
-            (
+        Ok(predictions) => match predictions {
+            Ok(output) => {
+                let error_msg = "".to_string();
+                (
+                    StatusCode::OK,
+                    Json(PredictResponse {
+                        error: error_msg,
+                        output,
+                    }),
+                )
+            }
+            Err(e) => (
                 StatusCode::INTERNAL_SERVER_ERROR,
                 Json(PredictResponse {
-                    error: e.to_string(),
-                    output,
+                    error: format!("Failed to make predictions: {}", e),
+                    output: "".to_string(),
                 }),
-            )
-        }
+            ),
+        },
+        Err(e) => (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            Json(PredictResponse {
+                error: format!("Failed to make predictions: {}", e),
+                output: "".to_string(),
+            }),
+        ),
     }
 }
 
@@ -191,24 +197,22 @@ pub async fn predict(
 /// message through a channel.
 ///
 /// This function takes an Arc-wrapped `Manager`, a `PredictRequest` containing model name
-/// and input data, and a `Sender<String>` channel for sending the prediction outcome or
-/// error message.
+/// and input data, and a `Sender<anyhow::Result<String>>` channel for sending the prediction result.
 ///
 /// # Arguments
 ///
 /// * `manager` - An `Arc` reference to the shared `Manager` instance used for predictions.
 /// * `payload` - A `PredictRequest` containing the model name and input data for prediction.
-/// * `tx` - A `Sender<String>` channel endpoint for sending the prediction result or error message.
+/// * `tx` - A `Sender<anyhow::Result<String>>` channel endpoint for sending the prediction result.
 ///
-/// The function asynchronously sends the prediction output or error message through the provided
+/// The function asynchronously sends the prediction result through the provided
 /// channel (`tx`) based on the result of the prediction operation using the shared `Manager`.
-fn predict_and_send(manager: Arc<Manager>, payload: PredictRequest, tx: Sender<String>) {
-    match manager.predict(payload.model_name, payload.input.as_str()) {
-        Ok(output) => {
-            let _ = tx.send(output);
-        }
-        Err(e) => {
-            let _ = tx.send(e.to_string());
-        }
-    }
+fn predict_and_send(
+    manager: Arc<Manager>,
+    payload: PredictRequest,
+    tx: Sender<anyhow::Result<String>>,
+) {
+    // we do not handle the result here
+    let predictions = manager.predict(payload.model_name, payload.input.as_str());
+    let _ = tx.send(predictions);
 }

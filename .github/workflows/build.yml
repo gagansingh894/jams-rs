@@ -11,7 +11,7 @@ env:
 
 jobs:
   build:
-    name: Build
+    name: Build and Publish
     runs-on: ubuntu-latest
 
     container:
@@ -31,21 +31,20 @@ jobs:
       - name: Setup Environment
         run: bash build/setup_environment_linux_x86_64.sh
 
-      - name: Lint
-        run: make lint
+      - name: Extract version from jams
+        if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+        id: extract_version
+        run: |
+          version=$(grep '^version' jams/Cargo.toml | sed 's/version = "\(.*\)"/\1/')
+          echo "::set-output name=version::${version}"
 
-      - name: Run tests
-        run: make test
-
-      - name: Install cargo-llvm-cov
-        uses: taiki-e/install-action@cargo-llvm-cov
-
-      - name: Generate code coverage
-        run: cargo llvm-cov --all-features --workspace --lcov --output-path lcov.info
-
-      - name: Upload coverage to Codecov
-        uses: codecov/codecov-action@v4
+      - name: Create GitHub Release
+        if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+        uses: actions/create-release@v1
         with:
-          token: ${{ secrets.CODECOV_TOKEN }} # not required for public repos
-          files: lcov.info
-          fail_ci_if_error: true
+          tag_name: v${{ steps.extract_version.outputs.version }}
+          release_name: Release ${{ steps.extract_version.outputs.version }}
+          draft: false
+          prerelease: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

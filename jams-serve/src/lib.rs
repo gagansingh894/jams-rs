@@ -93,7 +93,7 @@ pub async fn start_server(config: HTTPConfig) -> anyhow::Result<()> {
     // log that the server is running
     tracing::info!(
         "{}",
-        format!("Server is running on http://0.0.0.0:{} ✅ \n", port)
+        format!("Server is running on http://0.0.0.0:{} 🚀 \n", port)
     );
 
     // run on hyper

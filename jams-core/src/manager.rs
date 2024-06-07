@@ -28,7 +28,7 @@ impl Manager {
     pub fn new(model_store: Arc<dyn Storage>) -> anyhow::Result<Self> {
         match model_store.fetch_models() {
             Ok(_) => {
-                log::info!("Successfully fetched models ✅")
+                log::info!("Successfully fetched valid models from directory ✅")
             }
             Err(e) => {
                 anyhow::bail!("Failed to fetch models ❌ - {}", e.to_string());
@@ -66,7 +66,7 @@ impl Manager {
         let model = self.model_store.get_model(model_name.clone());
         match model {
             None => {
-                anyhow::bail!("no model exists for model name: {}", &model_name);
+                anyhow::bail!("No model exists for model name: {}", &model_name);
             }
             Some(model) => {
                 // parse input
@@ -76,7 +76,7 @@ impl Manager {
                         let output = match model.predict(input) {
                             Ok(output) => output,
                             Err(e) => {
-                                anyhow::bail!("failed to make predictions: {}", e.to_string());
+                                anyhow::bail!("Failed to make predictions: {}", e.to_string());
                             }
                         };
 
@@ -84,12 +84,12 @@ impl Manager {
                         match serde_json::to_string(&output) {
                             Ok(json) => Ok(json),
                             Err(e) => {
-                                anyhow::bail!("failed to parse predictions: {}", e.to_string());
+                                anyhow::bail!("Failed to parse predictions: {}", e.to_string());
                             }
                         }
                     }
                     Err(e) => {
-                        anyhow::bail!("failed to parse input: {}", e.to_string());
+                        anyhow::bail!("Failed to parse input: {}", e.to_string());
                     }
                 }
             }
