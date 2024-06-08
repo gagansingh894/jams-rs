@@ -1,6 +1,6 @@
 use crate::model;
-use crate::model::frameworks::{CATBOOST, LIGHTGBM, PYTORCH, TENSORFLOW, TORCH};
-use crate::model_store::storage::{Metadata, Model, ModelName, Storage};
+use crate::model::frameworks::{CATBOOST, LIGHTGBM, ModelFramework, PYTORCH, TENSORFLOW, TORCH};
+use crate::model_store::storage::{load_model, Metadata, Model, ModelName, Storage};
 use dashmap::mapref::one::Ref;
 use dashmap::DashMap;
 use std::fs;
@@ -241,15 +241,141 @@ impl Storage for LocalModelStore {
        }
     }
 
+    ///
+    /// This function attempts to extract the framework from the given model path,
+    /// load the model using the identified framework, and then store the model
+    /// in the model store along with its metadata.
+    ///
+    /// # Arguments
+    ///
+    /// * `model_name` - The name of the model to be added.
+    /// * `model_path` - The path to the model file.
+    ///
+    /// # Errors
+    ///
+    /// This function returns an error if:
+    /// * The framework cannot be extracted from the model path.
+    /// * The model fails to load.
+    ///
+    fn add_model(&self, model_name: ModelName, model_path: &str) -> anyhow::Result<()> {
+        match extract_framework_from_path(model_path.to_string()) {
+            None => {
+                anyhow::bail!("Failed to extract framework from path")
+            }
+            Some(framework) => {
+                match load_model(framework, model_path) {
+                    Ok(predictor) => {
+                        let now = Utc::now();
+                        let model = Model::new(predictor, model_name.clone(), framework, model_path.to_string(), now.to_rfc2822());
+                        self.models.insert(model_name, Arc::from(model));
+                    }
+                    Err(e) => {anyhow::bail!("Failed to add new model: {e}")}
+                }
+            }
+        };
+        Ok(())
+    }
 
+    /// Updates an existing model in the model store.
+    ///
+    /// This function retrieves the framework and location of an already loaded model,
+    /// reloads the model, and updates its metadata in the model store.
+    ///
+    /// # Arguments
+    ///
+    /// * `model_name` - The name of the model to be updated.
+    ///
+    /// # Errors
+    ///
+    /// This function returns an error if:
+    /// * The specified model does not exist in the model store.
+    /// * The model fails to load.
+    ///
+    fn update_model(&self, model_name: ModelName) -> anyhow::Result<()> {
+        // get the framework and location of an already loaded model from metadata
+        match self.models.get(model_name.as_str()) {
+            None => {
+                anyhow::bail!("Failed to update as the specified model {} does not exist", model_name)
+            }
+            Some(model) => {
+                let (framework, model_path) = (&model.info.framework, &model.info.path);
+                match load_model(framework, model_path) {
+                    Ok(predictor) => {
+                        let now = Utc::now();
+                        let model = Model::new(predictor, model_name.clone(), framework, model_path.to_string(), now.to_rfc2822());
+                        self.models.insert(model_name, Arc::from(model));
+                    }
+                    Err(e) => {anyhow::bail!("Failed to update model: {e}")}
+                }
+            }
+        }
+        Ok(())
+    }
+
+
+    /// Retrieves a model from the model store.
+    ///
+    /// This function returns a reference to the model with the specified name if it exists.
+    ///
+    /// # Arguments
+    ///
+    /// * `model_name` - The name of the model to be retrieved.
+    ///
+    /// # Returns
+    ///
+    /// This function returns an `Option`:
+    /// * `Some(Ref<ModelName, Arc<Model>>)` if the model exists.
+    /// * `None` if the model does not exist.
+    ///
     fn get_model(&self, model_name: ModelName) -> Option<Ref<ModelName, Arc<Model>>> {
         self.models.get(model_name.as_str())
     }
 
+
+    /// Retrieves metadata for all models in the model store.
+    ///
+    /// This function returns a vector of `Metadata` containing information about all the models in the store.
+    ///
+    /// # Returns
+    ///
+    /// This function returns an `anyhow::Result` containing a vector of `Metadata`.
+    ///
     fn get_models(&self) -> anyhow::Result<Vec<Metadata>> {
         let model_names: Vec<Metadata> = self.models.iter().map(|f| f.value().info.to_owned()).collect();
         Ok(model_names)
     }
+
+    fn delete_model(&self, model_name: ModelName) -> anyhow::Result<()> {
+        match self.models.remove(&model_name) {
+            None => {
+                anyhow::bail!("Failed to delete model as the specified model {} does not exist", model_name)
+            }
+            Some(_) => { Ok(()) }
+        }
+    }
+}
+
+/// Extracts the model framework from the given model path.
+///
+/// This function checks the provided model path for the presence of specific framework identifiers and returns the corresponding `ModelFramework` enum if a match is found.
+///
+/// # Arguments
+///
+/// * `model_path` - A string containing the path to the model file.
+///
+/// # Returns
+///
+/// This function returns an `Option<ModelFramework>`:
+/// * `Some(ModelFramework)` if a matching framework identifier is found in the model path.
+/// * `None` if no matching framework identifier is found.
+///
+fn extract_framework_from_path(model_path: String) -> Option<ModelFramework> {
+    if model_path.contains(TENSORFLOW) { Some(TENSORFLOW) }
+    else if model_path.contains(PYTORCH) { Some(PYTORCH) }
+    else if model_path.contains(TORCH) { Some(TORCH) }
+    else if model_path.contains(CATBOOST) { Some(CATBOOST) }
+    else if model_path.contains(TENSORFLOW) { Some(LIGHTGBM) }
+    else { None }
 }
 
 #[cfg(test)]

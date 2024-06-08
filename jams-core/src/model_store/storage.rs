@@ -1,8 +1,9 @@
 use crate::model::predictor::Predictor;
-use crate::model::frameworks::ModelFramework;
+use crate::model::frameworks::{ModelFramework, CATBOOST, LIGHTGBM, PYTORCH, TENSORFLOW, TORCH};
 use dashmap::mapref::one::Ref;
 use std::sync::Arc;
 use serde::Serialize;
+use crate::model;
 
 pub type ModelName = String;
 
@@ -11,11 +12,20 @@ pub trait Storage: Send + Sync + 'static {
     /// Fetches all available models from the storage.
     fn fetch_models(&self) -> anyhow::Result<()>;
 
+    /// Adds a specific machine learning/deep learning model
+    fn add_model(&self, model_name: ModelName, model_path: &str) -> anyhow::Result<()>;
+
+    /// Updates a specific machine learning/deep learning model based on model name
+    fn update_model(&self, model_name: ModelName) -> anyhow::Result<()>;
+
     /// Retrieves a specific machine learning/deep learning model by its name.
     fn get_model(&self, model_name: ModelName) -> Option<Ref<ModelName, Arc<Model>>>;
 
     /// Retrieves metadata for models which are currently loaded in memory
     fn get_models(&self) -> anyhow::Result<Vec<Metadata>>;
+
+    /// Removes a specific machine learning/deep learning model by its name.
+    fn delete_model(&self, model_name: ModelName) -> anyhow::Result<()>;
 }
 
 
@@ -51,10 +61,10 @@ pub struct Model {
 ///
 #[derive(Clone, Serialize)]
 pub struct Metadata {
-    name: String,
-    framework: ModelFramework,
-    path: String,
-    last_updated: String,
+    pub name: String,
+    pub framework: ModelFramework,
+    pub path: String,
+    pub last_updated: String,
 }
 
 impl Model {
@@ -92,5 +102,50 @@ impl Model {
             predictor,
             info,
         }
+    }
+}
+
+/// Loads a machine learning model based on the specified framework and model path.
+///
+/// # Arguments
+///
+/// * `model_framework` - An enum representing the framework of the model to be loaded.
+/// * `model_path` - A string slice that holds the path to the model file.
+///
+/// # Returns
+///
+/// This function returns a Result containing an `Arc<dyn Predictor>` on success, or an error of type `anyhow::Error` on failure.
+///
+/// # Errors
+///
+/// This function will return an error if:
+/// * The model framework is unsupported.
+/// * The model fails to load due to an internal error specific to the framework.
+///
+pub fn load_model(model_framework: ModelFramework, model_path: &str) -> anyhow::Result<Arc<dyn Predictor>> {
+    if model_framework == TENSORFLOW {
+        match model::tensorflow::Tensorflow::load(model_path) {
+            Ok(predictor) => {
+                Ok(Arc::new(predictor))
+            }
+            Err(e) => { anyhow::bail!("Failed to load Tensorflow model: {}", e) }
+        }
+    } else if (model_framework == TORCH) || (model_framework == PYTORCH) {
+        match model::torch::Torch::load(model_path) {
+            Ok(predictor) => { Ok(Arc::new(predictor)) }
+            Err(e) => { anyhow::bail!("Failed to load Torch model: {}", e) }
+        }
+    } else if model_framework == CATBOOST {
+        match model::catboost::Catboost::load(model_path) {
+            Ok(predictor) => { Ok(Arc::new(predictor)) }
+            Err(e) => { anyhow::bail!("Failed to load Catboost model: {}", e) }
+        }
+    } else if model_framework == LIGHTGBM {
+        match model::lightgbm::LightGBM::load(model_path) {
+            Ok(predictor) => { Ok(Arc::new(predictor)) }
+            Err(e) => { anyhow::bail!("Failed to load LightGBM model: {}", e) }
+        }
+    } else {
+        anyhow::bail!("unsupported model framework: {}", model_framework)
     }
 }
