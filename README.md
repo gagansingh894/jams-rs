@@ -50,14 +50,14 @@ Please refer to examples for different types of setup.
 tested the above on Apple Silicon and Linux x86_64 machines. Future releases will fix this**
 
 ## Setup
-Ensure that cargo and rust compiler are installed. Follow instructions [here](https://www.rust-lang.org/tools/install) if not installed
+**Ensure that Cargo and Rust compiler are installed. Follow instructions [here](https://www.rust-lang.org/tools/install) if not installed**
 
-This project relies on a couple of shared libraries. In order to easily set up, please follow the steps below
+This project relies on a couple of shared libraries. To easily set up, please follow the steps below
 
 
 ### Mac
 1. Install [Homebrew](https://brew.sh/) if not already installed
-2. Run the following command to install lightgbm, pytorch and tensorflow
+2. Run the following command to install bazel, lightgbm, pytorch and tensorflow
 ```
 brew install lightgbm pytorch tensorflow
 ```
@@ -101,10 +101,25 @@ export LIBRARY_PATH=$LIBRARY_PATH:$COMMON_LIBS_PATH/libtensorflow
 export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$COMMON_LIBS_PATH/libtensorflow/lib
 ```
 
-3. Run the following command to install **jams**
+3. Run the following command to install **J.A.M.S**
 ```
 cargo install jams
 ```
+---
+
+## API Endpoints
+Once **J.A.M.S** is up and running, these endpoints will help you interact with the server. 
+
+Please refer to [OpenAPI Spec](https://github.com/gagansingh894/jams-rs/blob/main/openapi.yml) for details.
+
+
+`/healthcheck`: Endpoint for health checks
+
+`/api/predict`: Endpoint for making predictions
+
+`/api/models`: Endpoint for managing models
+
+---
 
 ## Usage
 The CLI provides the following commands
@@ -192,7 +207,7 @@ corresponding sample json input. Below are some examples
 
 #### Tensorflow
 1. Run tensorflow_penguin_multiclass_classification_model.py
-2. This will create two files - a model file and input json file
+2. This will create two files- a model file and input json file
 3. Run the following command and pass in the path for model file and input file
 ```
 jams predict tensorflow --model-path=tensorflow_penguin_functional --input-path=tensorflow_input.json
@@ -201,7 +216,7 @@ jams predict tensorflow --model-path=tensorflow_penguin_functional --input-path=
 
 #### Torch
 1. Run torch_penguin_multiclass_classification_model.py
-2. This will create two files _ a model file and input json file
+2. This will create two files- a model file and input json file
 3. Run the following command and pass in the path for model file and input file
 ```
 jams predict torch --model-path=torch_penguin.pt --input-path=torch_input.json
@@ -210,7 +225,7 @@ jams predict torch --model-path=torch_penguin.pt --input-path=torch_input.json
 
 #### Catboost
 1. Run catboost_titanic_binary_classification_model.py
-2. This will create two files - a model file and input json file
+2. This will create two files- a model file and input json file
 3. Run the following command and pass in the path for model file and input file
 ```
 jams predict catboost --model-path=catboost_titanic --input-path=catboost_input.json
@@ -218,12 +233,12 @@ jams predict catboost --model-path=catboost_titanic --input-path=catboost_input.
 
 #### LightGBM
 1. Run lightgbm_iris_binary_classification_model.py
-2. This will create two files - a model file and input json file
+2. This will create two files- a model file and input json file
 3. Run the following command(example) and pass in the path for model file and input file
 ```
 jams predict lightgbm --model-path=lightgbm_iris.txt --input-path=lightgbm_input.json
-
 ```
+---
 
 ## Docker
 Please follow the following commands to start the server inside docker mounted

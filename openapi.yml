@@ -6,11 +6,11 @@ info:
 
 tags:
   - name: Root
-    description: Endpoints related to the root of the API
+    description: Endpoint related to the root of the API
   - name: Healthcheck
-    description: Endpoints related to health checks
+    description: Endpoint related to health checks
   - name: Predict
-    description: Endpoints related to making predictions
+    description: Endpoint related to making predictions
   - name: Models
     description: Endpoints related to managing models
 
@@ -84,12 +84,25 @@ paths:
                 properties:
                   total:
                     type: integer
-                    example: 2
+                    example: 1
                   models:
                     type: array
                     items:
-                      type: string
-                      example: "model1"
+                      type: object
+                      properties:
+                        name:
+                          type: string
+                          example: "my_awesome_model"
+                        framework:
+                          type: string
+                          example: "lightgbm"
+                        path:
+                          type: string
+                          example: "/path/to/model"
+                        last_updated:
+                          type: string
+                          format: date-time
+                          example: "Sat, 8 Jun 2024 13:37:56 +0000"
         '500':
           description: Internal Server Error
       tags:
