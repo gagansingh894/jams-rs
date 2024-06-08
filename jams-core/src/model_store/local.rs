@@ -142,7 +142,7 @@ impl Storage for LocalModelStore {
                         let now = Utc::now();
                         let model = Model::new(
                             Arc::new(predictor),
-                            model_name.clone().to_string(),
+                            model_name.to_string(),
                             PYTORCH, // TORCH can also be used, but they are aliases
                             full_path.clone(),
                             now.to_rfc2822()
