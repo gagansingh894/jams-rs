@@ -49,6 +49,49 @@ impl Manager {
         self.model_store.get_models()
     }
 
+    /// Adds a new model to the model store.
+    ///
+    /// # Arguments
+    ///
+    /// * `model_name` - A `ModelName` representing the name of the model to be added.
+    /// * `model_path` - A string slice representing the path to the model file.
+    ///
+    /// # Returns
+    ///
+    /// * `Ok(())` if the model is successfully added.
+    /// * `Err(anyhow::Error)` if there is an error during the addition process.
+    pub fn add_model(&self, model_name: ModelName, model_path: &str) -> anyhow::Result<()> {
+        self.model_store.add_model(model_name, model_path)
+    }
+
+    /// Updates an existing model in the model store.
+    ///
+    /// # Arguments
+    ///
+    /// * `model_name` - A `ModelName` representing the name of the model to be updated.
+    ///
+    /// # Returns
+    ///
+    /// * `Ok(())` if the model is successfully updated.
+    /// * `Err(anyhow::Error)` if there is an error during the update process or if the model does not exist.
+    pub fn update_model(&self, model_name: ModelName) -> anyhow::Result<()> {
+        self.model_store.update_model(model_name)
+    }
+
+    /// Deletes an existing model from the model store.
+    ///
+    /// # Arguments
+    ///
+    /// * `model_name` - A `ModelName` representing the name of the model to be deleted.
+    ///
+    /// # Returns
+    ///
+    /// * `Ok(())` if the model is successfully deleted.
+    /// * `Err(anyhow::Error)` if there is an error during the deletion process or if the model does not exist.
+    pub fn delete_model(&self, model_name: ModelName) -> anyhow::Result<()> {
+        self.model_store.delete_model(model_name)
+    }
+
     /// Predicts using the specified model and input data.
     ///
     /// This method fetches the specified model from the storage, parses the input data,
