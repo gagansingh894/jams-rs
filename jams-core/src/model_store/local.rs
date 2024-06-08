@@ -1,6 +1,8 @@
 use crate::model;
 use crate::model::frameworks::{CATBOOST, LIGHTGBM, PYTORCH, TENSORFLOW, TORCH};
-use crate::model_store::storage::{extract_framework_from_path, load_predictor, Metadata, Model, ModelName, Storage};
+use crate::model_store::storage::{
+    extract_framework_from_path, load_predictor, Metadata, Model, ModelName, Storage,
+};
 use chrono::Utc;
 use dashmap::mapref::one::Ref;
 use dashmap::DashMap;
