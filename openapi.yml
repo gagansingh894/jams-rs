@@ -108,7 +108,7 @@ paths:
       tags:
         - Models
     put:
-      summary: Update or add a model
+      summary: Update a model
       requestBody:
         required: true
         content:
@@ -121,6 +121,7 @@ paths:
                   example: "new_model"
               required:
                 - model_name
+                - model_path
       responses:
         '200':
           description: Model updated successfully
@@ -139,10 +140,10 @@ paths:
               properties:
                 model_name:
                   type: string
-                  example: "new_model"
-                location:
+                  example: "model_framework-new_model_name"
+                model_path:
                   type: string
-                  example: "New York"
+                  example: "model-dir/model_framework-new_model_name"
               required:
                 - model_name
                 - location
