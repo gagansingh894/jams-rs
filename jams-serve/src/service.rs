@@ -3,6 +3,7 @@ use axum::extract::State;
 use axum::http::StatusCode;
 use axum::Json;
 use jams_core::manager::Manager;
+use jams_core::model_store::storage::Metadata;
 use serde::{Deserialize, Serialize};
 use std::sync::Arc;
 use tokio::sync::oneshot;
@@ -17,7 +18,7 @@ pub struct GetModelsResponse {
     /// Total number of models.
     total: i32,
     /// List of model names.
-    models: Vec<String>,
+    models: Vec<Metadata>,
 }
 
 /// A request for making a prediction.
