@@ -103,6 +103,18 @@ pub async fn healthcheck() -> StatusCode {
     StatusCode::OK
 }
 
+pub async fn add_model() -> StatusCode {
+    StatusCode::NOT_IMPLEMENTED
+}
+
+pub async fn update_model() -> StatusCode {
+    StatusCode::NOT_IMPLEMENTED
+}
+
+pub async fn delete_model() -> StatusCode {
+    StatusCode::NOT_IMPLEMENTED
+}
+
 pub async fn get_models(
     State(app_state): State<Arc<AppState>>,
 ) -> (StatusCode, Json<GetModelsResponse>) {
