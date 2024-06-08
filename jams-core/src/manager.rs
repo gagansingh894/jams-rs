@@ -1,5 +1,5 @@
 use crate::model::predictor::ModelInput;
-use crate::model_store::storage::{ModelName, Storage};
+use crate::model_store::storage::{Metadata, ModelName, Storage};
 use std::sync::Arc;
 
 /// Manages model storage and prediction requests.
@@ -45,8 +45,8 @@ impl Manager {
     /// # Errors
     /// Returns an error if there are issues fetching the model names from the store.
     ///
-    pub fn get_models(&self) -> anyhow::Result<Vec<String>> {
-        self.model_store.get_model_names()
+    pub fn get_models(&self) -> anyhow::Result<Vec<Metadata>> {
+        self.model_store.get_models()
     }
 
     /// Predicts using the specified model and input data.
@@ -73,7 +73,7 @@ impl Manager {
                 match ModelInput::from_str(input_json) {
                     Ok(input) => {
                         // make predictions
-                        let output = match model.predict(input) {
+                        let output = match model.predictor.predict(input) {
                             Ok(output) => output,
                             Err(e) => {
                                 anyhow::bail!("Failed to make predictions: {}", e.to_string());
