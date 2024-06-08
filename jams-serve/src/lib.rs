@@ -1,7 +1,7 @@
-mod router;
+mod server;
 mod service;
 
-use crate::router::{build_router, shutdown_signal};
+use crate::server::{build_router, shutdown_signal};
 use std::env;
 
 /// Configuration for the HTTP server.
