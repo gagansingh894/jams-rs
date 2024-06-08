@@ -1,11 +1,12 @@
 use crate::model;
 use crate::model::frameworks::{CATBOOST, LIGHTGBM, PYTORCH, TENSORFLOW, TORCH};
 use crate::model::predictor::Predictor;
-use crate::model_store::storage::{ModelName, Storage};
+use crate::model_store::storage::{Metadata, Model, ModelName, Storage};
 use dashmap::mapref::one::Ref;
 use dashmap::DashMap;
 use std::fs;
 use std::sync::Arc;
+use chrono::Utc;
 
 /// A local model store that manages models stored in a specified directory.
 ///
@@ -14,10 +15,10 @@ use std::sync::Arc;
 /// Torch, CatBoost, and LightGBM.
 ///
 /// # Fields
-/// - `models` (DashMap<ModelName, Arc&ltdyn Predictor&gt>): A thread-safe map of model names to their respective predictor instances.
+/// - `models` (DashMap<ModelName, Arc&ltModel&gt>): A thread-safe map of model names to their respective Model struct instances.
 /// - `model_dir` (String): The directory where models are stored.
 pub struct LocalModelStore {
-    pub models: DashMap<ModelName, Arc<dyn Predictor>>,
+    pub models: DashMap<ModelName, Arc<Model>>,
     pub model_dir: String,
 }
 
@@ -34,7 +35,7 @@ impl LocalModelStore {
     /// - `Err(anyhow::Error)`: If there was an error creating the instance.
     ///
     pub fn new(model_dir: String) -> anyhow::Result<Self> {
-        let models: DashMap<ModelName, Arc<dyn Predictor>> = DashMap::new();
+        let models: DashMap<ModelName, Arc<Model>> = DashMap::new();
         Ok(LocalModelStore { models, model_dir })
     }
 }
@@ -44,7 +45,7 @@ impl Storage for LocalModelStore {
     ///
     /// The models have a specific name format which allows us to identify the model framework
     /// `<model_framework>-<model_name>`
-    /// The `model_framework` and `model_name` are seperated by `-`
+    /// The `model_framework` and `model_name` are separated by `-`
     ///
     /// This method iterates through the models in the directory, identifies the model framework based on the file name,
     /// and loads each model into the `models` map.
@@ -93,8 +94,16 @@ impl Storage for LocalModelStore {
                         )
                     }
                     Some(model_name) => {
-                        let model =
+                        let predictor =
                             model::tensorflow::Tensorflow::load(full_path.as_str()).unwrap();
+                        let now = Utc::now();
+                        let model = Model::new(
+                            Arc::new(predictor),
+                            model_name.to_string(),
+                            TENSORFLOW,
+                            full_path.clone(),
+                            now.to_rfc2822()
+                        );
                         self.models.insert(model_name.to_string(), Arc::new(model));
                         log::info!("Successfully loaded model from path: {} ✅", full_path);
                     }
@@ -114,14 +123,30 @@ impl Storage for LocalModelStore {
                                 )
                             }
                             Some(model_name) => {
-                                let model = model::torch::Torch::load(full_path.as_str()).unwrap();
+                                let predictor = model::torch::Torch::load(full_path.as_str()).unwrap();
+                                let now = Utc::now();
+                                let model = Model::new(
+                                    Arc::new(predictor),
+                                    model_name.to_string(),
+                                    PYTORCH, // TORCH can also be used, but they are aliases
+                                    full_path.clone(),
+                                    now.to_rfc2822()
+                                );
                                 self.models.insert(model_name.to_string(), Arc::new(model));
                                 log::info!("Successfully loaded model from path: {} ✅", full_path);
                             }
                         }
                     }
                     Some(model_name) => {
-                        let model = model::torch::Torch::load(full_path.as_str()).unwrap();
+                        let predictor = model::torch::Torch::load(full_path.as_str()).unwrap();
+                        let now = Utc::now();
+                        let model = Model::new(
+                            Arc::new(predictor),
+                            model_name.clone().to_string(),
+                            PYTORCH, // TORCH can also be used, but they are aliases
+                            full_path.clone(),
+                            now.to_rfc2822()
+                        );
                         self.models.insert(model_name.to_string(), Arc::new(model));
                         log::info!("Successfully loaded model from path: {} ✅", full_path);
                     }
@@ -137,7 +162,15 @@ impl Storage for LocalModelStore {
                         )
                     }
                     Some(model_name) => {
-                        let model = model::catboost::Catboost::load(full_path.as_str()).unwrap();
+                        let predictor = model::catboost::Catboost::load(full_path.as_str()).unwrap();
+                        let now = Utc::now();
+                        let model = Model::new(
+                            Arc::new(predictor),
+                            model_name.to_string(),
+                            CATBOOST,
+                            full_path.clone(),
+                            now.to_rfc2822()
+                        );
                         self.models.insert(model_name.to_string(), Arc::new(model));
                         log::info!("Successfully loaded model from path: {} ✅", full_path);
                     }
@@ -153,7 +186,15 @@ impl Storage for LocalModelStore {
                         )
                     }
                     Some(model_name) => {
-                        let model = model::lightgbm::LightGBM::load(full_path.as_str()).unwrap();
+                        let predictor = model::lightgbm::LightGBM::load(full_path.as_str()).unwrap();
+                        let now = Utc::now();
+                        let model = Model::new(
+                            Arc::new(predictor),
+                            model_name.to_string(),
+                            LIGHTGBM,
+                            full_path.clone(),
+                            now.to_rfc2822()
+                        );
                         self.models.insert(model_name.to_string(), Arc::new(model));
                         log::info!("Successfully loaded model from path: {} ✅", full_path);
                     }
@@ -168,12 +209,12 @@ impl Storage for LocalModelStore {
         Ok(())
     }
 
-    fn get_model(&self, model_name: ModelName) -> Option<Ref<ModelName, Arc<dyn Predictor>>> {
+    fn get_model(&self, model_name: ModelName) -> Option<Ref<ModelName, Arc<Model>>> {
         self.models.get(model_name.as_str())
     }
 
-    fn get_model_names(&self) -> anyhow::Result<Vec<String>> {
-        let model_names: Vec<String> = self.models.iter().map(|f| f.key().to_string()).collect();
+    fn get_models(&self) -> anyhow::Result<Vec<Metadata>> {
+        let model_names: Vec<Metadata> = self.models.iter().map(|f| f.value().info.to_owned()).collect();
         Ok(model_names)
     }
 }
@@ -216,7 +257,7 @@ mod tests {
 
         // load models
         let result = local_model_store.fetch_models();
-        let model_names = local_model_store.get_model_names();
+        let model_names = local_model_store.get_models();
 
         // assert
         assert!(result.is_ok());
