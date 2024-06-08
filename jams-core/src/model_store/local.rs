@@ -1,6 +1,5 @@
 use crate::model;
 use crate::model::frameworks::{CATBOOST, LIGHTGBM, PYTORCH, TENSORFLOW, TORCH};
-use crate::model::predictor::Predictor;
 use crate::model_store::storage::{Metadata, Model, ModelName, Storage};
 use dashmap::mapref::one::Ref;
 use dashmap::DashMap;
@@ -225,7 +224,7 @@ impl Storage for LocalModelStore {
     fn fetch_models(&self) -> anyhow::Result<()> {
        match self.model_dir.is_empty() {
            true => {
-               log::warn!("No model directory specified, hence no models will be loaded.");
+               log::warn!("No model directory specified, hence no models will be loaded ⚠️");
                Ok(())
            }
            false => {
@@ -235,7 +234,7 @@ impl Storage for LocalModelStore {
                        Ok(())
                    }
                    Err(e) => {
-                       anyhow::bail!("Failed to fetch models ❌ - {}", e.to_string());
+                       anyhow::bail!("Failed to fetch models - {}", e.to_string());
                    }
                }
            }
