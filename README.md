@@ -145,6 +145,9 @@ and run `jams start`
 export MODEL_STORE_DIR=path/to/model_dir
 ```
 
+**_If no path is provided for a model directory, the server will start but with a warning. 
+The models can still be added via API endpoints._**
+
 By default, the server runs on port `3000` and `2` workers in the rayon threadpool.You can override using
 the `--port` and `--num-workers` flags respectively. The log level can also be changed to
 `DEBUG` level using `--use-debug-level=true`.
@@ -249,4 +252,3 @@ to a local model dir
 3. `docker build -t <your-tag> .`
 4. `docker run --rm -p 3000:3000 -v <host_directory>:<container_directory> -e MODEL_STORE_DIR=your-model-dir <image_name>
    `
-
