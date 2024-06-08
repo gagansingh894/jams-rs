@@ -225,7 +225,6 @@ pub async fn get_models(
 ///   is successful, returns `StatusCode::OK` and the prediction result. Otherwise, returns
 ///   `StatusCode::INTERNAL_SERVER_ERROR` and the error message.
 ///
-/// ```
 /// // Example request:
 /// // POST /predict
 /// // Body: {"model_name": "example_model", "input": "{\"key\": \"value\"}"}
@@ -237,7 +236,6 @@ pub async fn get_models(
 /// // Example response for error:
 /// // StatusCode: 500 INTERNAL SERVER ERROR
 /// // Body: {"error": "error_message", "output": ""}
-/// ```
 pub async fn predict(
     State(app_state): State<Arc<AppState>>,
     Json(payload): Json<PredictRequest>,
