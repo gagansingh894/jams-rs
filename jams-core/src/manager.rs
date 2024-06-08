@@ -28,10 +28,10 @@ impl Manager {
     pub fn new(model_store: Arc<dyn Storage>) -> anyhow::Result<Self> {
         match model_store.fetch_models() {
             Ok(_) => {
-                log::info!("Successfully fetched valid models from directory ✅")
+                log::info!("Successfully initialized manager with a model store ✅")
             }
             Err(e) => {
-                anyhow::bail!("Failed to fetch models ❌ - {}", e.to_string());
+                anyhow::bail!("Failed to initialize manager ❌ - {}", e.to_string());
             }
         }
         Ok(Manager { model_store })

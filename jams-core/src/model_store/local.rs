@@ -38,10 +38,8 @@ impl LocalModelStore {
         let models: DashMap<ModelName, Arc<Model>> = DashMap::new();
         Ok(LocalModelStore { models, model_dir })
     }
-}
 
-impl Storage for LocalModelStore {
-    /// Fetches and loads all models from the specified directory.
+    /// Loads all models from the specified directory.
     ///
     /// The models have a specific name format which allows us to identify the model framework
     /// `<model_framework>-<model_name>`
@@ -54,7 +52,7 @@ impl Storage for LocalModelStore {
     /// - `Ok(())`: If all models were successfully fetched and loaded.
     /// - `Err(anyhow::Error)`: If there was an error fetching or loading the models.
     ///
-    fn fetch_models(&self) -> anyhow::Result<()> {
+    fn load_models(&self) -> anyhow::Result<()> {
         let dir = match fs::read_dir(&self.model_dir) {
             Ok(dir) => dir,
             Err(e) => {
@@ -208,6 +206,42 @@ impl Storage for LocalModelStore {
         }
         Ok(())
     }
+}
+
+impl Storage for LocalModelStore {
+    /// Fetches and loads all models from the specified directory.
+    ///
+    /// The models have a specific name format which allows us to identify the model framework
+    /// `<model_framework>-<model_name>`
+    /// The `model_framework` and `model_name` are separated by `-`
+    ///
+    /// This method iterates through the models in the directory, identifies the model framework based on the file name,
+    /// and loads each model into the `models` map.
+    ///
+    /// # Returns
+    /// - `Ok(())`: If all models were successfully fetched and loaded.
+    /// - `Err(anyhow::Error)`: If there was an error fetching or loading the models.
+    ///
+    fn fetch_models(&self) -> anyhow::Result<()> {
+       match self.model_dir.is_empty() {
+           true => {
+               log::warn!("No model directory specified, hence no models will be loaded.");
+               Ok(())
+           }
+           false => {
+               match self.load_models() {
+                   Ok(_) => {
+                       log::info!("Successfully fetched valid models from directory ✅");
+                       Ok(())
+                   }
+                   Err(e) => {
+                       anyhow::bail!("Failed to fetch models ❌ - {}", e.to_string());
+                   }
+               }
+           }
+       }
+    }
+
 
     fn get_model(&self, model_name: ModelName) -> Option<Ref<ModelName, Arc<Model>>> {
         self.models.get(model_name.as_str())
