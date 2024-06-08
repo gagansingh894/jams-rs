@@ -118,10 +118,9 @@ paths:
               properties:
                 model_name:
                   type: string
-                  example: "new_model"
+                  example: "existing-model"
               required:
                 - model_name
-                - model_path
       responses:
         '200':
           description: Model updated successfully

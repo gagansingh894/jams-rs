@@ -1,4 +1,6 @@
-use crate::service::{add_model, delete_model, get_models, healthcheck, predict, root, update_model};
+use crate::service::{
+    add_model, delete_model, get_models, healthcheck, predict, root, update_model,
+};
 use axum::routing::{delete, get, post, put};
 use axum::Router;
 use jams_core::manager::Manager;

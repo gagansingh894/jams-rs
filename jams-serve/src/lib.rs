@@ -62,9 +62,7 @@ pub struct HTTPConfig {
 pub async fn start_server(config: HTTPConfig) -> anyhow::Result<()> {
     let model_dir = config.model_dir.unwrap_or_else(|| {
         // search for environment variable
-        env::var("MODEL_STORE_DIR").unwrap_or_else(|_| {
-            "".to_string()
-        })
+        env::var("MODEL_STORE_DIR").unwrap_or_else(|_| "".to_string())
     });
 
     let port = config.port.unwrap_or(3000);
