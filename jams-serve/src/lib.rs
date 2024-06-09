@@ -1,7 +1,7 @@
-mod router;
+mod server;
 mod service;
 
-use crate::router::{build_router, shutdown_signal};
+use crate::server::{build_router, shutdown_signal};
 use std::env;
 
 /// Configuration for the HTTP server.
@@ -60,18 +60,10 @@ pub struct HTTPConfig {
 /// - Logs errors if the `model_dir` is not provided and the `MODEL_STORE_DIR` environment variable is not set.
 /// - Log the server status, including the address it's running on and any shutdown signals received.
 pub async fn start_server(config: HTTPConfig) -> anyhow::Result<()> {
-    let model_dir = match config.model_dir {
-        Some(dir) => dir,
-        None => {
-            // search for environment variable
-            match env::var("MODEL_STORE_DIR") {
-                Ok(model_dir) => model_dir,
-                Err(_) => {
-                    anyhow::bail!("Either set MODEL_STORE_DIR or use 'model-dir' argument ❌")
-                }
-            }
-        }
-    };
+    let model_dir = config.model_dir.unwrap_or_else(|| {
+        // search for environment variable
+        env::var("MODEL_STORE_DIR").unwrap_or_else(|_| "".to_string())
+    });
 
     let port = config.port.unwrap_or(3000);
     let use_debug_level = config.use_debug_level.unwrap_or(false);

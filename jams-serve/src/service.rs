@@ -1,12 +1,29 @@
-use crate::router::AppState;
-use axum::extract::State;
+use crate::server::AppState;
+use axum::extract::{Query, State};
 use axum::http::StatusCode;
 use axum::Json;
 use jams_core::manager::Manager;
+use jams_core::model_store::storage::Metadata;
 use serde::{Deserialize, Serialize};
 use std::sync::Arc;
 use tokio::sync::oneshot;
 use tokio::sync::oneshot::Sender;
+
+#[derive(Deserialize)]
+pub struct AddModelRequest {
+    model_name: String,
+    model_path: String,
+}
+
+#[derive(Deserialize)]
+pub struct UpdateModelRequest {
+    model_name: String,
+}
+
+#[derive(Deserialize)]
+pub struct DeleteModelRequest {
+    model_name: String,
+}
 
 /// Response structure for retrieving the list of models.
 ///
@@ -17,7 +34,7 @@ pub struct GetModelsResponse {
     /// Total number of models.
     total: i32,
     /// List of model names.
-    models: Vec<String>,
+    models: Vec<Metadata>,
 }
 
 /// A request for making a prediction.
@@ -66,19 +83,15 @@ pub struct PredictResponse {
     output: String,
 }
 
-/// Root endpoint handler.
+/// Root endpoint for the API.
 ///
-/// This function handles the root ("/") endpoint and returns a status message indicating that the server is running.
+/// This endpoint returns a simple message indicating that the server is running.
 ///
 /// # Returns
-/// - `(StatusCode, &'static str)`: A tuple containing the HTTP status code and a static string message.
 ///
-/// # Example
-/// ```
-/// // This endpoint returns the following response:
-/// // StatusCode: 200 OK
-/// // Body: "J.A.M.S - Just Another Model Server is running 🚀\n"
-/// ```
+/// A tuple containing:
+/// * `StatusCode::OK` - The HTTP status code indicating success.
+/// * A static string message indicating that the server is running.
 pub async fn root() -> (StatusCode, &'static str) {
     (
         StatusCode::OK,
@@ -92,16 +105,90 @@ pub async fn root() -> (StatusCode, &'static str) {
 ///
 /// # Returns
 /// - `StatusCode`: An HTTP status code indicating the health status. Always returns `StatusCode::OK`.
-///
-/// # Example
-/// ```
-/// // This endpoint returns the following response:
-/// // StatusCode: 200 OK
-/// ```
 pub async fn healthcheck() -> StatusCode {
     StatusCode::OK
 }
 
+/// Adds a new model to the model store.
+///
+/// # Arguments
+///
+/// * `State(app_state)` - An `Arc` wrapped `AppState` instance representing the application state.
+/// * `Json(payload)` - A `Json` wrapped `AddModelRequest` instance containing the model name and path.
+///
+/// # Returns
+///
+/// * `StatusCode::OK` if the model is successfully added.
+/// * `StatusCode::INTERNAL_SERVER_ERROR` if there is an error during the addition process.
+///
+pub async fn add_model(
+    State(app_state): State<Arc<AppState>>,
+    Json(payload): Json<AddModelRequest>,
+) -> StatusCode {
+    match app_state
+        .manager
+        .add_model(payload.model_name, payload.model_path.as_str())
+    {
+        Ok(_) => StatusCode::OK,
+        Err(_) => StatusCode::INTERNAL_SERVER_ERROR,
+    }
+}
+
+/// Updates an existing model in the model store.
+///
+/// # Arguments
+///
+/// * `State(app_state)` - An `Arc` wrapped `AppState` instance representing the application state.
+/// * `Json(payload)` - A `Json` wrapped `UpdateModelRequest` instance containing the model name.
+///
+/// # Returns
+///
+/// * `StatusCode::OK` if the model is successfully updated.
+/// * `StatusCode::INTERNAL_SERVER_ERROR` if there is an error during the update process or if the model does not exist.
+pub async fn update_model(
+    State(app_state): State<Arc<AppState>>,
+    Json(payload): Json<UpdateModelRequest>,
+) -> StatusCode {
+    match app_state.manager.update_model(payload.model_name) {
+        Ok(_) => StatusCode::OK,
+        Err(_) => StatusCode::INTERNAL_SERVER_ERROR,
+    }
+}
+
+/// Deletes an existing model from the model store.
+///
+/// # Arguments
+///
+/// * `State(app_state)` - An `Arc` wrapped `AppState` instance representing the application state.
+/// * `Query(request)` - A `Query` wrapped `DeleteModelRequest` instance containing the model name.
+///
+/// # Returns
+///
+/// * `StatusCode::OK` if the model is successfully deleted.
+/// * `StatusCode::INTERNAL_SERVER_ERROR` if there is an error during the deletion process or if the model does not exist.
+pub async fn delete_model(
+    State(app_state): State<Arc<AppState>>,
+    request: Query<DeleteModelRequest>,
+) -> StatusCode {
+    match app_state.manager.delete_model(request.0.model_name) {
+        Ok(_) => StatusCode::OK,
+        Err(_) => StatusCode::INTERNAL_SERVER_ERROR,
+    }
+}
+
+/// Retrieves the list of models.
+///
+/// This endpoint fetches the list of models available in the server and returns their metadata.
+///
+/// # Arguments
+///
+/// * `State(app_state)` - The application state containing the manager that handles model operations.
+///
+/// # Returns
+///
+/// A tuple containing:
+/// * `StatusCode::OK` and a JSON response with the list of models and their count if successful.
+/// * `StatusCode::INTERNAL_SERVER_ERROR` and an empty list of models if there is an error.
 pub async fn get_models(
     State(app_state): State<Arc<AppState>>,
 ) -> (StatusCode, Json<GetModelsResponse>) {
@@ -138,8 +225,6 @@ pub async fn get_models(
 ///   is successful, returns `StatusCode::OK` and the prediction result. Otherwise, returns
 ///   `StatusCode::INTERNAL_SERVER_ERROR` and the error message.
 ///
-/// # Example
-/// ```
 /// // Example request:
 /// // POST /predict
 /// // Body: {"model_name": "example_model", "input": "{\"key\": \"value\"}"}
@@ -151,7 +236,6 @@ pub async fn get_models(
 /// // Example response for error:
 /// // StatusCode: 500 INTERNAL SERVER ERROR
 /// // Body: {"error": "error_message", "output": ""}
-/// ```
 pub async fn predict(
     State(app_state): State<Arc<AppState>>,
     Json(payload): Json<PredictRequest>,

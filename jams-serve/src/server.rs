@@ -1,5 +1,7 @@
-use crate::service::{get_models, healthcheck, predict, root};
-use axum::routing::{get, post};
+use crate::service::{
+    add_model, delete_model, get_models, healthcheck, predict, root, update_model,
+};
+use axum::routing::{delete, get, post, put};
 use axum::Router;
 use jams_core::manager::Manager;
 use jams_core::model_store::local::LocalModelStore;
@@ -49,6 +51,9 @@ pub fn build_router(
     // API routes
     let api_routes = Router::new()
         .route("/models", get(get_models))
+        .route("/models", post(add_model))
+        .route("/models", put(update_model))
+        .route("/models", delete(delete_model))
         .route("/predict", post(predict));
 
     tracing::info!(
