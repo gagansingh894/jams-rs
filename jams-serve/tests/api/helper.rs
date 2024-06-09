@@ -12,7 +12,7 @@ use tower_http::trace::TraceLayer;
 pub fn test_router() -> Router {
     // setup rayon thread pool for cpu intensive task
     let cpu_pool = ThreadPoolBuilder::new()
-        .num_threads(2)
+        .num_threads(1)
         .build()
         .expect("Failed to build rayon threadpool ❌");
 
