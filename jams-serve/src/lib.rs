@@ -1,5 +1,5 @@
-mod server;
-mod service;
+pub mod server;
+pub mod service;
 
 use crate::server::{build_router, shutdown_signal};
 use std::env;
