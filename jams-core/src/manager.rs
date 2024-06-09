@@ -207,20 +207,22 @@ mod tests {
         let local_model_store = LocalModelStore::new(model_dir.to_string()).unwrap();
         let manager = Manager::new(Arc::new(local_model_store)).unwrap();
         let model_name: ModelName = "my_awesome_penguin_model".to_string();
-        let model_path = "tests/model_storage/local_model_store/tensorflow-my_awesome_penguin_model";
+        let model_path =
+            "tests/model_storage/local_model_store/tensorflow-my_awesome_penguin_model";
 
         // delete a model to add it back
         let num_model_before_deletion = manager.get_models().unwrap().len();
         manager.delete_model(model_name.clone()).unwrap();
-
 
         // add model
         let add = manager.add_model(model_name, model_path);
 
         // assert
         assert!(add.is_ok());
-        assert_eq!(num_model_before_deletion, manager.get_models().unwrap().len());
-
+        assert_eq!(
+            num_model_before_deletion,
+            manager.get_models().unwrap().len()
+        );
     }
 
     #[test]
@@ -250,6 +252,9 @@ mod tests {
 
         // assert
         assert!(delete.is_ok());
-        assert_eq!(num_model_before_deletion - manager.get_models().unwrap().len(), 1)
+        assert_eq!(
+            num_model_before_deletion - manager.get_models().unwrap().len(),
+            1
+        )
     }
 }
