@@ -318,4 +318,104 @@ mod tests {
         // assert result is ok
         assert!(model_input.is_ok())
     }
+
+    #[test]
+    fn fails_to_parses_model_input_serde_json_value_due_to_empty_input() {
+        let json_data = r#"{
+        "feature_1": [],
+        "feature_2": [],
+        "feature_3": []
+    }"#;
+
+        let serde_json_value = serde_json::from_str(json_data).unwrap();
+
+        let model_input = ModelInput::from_serde_json(serde_json_value);
+
+        // assert result is ok
+        assert!(model_input.is_err())
+    }
+
+    #[test]
+    fn fails_to_parses_model_input_serde_json_value_due_to_value_being_not_an_array() {
+        let json_data = r#"{
+        "feature_1": {
+                "a": ""
+            },
+        "feature_2": [],
+        "feature_3": []
+    }"#;
+
+        let serde_json_value = serde_json::from_str(json_data).unwrap();
+
+        let model_input = ModelInput::from_serde_json(serde_json_value);
+
+        // assert result is ok
+        assert!(model_input.is_err())
+    }
+
+    // Adding these tests as these are not currently used anywhere in the code
+    // but are useful methods to have
+    #[test]
+    fn successfully_convert_to_value_enum_to_option_i32() {
+        let value = Value::Int(2147);
+
+        let convert = value.as_int();
+
+        assert!(convert.is_some())
+    }
+
+    #[test]
+    fn successfully_convert_to_values_enum_from_vec_i32() {
+        let vec = vec![1, 2, 3];
+
+        let values = Values::from_ints(vec.clone());
+
+        assert_eq!(vec.len(), values.iter().len())
+    }
+
+    #[test]
+    fn successfully_convert_to_values_enum_from_vec_f32() {
+        let vec: Vec<f32> = vec![1.0, 2.0, 3.0];
+
+        let values = Values::from_floats(vec.clone());
+
+        assert_eq!(vec.len(), values.iter().len())
+    }
+
+    #[test]
+    fn successfully_convert_to_values_enum_from_vec_string() {
+        let vec: Vec<String> = vec!["a".to_string(), "b".to_string(), "c".to_string()];
+
+        let values = Values::from_strings(vec.clone());
+
+        assert_eq!(vec.len(), values.iter().len())
+    }
+
+    #[test]
+    fn successfully_convert_the_values_enum_of_int_to_vec_int() {
+        let vec: Vec<i32> = vec![1, 2, 3];
+
+        let values = Values::from_ints(vec.clone());
+
+        let values_vec = values.to_ints();
+
+        assert_eq!(vec, values_vec)
+    }
+
+    #[test]
+    fn successfully_returns_a_mutable_iterator_for_values_enum() {
+        let vec: Vec<f32> = vec![1.0, 2.0, 3.0];
+
+        let mut values = Values::from_floats(vec.clone());
+
+        // change all values to 10
+        for element in values.iter_mut() {
+            *element = Value::Int(10);
+        }
+
+        // assertion
+        for element in values.iter() {
+            assert_eq!(element.as_int().unwrap(), 10)
+        }
+    }
 }

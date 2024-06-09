@@ -45,7 +45,7 @@ async fn successfully_calls_the_add_model_endpoint_and_return_200() {
         .json(&serde_json::json!(
             {
                 "model_name": "my_awesome_penguin_model",
-                "model_path": "assets/model_storage/local_model_store/torch-my_awesome_penguin_model.pt"
+                "model_path": "tests/model_storage/local_model_store/torch-my_awesome_penguin_model.pt"
             }
         ))
         .send()
@@ -75,7 +75,7 @@ async fn successfully_calls_the_update_model_endpoint_and_return_200() {
         .json(&serde_json::json!(
             {
                 "model_name": "my_awesome_penguin_model",
-                "model_path": "assets/model_storage/local_model_store/torch-my_awesome_penguin_model.pt"
+                "model_path": "tests/model_storage/local_model_store/torch-my_awesome_penguin_model.pt"
             }
         ))
         .send()
@@ -151,7 +151,7 @@ async fn successfully_calls_the_delete_model_endpoint_and_return_200() {
         .json(&serde_json::json!(
             {
                 "model_name": "my_awesome_penguin_model",
-                "model_path": "assets/model_storage/local_model_store/torch-my_awesome_penguin_model.pt"
+                "model_path": "tests/model_storage/local_model_store/torch-my_awesome_penguin_model.pt"
             }
         ))
         .send()
