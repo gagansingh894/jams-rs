@@ -244,11 +244,10 @@ jams predict lightgbm --model-path=lightgbm_iris.txt --input-path=lightgbm_input
 ---
 
 ## Docker
-Please follow the following commands to start the server inside docker mounted
-to a local model dir
+Please follow the following commands to start the server inside docker
 
 1. git clone https://github.com/gagansingh894/jams-rs.git
 2. `cd jams`
 3. `docker build -t <your-tag> .`
-4. `docker run --rm -p 3000:3000 -v <host_directory>:<container_directory> -e MODEL_STORE_DIR=your-model-dir <image_name>
+4. `docker run --rm -p 3000:3000 <image_name>
    `
