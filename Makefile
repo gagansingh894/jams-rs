@@ -23,7 +23,7 @@ lint:
 
 test:
 	@echo "Testing all projects with cargo"
-	cargo test
+	cargo test -- --test-threads=1
 
 check-gpu-linux:
 	sudo lshw -C display
