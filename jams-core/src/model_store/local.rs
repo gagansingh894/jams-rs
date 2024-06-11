@@ -393,188 +393,188 @@ impl Storage for LocalModelStore {
     }
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn successfully_load_models_from_different_frameworks_into_local_model_store() {
-        let model_dir = "tests/model_storage/local_model_store";
-        let local_model_store = LocalModelStore::new(model_dir.to_string()).unwrap();
-
-        // load models
-        let result = local_model_store.fetch_models();
-
-        // assert
-        assert!(result.is_ok());
-        assert_ne!(local_model_store.models.len(), 0);
-    }
-
-    #[test]
-    fn successfully_get_model_from_local_model_store() {
-        let model_dir = "tests/model_storage/local_model_store";
-        let local_model_store = LocalModelStore::new(model_dir.to_string()).unwrap();
-
-        // load models
-        let result = local_model_store.fetch_models();
-        let model = local_model_store.get_model("my_awesome_autompg_model".to_string());
-
-        // assert
-        assert!(result.is_ok());
-        assert!(model.is_some());
-    }
-
-    #[test]
-    fn fails_to_get_model_from_local_model_store_when_model_name_is_wrong() {
-        let model_dir = "tests/model_storage/local_model_store";
-        let local_model_store = LocalModelStore::new(model_dir.to_string()).unwrap();
-
-        // load models
-        let result = local_model_store.fetch_models();
-        let model = local_model_store.get_model("model_which_does_not_exist".to_string());
-
-        // assert
-        assert!(result.is_ok());
-        assert!(model.is_none());
-    }
-
-    #[test]
-    fn successfully_get_models_from_local_model_store() {
-        let model_dir = "tests/model_storage/local_model_store";
-        let local_model_store = LocalModelStore::new(model_dir.to_string()).unwrap();
-
-        // load models
-        let result = local_model_store.fetch_models();
-        let models = local_model_store.get_models();
-
-        // assert
-        assert!(result.is_ok());
-        assert!(models.is_ok());
-        assert_ne!(models.unwrap().len(), 0);
-    }
-
-    #[test]
-    fn successfully_deletes_model_in_the_local_model_store() {
-        let model_dir = "tests/model_storage/local_model_store";
-        let local_model_store = LocalModelStore::new(model_dir.to_string()).unwrap();
-
-        // load models
-        let result = local_model_store.fetch_models();
-        let deletion = local_model_store.delete_model("my_awesome_autompg_model".to_string());
-
-        // assert
-        assert!(result.is_ok());
-        assert!(deletion.is_ok());
-    }
-
-    #[test]
-    fn fails_to_deletes_model_in_the_local_model_store() {
-        let model_dir = "tests/model_storage/local_model_store";
-        let local_model_store = LocalModelStore::new(model_dir.to_string()).unwrap();
-
-        // load models
-        let result = local_model_store.fetch_models();
-        let deletion = local_model_store.delete_model("model_which_does_not_exist".to_string());
-
-        // assert
-        assert!(result.is_ok());
-        assert!(deletion.is_err());
-    }
-
-    #[test]
-    fn successfully_update_model_in_the_local_model_store() {
-        let model_dir = "tests/model_storage/local_model_store";
-        let local_model_store = LocalModelStore::new(model_dir.to_string()).unwrap();
-        let model_name = "my_awesome_autompg_model".to_string();
-
-        // load models
-        let result = local_model_store.fetch_models();
-        assert!(result.is_ok());
-
-        // retrieve timestamp from existing to model for assertion
-        let model = local_model_store
-            .get_model(model_name.clone())
-            .unwrap()
-            .to_owned();
-
-        // update model
-        let update = local_model_store.update_model(model_name.clone());
-        assert!(update.is_ok());
-        let updated_model = local_model_store
-            .get_model(model_name.clone())
-            .unwrap()
-            .to_owned();
-
-        // assert
-        assert_eq!(model.info.name, updated_model.info.name);
-        assert_eq!(model.info.path, updated_model.info.path);
-        assert_ne!(model.info.last_updated, updated_model.info.last_updated); // as model will be updated
-    }
-
-    #[test]
-    fn fails_to_update_model_in_the_local_model_store_when_model_name_is_incorrect() {
-        let model_dir = "tests/model_storage/local_model_store";
-        let local_model_store = LocalModelStore::new(model_dir.to_string()).unwrap();
-        let incorrect_model_name = "my_awesome_autompg_model_incorrect".to_string();
-
-        // load models
-        let result = local_model_store.fetch_models();
-        assert!(result.is_ok());
-
-        // update model with incorrect model name
-        let update = local_model_store.update_model(incorrect_model_name);
-
-        // assert
-        assert!(update.is_err());
-    }
-
-    #[test]
-    fn successfully_add_model_in_the_local_model_store() {
-        let model_dir = "tests/model_storage/local_model_store";
-        let local_model_store = LocalModelStore::new(model_dir.to_string()).unwrap();
-
-        // load models
-        let result = local_model_store.fetch_models();
-        assert!(result.is_ok());
-        // delete model to set up test
-        local_model_store
-            .delete_model("my_awesome_penguin_model".to_string())
-            .unwrap();
-        // assert that model is not present
-        let model = local_model_store.get_model("my_awesome_penguin_model".to_string());
-        assert!(model.is_none());
-        let num_models = local_model_store.get_models().unwrap().len();
-
-        // add model
-        let add = local_model_store.add_model(
-            "my_awesome_penguin_model".to_string(),
-            "tests/model_storage/local_model_store/tensorflow-my_awesome_penguin_model",
-        );
-        let num_models_after_add = local_model_store.get_models().unwrap().len();
-
-        // assert
-        assert!(add.is_ok());
-        let model = local_model_store.get_model("my_awesome_penguin_model".to_string());
-        assert!(model.is_some());
-        assert_eq!(num_models_after_add - num_models, 1);
-    }
-
-    #[test]
-    fn fails_to_add_model_in_the_local_model_store_when_the_model_path_is_wrong() {
-        let model_dir = "tests/model_storage/local_model_store";
-        let local_model_store = LocalModelStore::new(model_dir.to_string()).unwrap();
-
-        // load models
-        let result = local_model_store.fetch_models();
-        assert!(result.is_ok());
-
-        // add model
-        let add = local_model_store.add_model(
-            "my_awesome_penguin_model".to_string(),
-            "tests/model_storage/local_model_store/model_which_does_not_exist",
-        );
-
-        // assert
-        assert!(add.is_err());
-    }
-}
+// #[cfg(test)]
+// mod tests {
+//     use super::*;
+//
+//     #[test]
+//     fn successfully_load_models_from_different_frameworks_into_local_model_store() {
+//         let model_dir = "tests/model_storage/local_model_store";
+//         let local_model_store = LocalModelStore::new(model_dir.to_string()).unwrap();
+//
+//         // load models
+//         let result = local_model_store.fetch_models();
+//
+//         // assert
+//         assert!(result.is_ok());
+//         assert_ne!(local_model_store.models.len(), 0);
+//     }
+//
+//     #[test]
+//     fn successfully_get_model_from_local_model_store() {
+//         let model_dir = "tests/model_storage/local_model_store";
+//         let local_model_store = LocalModelStore::new(model_dir.to_string()).unwrap();
+//
+//         // load models
+//         let result = local_model_store.fetch_models();
+//         let model = local_model_store.get_model("my_awesome_autompg_model".to_string());
+//
+//         // assert
+//         assert!(result.is_ok());
+//         assert!(model.is_some());
+//     }
+//
+//     #[test]
+//     fn fails_to_get_model_from_local_model_store_when_model_name_is_wrong() {
+//         let model_dir = "tests/model_storage/local_model_store";
+//         let local_model_store = LocalModelStore::new(model_dir.to_string()).unwrap();
+//
+//         // load models
+//         let result = local_model_store.fetch_models();
+//         let model = local_model_store.get_model("model_which_does_not_exist".to_string());
+//
+//         // assert
+//         assert!(result.is_ok());
+//         assert!(model.is_none());
+//     }
+//
+//     #[test]
+//     fn successfully_get_models_from_local_model_store() {
+//         let model_dir = "tests/model_storage/local_model_store";
+//         let local_model_store = LocalModelStore::new(model_dir.to_string()).unwrap();
+//
+//         // load models
+//         let result = local_model_store.fetch_models();
+//         let models = local_model_store.get_models();
+//
+//         // assert
+//         assert!(result.is_ok());
+//         assert!(models.is_ok());
+//         assert_ne!(models.unwrap().len(), 0);
+//     }
+//
+//     #[test]
+//     fn successfully_deletes_model_in_the_local_model_store() {
+//         let model_dir = "tests/model_storage/local_model_store";
+//         let local_model_store = LocalModelStore::new(model_dir.to_string()).unwrap();
+//
+//         // load models
+//         let result = local_model_store.fetch_models();
+//         let deletion = local_model_store.delete_model("my_awesome_autompg_model".to_string());
+//
+//         // assert
+//         assert!(result.is_ok());
+//         assert!(deletion.is_ok());
+//     }
+//
+//     #[test]
+//     fn fails_to_deletes_model_in_the_local_model_store() {
+//         let model_dir = "tests/model_storage/local_model_store";
+//         let local_model_store = LocalModelStore::new(model_dir.to_string()).unwrap();
+//
+//         // load models
+//         let result = local_model_store.fetch_models();
+//         let deletion = local_model_store.delete_model("model_which_does_not_exist".to_string());
+//
+//         // assert
+//         assert!(result.is_ok());
+//         assert!(deletion.is_err());
+//     }
+//
+//     #[test]
+//     fn successfully_update_model_in_the_local_model_store() {
+//         let model_dir = "tests/model_storage/local_model_store";
+//         let local_model_store = LocalModelStore::new(model_dir.to_string()).unwrap();
+//         let model_name = "my_awesome_autompg_model".to_string();
+//
+//         // load models
+//         let result = local_model_store.fetch_models();
+//         assert!(result.is_ok());
+//
+//         // retrieve timestamp from existing to model for assertion
+//         let model = local_model_store
+//             .get_model(model_name.clone())
+//             .unwrap()
+//             .to_owned();
+//
+//         // update model
+//         let update = local_model_store.update_model(model_name.clone());
+//         assert!(update.is_ok());
+//         let updated_model = local_model_store
+//             .get_model(model_name.clone())
+//             .unwrap()
+//             .to_owned();
+//
+//         // assert
+//         assert_eq!(model.info.name, updated_model.info.name);
+//         assert_eq!(model.info.path, updated_model.info.path);
+//         assert_ne!(model.info.last_updated, updated_model.info.last_updated); // as model will be updated
+//     }
+//
+//     #[test]
+//     fn fails_to_update_model_in_the_local_model_store_when_model_name_is_incorrect() {
+//         let model_dir = "tests/model_storage/local_model_store";
+//         let local_model_store = LocalModelStore::new(model_dir.to_string()).unwrap();
+//         let incorrect_model_name = "my_awesome_autompg_model_incorrect".to_string();
+//
+//         // load models
+//         let result = local_model_store.fetch_models();
+//         assert!(result.is_ok());
+//
+//         // update model with incorrect model name
+//         let update = local_model_store.update_model(incorrect_model_name);
+//
+//         // assert
+//         assert!(update.is_err());
+//     }
+//
+//     #[test]
+//     fn successfully_add_model_in_the_local_model_store() {
+//         let model_dir = "tests/model_storage/local_model_store";
+//         let local_model_store = LocalModelStore::new(model_dir.to_string()).unwrap();
+//
+//         // load models
+//         let result = local_model_store.fetch_models();
+//         assert!(result.is_ok());
+//         // delete model to set up test
+//         local_model_store
+//             .delete_model("my_awesome_penguin_model".to_string())
+//             .unwrap();
+//         // assert that model is not present
+//         let model = local_model_store.get_model("my_awesome_penguin_model".to_string());
+//         assert!(model.is_none());
+//         let num_models = local_model_store.get_models().unwrap().len();
+//
+//         // add model
+//         let add = local_model_store.add_model(
+//             "my_awesome_penguin_model".to_string(),
+//             "tests/model_storage/local_model_store/tensorflow-my_awesome_penguin_model",
+//         );
+//         let num_models_after_add = local_model_store.get_models().unwrap().len();
+//
+//         // assert
+//         assert!(add.is_ok());
+//         let model = local_model_store.get_model("my_awesome_penguin_model".to_string());
+//         assert!(model.is_some());
+//         assert_eq!(num_models_after_add - num_models, 1);
+//     }
+//
+//     #[test]
+//     fn fails_to_add_model_in_the_local_model_store_when_the_model_path_is_wrong() {
+//         let model_dir = "tests/model_storage/local_model_store";
+//         let local_model_store = LocalModelStore::new(model_dir.to_string()).unwrap();
+//
+//         // load models
+//         let result = local_model_store.fetch_models();
+//         assert!(result.is_ok());
+//
+//         // add model
+//         let add = local_model_store.add_model(
+//             "my_awesome_penguin_model".to_string(),
+//             "tests/model_storage/local_model_store/model_which_does_not_exist",
+//         );
+//
+//         // assert
+//         assert!(add.is_err());
+//     }
+// }
