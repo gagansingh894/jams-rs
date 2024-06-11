@@ -18,19 +18,7 @@ pub struct AppState {
     pub cpu_pool: ThreadPool,
 }
 
-pub fn build_router(
-    model_dir: String,
-    use_debug_log: bool,
-    worker_pool_threads: usize,
-) -> anyhow::Result<Router> {
-    // initialize tracing
-    let mut log_level = tracing::Level::INFO;
-    if use_debug_log {
-        log_level = tracing::Level::TRACE
-    }
-
-    tracing_subscriber::fmt().with_max_level(log_level).init();
-
+pub fn build_router(model_dir: String, worker_pool_threads: usize) -> anyhow::Result<Router> {
     // setup rayon thread pool for cpu intensive task
     let cpu_pool = ThreadPoolBuilder::new()
         .num_threads(worker_pool_threads)
@@ -56,7 +44,7 @@ pub fn build_router(
         .route("/models", delete(delete_model))
         .route("/predict", post(predict));
 
-    tracing::info!(
+    log::info!(
         "Rayon threadpool started with {} workers ⚙️",
         worker_pool_threads
     );
