@@ -2,7 +2,7 @@ use crate::helper::test_router;
 use reqwest::Client;
 use tokio::net::TcpListener;
 
-#[tokio::test(flavor = "current_thread")]
+#[tokio::test]
 async fn successfully_calls_the_root_endpoint_and_return_200() {
     // Arrange
     let client = Client::new();
@@ -26,7 +26,7 @@ async fn successfully_calls_the_root_endpoint_and_return_200() {
     assert!(response.status().is_success())
 }
 
-#[tokio::test(flavor = "current_thread")]
+#[tokio::test]
 async fn successfully_calls_the_healthcheck_endpoint_and_return_200() {
     // Arrange
     let client = Client::new();

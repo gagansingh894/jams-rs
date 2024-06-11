@@ -2,7 +2,7 @@ use crate::helper::test_router;
 use reqwest::Client;
 use tokio::net::TcpListener;
 
-#[tokio::test(flavor = "current_thread")]
+#[tokio::test]
 async fn successfully_calls_the_get_models_endpoint_and_return_200() {
     // Arrange
     let client = Client::new();
@@ -26,7 +26,7 @@ async fn successfully_calls_the_get_models_endpoint_and_return_200() {
     assert!(response.status().is_success())
 }
 
-#[tokio::test(flavor = "current_thread")]
+#[tokio::test]
 async fn successfully_calls_the_add_model_endpoint_and_return_200() {
     // Arrange
     let client = Client::new();
@@ -56,7 +56,7 @@ async fn successfully_calls_the_add_model_endpoint_and_return_200() {
     assert!(response.status().is_success())
 }
 
-#[tokio::test(flavor = "current_thread")]
+#[tokio::test]
 async fn successfully_calls_the_update_model_endpoint_and_return_200() {
     // Arrange
     let client = Client::new();
@@ -99,7 +99,7 @@ async fn successfully_calls_the_update_model_endpoint_and_return_200() {
     assert!(response.status().is_success())
 }
 
-#[tokio::test(flavor = "current_thread")]
+#[tokio::test]
 async fn fails_to_call_the_update_model_endpoint_and_return_500_when_model_name_is_incorrect() {
     // Arrange
     let client = Client::new();
@@ -128,7 +128,7 @@ async fn fails_to_call_the_update_model_endpoint_and_return_500_when_model_name_
     assert!(response.status().is_server_error())
 }
 
-#[tokio::test(flavor = "current_thread")]
+#[tokio::test]
 async fn successfully_calls_the_delete_model_endpoint_and_return_200() {
     // Arrange
     let client = Client::new();
