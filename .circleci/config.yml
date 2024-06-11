@@ -23,7 +23,7 @@ jobs:
           name: Setup Environment
           command: bash build/setup_environment_linux_x86_64.sh
 
-      - run:
+#      - run:
 #          name: Lint
 #          command: make lint
 
