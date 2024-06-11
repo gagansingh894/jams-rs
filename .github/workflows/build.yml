@@ -34,7 +34,7 @@ jobs:
           override: true
 
       - name: Setup Environment
-        run: bash build/setup_environment_linux_x86_64.sh
+        run: sudo bash build/setup_environment_linux_x86_64.sh
 
 #      - name: Lint
 #        run: make lint
