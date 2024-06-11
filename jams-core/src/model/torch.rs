@@ -116,6 +116,15 @@ mod tests {
     use crate::model::test_utils;
 
     #[test]
+    fn fails_to_load_torch_model() {
+        let model_dir = "incorrect/path";
+        let model = Torch::load(model_dir);
+
+        // assert the result is Ok
+        assert!(model.is_err())
+    }
+
+    #[test]
     fn successfully_load_pytorch_regression_model() {
         let path =
             "tests/model_storage/local_model_store/pytorch-my_awesome_californiahousing_model.pt";

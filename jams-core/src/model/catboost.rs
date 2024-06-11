@@ -190,6 +190,15 @@ mod tests {
     use crate::model::test_utils;
 
     #[test]
+    fn fails_to_load_catboost_model() {
+        let model_dir = "incorrect/path";
+        let model = Catboost::load(model_dir);
+
+        // assert the result is Ok
+        assert!(model.is_err())
+    }
+
+    #[test]
     fn successfully_load_catboost_regressor_model() {
         let path = "tests/model_storage/local_model_store/catboost-my_awesome_regressor_model";
         let model = Catboost::load(path);

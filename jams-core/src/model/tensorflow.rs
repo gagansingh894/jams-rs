@@ -430,6 +430,15 @@ mod tests {
     use crate::model::test_utils;
 
     #[test]
+    fn fails_to_load_tensorflow_model() {
+        let model_dir = "incorrect/path";
+        let model = Tensorflow::load(model_dir);
+
+        // assert the result is Ok
+        assert!(model.is_err())
+    }
+
+    #[test]
     fn successfully_load_tensorflow_regression_model() {
         let model_dir = "tests/model_storage/local_model_store/tensorflow-my_awesome_autompg_model";
         let model = Tensorflow::load(model_dir);
