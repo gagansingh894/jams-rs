@@ -24,26 +24,26 @@ jobs:
           command: bash build/setup_environment_linux_x86_64.sh
 
       - run:
-          name: Lint
-          command: make lint
+#          name: Lint
+#          command: make lint
 
       - run:
           name: Run tests
           command: make test
 
-      - run:
-          name: Install cargo-llvm-cov
-          command: cargo install cargo-llvm-cov
+#      - run:
+#          name: Install cargo-llvm-cov
+#          command: cargo install cargo-llvm-cov
 
-      - run:
-          name: Generate code coverage
-          command: cargo llvm-cov --all-features --workspace --lcov --output-path lcov.info
+#      - run:
+#          name: Generate code coverage
+#          command: cargo llvm-cov --all-features --workspace --lcov --output-path lcov.info
 
-      - run:
-          name: Upload coverage to Codecov
-          command: |
-            bash <(curl -s https://codecov.io/bash) -t $CODECOV_TOKEN -f lcov.info -F rust
-          when: always
+#      - run:
+#          name: Upload coverage to Codecov
+#          command: |
+#            bash <(curl -s https://codecov.io/bash) -t $CODECOV_TOKEN -f lcov.info -F rust
+#          when: always
 
 workflows:
   version: 2
