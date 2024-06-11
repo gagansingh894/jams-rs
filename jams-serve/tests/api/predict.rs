@@ -1,18 +1,16 @@
 // use crate::helper::test_router;
 // use reqwest::Client;
 // use tokio::net::TcpListener;
-
+//
 // #[tokio::test]
-// TODO: check why it is not working as other tests with same setup are
-// I have tested in Postman and this works
-// For now changing assertions to fail
 // async fn successfully_calls_the_predict_endpoint_and_return_200() {
 //     // Arrange
 //     let client = Client::new();
 //     let listener = TcpListener::bind("0.0.0.0:0").await.unwrap();
 //     let addr = listener.local_addr().unwrap();
 //     let router = test_router();
-//     let url = format!("http://{}/api/predict", addr).to_string();
+//     let models_url = format!("http://{}/api/models", addr).to_string();
+//     let predict_url = format!("http://{}/api/predict", addr).to_string();
 //
 //     tokio::spawn(async move {
 //         axum::serve(listener, router).await.unwrap();
@@ -20,22 +18,20 @@
 //
 //     // Act: Add model for prediction
 //     let response = client
-//         .post(url.clone())
+//         .post(models_url.clone())
 //         .json(&serde_json::json!(
 //             {
 //                 "model_name": "titanic_model",
-//                 "model_path": "assets/model_storage/local_model_store/catboost-titanic_model"
+//                 "model_path": "tests/local_model_store/catboost-titanic_model"
 //             }
 //         ))
 //         .send()
 //         .await
 //         .expect("Failed to make request");
-//     assert!(response.status().is_server_error());
+//     assert!(response.status().is_success());
 //
 //     // Act: Make Predictions
-//     let response = client
-//         .post(url)
-//         .json(&serde_json::json!(
+//     let model_input = serde_json::json!(
 //             {
 //                 "pclass": ["1", "3"],
 //                 "sex": ["male", "female"],
@@ -51,11 +47,23 @@
 //                 "embark_town": ["Southampton", "Cherbourg"],
 //                 "alone": ["True", "False"]
 //             }
+//     )
+//     .to_string();
+//
+//     let response = client
+//         .post(predict_url)
+//         .json(&serde_json::json!(
+//             {
+//                 "model_name": "titanic_model",
+//                 "input": model_input
+//             }
+//
 //         ))
 //         .send()
 //         .await
 //         .expect("Failed to make request");
 //
 //     // Assert
+//     println!("{:?}", response);
 //     assert!(response.status().is_success())
 // }

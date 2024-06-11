@@ -185,159 +185,159 @@ pub fn extract_framework_from_path(model_path: String) -> Option<ModelFramework>
     }
 }
 
-// #[cfg(test)]
-// mod tests {
-//     use super::*;
-//
-//     #[test]
-//     fn successfully_create_model_artefact() {
-//         // Setup
-//         let model_name = "pytorch-my_awesome_californiahousing_model".to_string(); // notice that model name is exactly the same in path
-//         let path =
-//             "tests/model_storage/local_model_store/pytorch-my_awesome_californiahousing_model.pt";
-//         let framework = PYTORCH;
-//         let timestamp = chrono::Utc::now();
-//         let predictor = model::torch::Torch::load(path).unwrap();
-//
-//         // Create
-//         let model = Model::new(
-//             Arc::new(predictor),
-//             model_name.clone(),
-//             framework,
-//             path.to_string(),
-//             timestamp.to_rfc3339(),
-//         );
-//
-//         // Assert
-//         assert_eq!(model_name, model.info.name);
-//         assert_eq!(path, model.info.path.as_str());
-//         assert_eq!(framework, model.info.framework);
-//         assert_eq!(timestamp.to_rfc3339(), model.info.last_updated);
-//     }
-//
-//     #[test]
-//     fn successfully_load_tensorflow_framework_model() {
-//         let path = "tests/model_storage/local_model_store/tensorflow-my_awesome_penguin_model";
-//         let framework = TENSORFLOW;
-//
-//         // Load Model
-//         let model = load_predictor(framework, path);
-//
-//         // Assert
-//         assert!(model.is_ok());
-//     }
-//
-//     #[test]
-//     fn successfully_load_torch_framework_model() {
-//         let path = "tests/model_storage/local_model_store/torch-my_awesome_penguin_model.pt";
-//         let framework = TORCH;
-//
-//         // Load Model
-//         let model = load_predictor(framework, path);
-//
-//         // Assert
-//         assert!(model.is_ok());
-//     }
-//
-//     #[test]
-//     fn successfully_load_pytorch_framework_model() {
-//         let path =
-//             "tests/model_storage/local_model_store/pytorch-my_awesome_californiahousing_model.pt";
-//         let framework = PYTORCH;
-//
-//         // Load Model
-//         let model = load_predictor(framework, path);
-//
-//         // Assert
-//         assert!(model.is_ok());
-//     }
-//
-//     #[test]
-//     fn successfully_load_lightgbm_model() {
-//         let path = "tests/model_storage/local_model_store/lightgbm-my_awesome_binary_model_2.txt";
-//         let framework = LIGHTGBM;
-//
-//         // Load Model
-//         let model = load_predictor(framework, path);
-//
-//         // Assert
-//         assert!(model.is_ok());
-//     }
-//
-//     #[test]
-//     fn successfully_load_catboost_model() {
-//         let path = "tests/model_storage/local_model_store/catboost-titanic_model";
-//         let framework = CATBOOST;
-//
-//         // Load Model
-//         let model = load_predictor(framework, path);
-//
-//         // Assert
-//         assert!(model.is_ok());
-//     }
-//
-//     #[test]
-//     fn successfully_extract_framework_from_path_when_tensorflow_framework() {
-//         let path = "model/directory/tensorflow-my_model";
-//
-//         let result = extract_framework_from_path(path.to_string());
-//
-//         // assert
-//         assert!(result.is_some());
-//         assert_eq!(result.unwrap(), TENSORFLOW)
-//     }
-//
-//     #[test]
-//     fn successfully_extract_framework_from_path_when_torch_framework() {
-//         let path = "model/directory/torch-my_model";
-//
-//         let result = extract_framework_from_path(path.to_string());
-//
-//         // assert
-//         assert!(result.is_some());
-//         assert_eq!(result.unwrap(), TORCH)
-//     }
-//
-//     #[test]
-//     fn successfully_extract_framework_from_path_when_pytorch_framework() {
-//         let path = "model/directory/pytorch-my_model";
-//
-//         let result = extract_framework_from_path(path.to_string());
-//
-//         // assert
-//         assert!(result.is_some());
-//         assert_eq!(result.unwrap(), PYTORCH)
-//     }
-//
-//     #[test]
-//     fn successfully_extract_framework_from_path_when_lightgbm_framework() {
-//         let path = "model/directory/lightgbm-my_model";
-//
-//         let result = extract_framework_from_path(path.to_string());
-//
-//         // assert
-//         assert!(result.is_some());
-//         assert_eq!(result.unwrap(), LIGHTGBM)
-//     }
-//
-//     #[test]
-//     fn successfully_extract_framework_from_path_when_catboost_framework() {
-//         let path = "model/directory/catboost-my_model";
-//
-//         let result = extract_framework_from_path(path.to_string());
-//
-//         // assert
-//         assert!(result.is_some());
-//         assert_eq!(result.unwrap(), CATBOOST)
-//     }
-//
-//     #[test]
-//     fn fails_to_extract_framework_from_path_when_unknown_framework() {
-//         let path = "model/directory/fbprophet-my_model";
-//
-//         let result = extract_framework_from_path(path.to_string());
-//
-//         // assert
-//         assert!(result.is_none());
-//     }
-// }
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn successfully_create_model_artefact() {
+        // Setup
+        let model_name = "pytorch-my_awesome_californiahousing_model".to_string(); // notice that model name is exactly the same in path
+        let path =
+            "tests/model_storage/local_model_store/pytorch-my_awesome_californiahousing_model.pt";
+        let framework = PYTORCH;
+        let timestamp = chrono::Utc::now();
+        let predictor = model::torch::Torch::load(path).unwrap();
+
+        // Create
+        let model = Model::new(
+            Arc::new(predictor),
+            model_name.clone(),
+            framework,
+            path.to_string(),
+            timestamp.to_rfc3339(),
+        );
+
+        // Assert
+        assert_eq!(model_name, model.info.name);
+        assert_eq!(path, model.info.path.as_str());
+        assert_eq!(framework, model.info.framework);
+        assert_eq!(timestamp.to_rfc3339(), model.info.last_updated);
+    }
+
+    #[test]
+    fn successfully_load_tensorflow_framework_model() {
+        let path = "tests/model_storage/local_model_store/tensorflow-my_awesome_penguin_model";
+        let framework = TENSORFLOW;
+
+        // Load Model
+        let model = load_predictor(framework, path);
+
+        // Assert
+        assert!(model.is_ok());
+    }
+
+    #[test]
+    fn successfully_load_torch_framework_model() {
+        let path = "tests/model_storage/local_model_store/torch-my_awesome_penguin_model.pt";
+        let framework = TORCH;
+
+        // Load Model
+        let model = load_predictor(framework, path);
+
+        // Assert
+        assert!(model.is_ok());
+    }
+
+    #[test]
+    fn successfully_load_pytorch_framework_model() {
+        let path =
+            "tests/model_storage/local_model_store/pytorch-my_awesome_californiahousing_model.pt";
+        let framework = PYTORCH;
+
+        // Load Model
+        let model = load_predictor(framework, path);
+
+        // Assert
+        assert!(model.is_ok());
+    }
+
+    #[test]
+    fn successfully_load_lightgbm_model() {
+        let path = "tests/model_storage/local_model_store/lightgbm-my_awesome_binary_model_2.txt";
+        let framework = LIGHTGBM;
+
+        // Load Model
+        let model = load_predictor(framework, path);
+
+        // Assert
+        assert!(model.is_ok());
+    }
+
+    #[test]
+    fn successfully_load_catboost_model() {
+        let path = "tests/model_storage/local_model_store/catboost-titanic_model";
+        let framework = CATBOOST;
+
+        // Load Model
+        let model = load_predictor(framework, path);
+
+        // Assert
+        assert!(model.is_ok());
+    }
+
+    #[test]
+    fn successfully_extract_framework_from_path_when_tensorflow_framework() {
+        let path = "model/directory/tensorflow-my_model";
+
+        let result = extract_framework_from_path(path.to_string());
+
+        // assert
+        assert!(result.is_some());
+        assert_eq!(result.unwrap(), TENSORFLOW)
+    }
+
+    #[test]
+    fn successfully_extract_framework_from_path_when_torch_framework() {
+        let path = "model/directory/torch-my_model";
+
+        let result = extract_framework_from_path(path.to_string());
+
+        // assert
+        assert!(result.is_some());
+        assert_eq!(result.unwrap(), TORCH)
+    }
+
+    #[test]
+    fn successfully_extract_framework_from_path_when_pytorch_framework() {
+        let path = "model/directory/pytorch-my_model";
+
+        let result = extract_framework_from_path(path.to_string());
+
+        // assert
+        assert!(result.is_some());
+        assert_eq!(result.unwrap(), PYTORCH)
+    }
+
+    #[test]
+    fn successfully_extract_framework_from_path_when_lightgbm_framework() {
+        let path = "model/directory/lightgbm-my_model";
+
+        let result = extract_framework_from_path(path.to_string());
+
+        // assert
+        assert!(result.is_some());
+        assert_eq!(result.unwrap(), LIGHTGBM)
+    }
+
+    #[test]
+    fn successfully_extract_framework_from_path_when_catboost_framework() {
+        let path = "model/directory/catboost-my_model";
+
+        let result = extract_framework_from_path(path.to_string());
+
+        // assert
+        assert!(result.is_some());
+        assert_eq!(result.unwrap(), CATBOOST)
+    }
+
+    #[test]
+    fn fails_to_extract_framework_from_path_when_unknown_framework() {
+        let path = "model/directory/fbprophet-my_model";
+
+        let result = extract_framework_from_path(path.to_string());
+
+        // assert
+        assert!(result.is_none());
+    }
+}

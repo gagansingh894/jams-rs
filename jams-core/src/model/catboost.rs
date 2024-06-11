@@ -1,5 +1,4 @@
 use crate::model::predictor::{ModelInput, Output, Predictor, Value, Values};
-use anyhow::anyhow;
 
 use catboost_rs;
 use ndarray::Axis;
@@ -148,8 +147,12 @@ impl Catboost {
     ///
     /// Returns an `Err` if loading the Catboost model fails.
     pub fn load(path: &str) -> anyhow::Result<Self> {
-        let model = catboost_rs::Model::load(path)
-            .map_err(|e| anyhow!("Failed to load Catboost model from file {}: {}", path, e))?;
+        let model = match catboost_rs::Model::load(path) {
+            Ok(model) => model,
+            Err(e) => {
+                anyhow::bail!("Failed to load Catboost model from file {}: {}", path, e)
+            }
+        };
         Ok(Catboost { model })
     }
 }
@@ -185,6 +188,15 @@ impl Predictor for Catboost {
 mod tests {
     use super::*;
     use crate::model::test_utils;
+
+    #[test]
+    fn fails_to_load_catboost_model() {
+        let model_dir = "incorrect/path";
+        let model = Catboost::load(model_dir);
+
+        // assert the result is Ok
+        assert!(model.is_err())
+    }
 
     #[test]
     fn successfully_load_catboost_regressor_model() {

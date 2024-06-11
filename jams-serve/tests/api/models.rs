@@ -45,7 +45,7 @@
 //         .json(&serde_json::json!(
 //             {
 //                 "model_name": "my_awesome_penguin_model",
-//                 "model_path": "tests/model_storage/local_model_store/torch-my_awesome_penguin_model.pt"
+//                 "model_path": "tests/local_model_store/pytorch-my_awesome_californiahousing_model.pt"
 //             }
 //         ))
 //         .send()
@@ -75,7 +75,7 @@
 //         .json(&serde_json::json!(
 //             {
 //                 "model_name": "my_awesome_penguin_model",
-//                 "model_path": "tests/model_storage/local_model_store/torch-my_awesome_penguin_model.pt"
+//                 "model_path": "tests/local_model_store/pytorch-my_awesome_californiahousing_model.pt"
 //             }
 //         ))
 //         .send()
@@ -151,7 +151,7 @@
 //         .json(&serde_json::json!(
 //             {
 //                 "model_name": "my_awesome_penguin_model",
-//                 "model_path": "tests/model_storage/local_model_store/torch-my_awesome_penguin_model.pt"
+//                 "model_path": "tests/local_model_store/pytorch-my_awesome_californiahousing_model.pt"
 //             }
 //         ))
 //         .send()

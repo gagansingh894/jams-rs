@@ -135,6 +135,15 @@ mod tests {
     use crate::model::test_utils;
 
     #[test]
+    fn fails_to_load_lightgbm_model() {
+        let model_dir = "incorrect/path";
+        let model = LightGBM::load(model_dir);
+
+        // assert the result is Ok
+        assert!(model.is_err())
+    }
+
+    #[test]
     fn successfully_load_lightgbm_regressor_model() {
         let path = "tests/model_storage/local_model_store/lightgbm-my_awesome_reg_model.txt";
         let model = LightGBM::load(path);

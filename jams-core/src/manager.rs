@@ -140,121 +140,121 @@ impl Manager {
     }
 }
 
-// #[cfg(test)]
-// mod tests {
-//     use super::*;
-//     use crate::model_store::local::LocalModelStore;
-//
-//     #[test]
-//     fn successfully_create_manager_with_local_model_store() {
-//         let model_dir = "./tests/model_storage/local_model_store";
-//         let local_model_store = LocalModelStore::new(model_dir.to_string()).unwrap();
-//         let manager = Manager::new(Arc::new(local_model_store));
-//
-//         // assert
-//         assert!(manager.is_ok());
-//     }
-//
-//     #[test]
-//     fn successfully_make_predictions_via_manager_with_local_model_store() {
-//         let model_dir = "tests/model_storage/local_model_store";
-//         let local_model_store = LocalModelStore::new(model_dir.to_string()).unwrap();
-//         let manager = Manager::new(Arc::new(local_model_store)).unwrap();
-//
-//         // dummy input
-//         let input = "{\"pclass\":[\"1\",\"3\",\"3\",\"3\",\"3\",\"3\",\"3\",\"3\",\"3\",\"1\"],\"sex\":[\"female\",\"female\",\"male\",\"female\",\"male\",\"female\",\"male\",\"male\",\"male\",\"male\"],\"age\":[22.0,23.79929292929293,32.0,23.79929292929293,14.0,2.0,22.0,28.0,23.79929292929293,23.79929292929293],\"sibsp\":[\"0\",\"1\",\"0\",\"8\",\"5\",\"4\",\"0\",\"0\",\"0\",\"0\"],\"parch\":[\"0\",\"0\",\"0\",\"2\",\"2\",\"2\",\"0\",\"0\",\"0\",\"0\"],\"fare\":[151.55,14.4542,7.925,69.55,46.9,31.275,7.8958,7.8958,7.8958,35.5],\"embarked\":[\"S\",\"C\",\"S\",\"S\",\"S\",\"S\",\"S\",\"S\",\"S\",\"S\"],\"class\":[\"First\",\"Third\",\"Third\",\"Third\",\"Third\",\"Third\",\"Third\",\"Third\",\"Third\",\"First\"],\"who\":[\"woman\",\"woman\",\"man\",\"woman\",\"child\",\"child\",\"man\",\"man\",\"man\",\"man\"],\"adult_male\":[\"True\",\"False\",\"True\",\"False\",\"False\",\"False\",\"True\",\"True\",\"True\",\"True\"],\"deck\":[\"Unknown\",\"Unknown\",\"Unknown\",\"Unknown\",\"Unknown\",\"Unknown\",\"Unknown\",\"Unknown\",\"Unknown\",\"C\"],\"embark_town\":[\"Southampton\",\"Cherbourg\",\"Southampton\",\"Southampton\",\"Southampton\",\"Southampton\",\"Southampton\",\"Southampton\",\"Southampton\",\"Southampton\"],\"alone\":[\"True\",\"False\",\"True\",\"False\",\"False\",\"False\",\"True\",\"True\",\"True\",\"True\"]}";
-//         let model_name: ModelName = "titanic_model".to_string(); // catboost model
-//
-//         // assert
-//         let prediction = manager.predict(model_name, input);
-//         assert!(prediction.is_ok());
-//     }
-//
-//     #[test]
-//     #[should_panic]
-//     // todo: check if we can exit gracefully
-//     fn fail_to_make_predictions_via_manager_with_local_model_store_when_input_shape_is_wrong() {
-//         let model_dir = "tests/model_storage/local_model_store";
-//         let local_model_store = LocalModelStore::new(model_dir.to_string()).unwrap();
-//         let manager = Manager::new(Arc::new(local_model_store)).unwrap();
-//
-//         // dummy input
-//         let input = "{\"pclass\":[\"3\",\"3\",\"3\",\"3\",\"3\",\"3\",\"3\",\"3\",\"1\"],\"sex\":[\"female\",\"female\",\"male\",\"female\",\"male\",\"female\",\"male\",\"male\",\"male\",\"male\"],\"age\":[22.0,23.79929292929293,32.0,23.79929292929293,14.0,2.0,22.0,28.0,23.79929292929293,23.79929292929293],\"sibsp\":[\"0\",\"1\",\"0\",\"8\",\"5\",\"4\",\"0\",\"0\",\"0\",\"0\"],\"parch\":[\"0\",\"0\",\"0\",\"2\",\"2\",\"2\",\"0\",\"0\",\"0\",\"0\"],\"fare\":[151.55,14.4542,7.925,69.55,46.9,31.275,7.8958,7.8958,7.8958,35.5],\"embarked\":[\"S\",\"C\",\"S\",\"S\",\"S\",\"S\",\"S\",\"S\",\"S\",\"S\"],\"class\":[\"First\",\"Third\",\"Third\",\"Third\",\"Third\",\"Third\",\"Third\",\"Third\",\"Third\",\"First\"],\"who\":[\"woman\",\"woman\",\"man\",\"woman\",\"child\",\"child\",\"man\",\"man\",\"man\",\"man\"],\"adult_male\":[\"True\",\"False\",\"True\",\"False\",\"False\",\"False\",\"True\",\"True\",\"True\",\"True\"],\"deck\":[\"Unknown\",\"Unknown\",\"Unknown\",\"Unknown\",\"Unknown\",\"Unknown\",\"Unknown\",\"Unknown\",\"Unknown\",\"C\"],\"embark_town\":[\"Southampton\",\"Cherbourg\",\"Southampton\",\"Southampton\",\"Southampton\",\"Southampton\",\"Southampton\",\"Southampton\",\"Southampton\",\"Southampton\"],\"alone\":[\"True\",\"False\",\"True\",\"False\",\"False\",\"False\",\"True\",\"True\",\"True\",\"True\"]}";
-//         let model_name: ModelName = "titanic_model".to_string(); // catboost model
-//
-//         // assert
-//         let prediction = manager.predict(model_name, input);
-//         assert!(prediction.is_err());
-//     }
-//
-//     #[test]
-//     fn successfully_get_models_via_manager_with_local_model_store() {
-//         let model_dir = "tests/model_storage/local_model_store";
-//         let local_model_store = LocalModelStore::new(model_dir.to_string()).unwrap();
-//         let manager = Manager::new(Arc::new(local_model_store)).unwrap();
-//
-//         // models
-//         let models = manager.get_models();
-//
-//         // assert
-//         assert!(models.is_ok());
-//         assert_ne!(manager.get_models().unwrap().len(), 0);
-//     }
-//
-//     #[test]
-//     fn successfully_add_model_via_manager_with_local_model_store() {
-//         let model_dir = "tests/model_storage/local_model_store";
-//         let local_model_store = LocalModelStore::new(model_dir.to_string()).unwrap();
-//         let manager = Manager::new(Arc::new(local_model_store)).unwrap();
-//         let model_name: ModelName = "my_awesome_penguin_model".to_string();
-//         let model_path =
-//             "tests/model_storage/local_model_store/tensorflow-my_awesome_penguin_model";
-//
-//         // delete a model to add it back
-//         let num_model_before_deletion = manager.get_models().unwrap().len();
-//         manager.delete_model(model_name.clone()).unwrap();
-//
-//         // add model
-//         let add = manager.add_model(model_name, model_path);
-//
-//         // assert
-//         assert!(add.is_ok());
-//         assert_eq!(
-//             num_model_before_deletion,
-//             manager.get_models().unwrap().len()
-//         );
-//     }
-//
-//     #[test]
-//     fn successfully_update_model_via_manager_with_local_model_store() {
-//         let model_dir = "tests/model_storage/local_model_store";
-//         let local_model_store = LocalModelStore::new(model_dir.to_string()).unwrap();
-//         let manager = Manager::new(Arc::new(local_model_store)).unwrap();
-//         let model_name: ModelName = "my_awesome_penguin_model".to_string();
-//
-//         // update model
-//         let update = manager.update_model(model_name);
-//
-//         // assert
-//         assert!(update.is_ok())
-//     }
-//
-//     #[test]
-//     fn successfully_delete_model_via_manager_with_local_model_store() {
-//         let model_dir = "tests/model_storage/local_model_store";
-//         let local_model_store = LocalModelStore::new(model_dir.to_string()).unwrap();
-//         let manager = Manager::new(Arc::new(local_model_store)).unwrap();
-//         let model_name: ModelName = "my_awesome_penguin_model".to_string();
-//
-//         // delete model
-//         let num_model_before_deletion = manager.get_models().unwrap().len();
-//         let delete = manager.delete_model(model_name);
-//
-//         // assert
-//         assert!(delete.is_ok());
-//         assert_eq!(
-//             num_model_before_deletion - manager.get_models().unwrap().len(),
-//             1
-//         )
-//     }
-// }
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::model_store::local::LocalModelStore;
+
+    #[test]
+    fn successfully_create_manager_with_local_model_store() {
+        let model_dir = "./tests/model_storage/local_model_store";
+        let local_model_store = LocalModelStore::new(model_dir.to_string()).unwrap();
+        let manager = Manager::new(Arc::new(local_model_store));
+
+        // assert
+        assert!(manager.is_ok());
+    }
+
+    #[test]
+    fn successfully_make_predictions_via_manager_with_local_model_store() {
+        let model_dir = "tests/model_storage/local_model_store";
+        let local_model_store = LocalModelStore::new(model_dir.to_string()).unwrap();
+        let manager = Manager::new(Arc::new(local_model_store)).unwrap();
+
+        // dummy input
+        let input = "{\"pclass\":[\"1\",\"3\",\"3\",\"3\",\"3\",\"3\",\"3\",\"3\",\"3\",\"1\"],\"sex\":[\"female\",\"female\",\"male\",\"female\",\"male\",\"female\",\"male\",\"male\",\"male\",\"male\"],\"age\":[22.0,23.79929292929293,32.0,23.79929292929293,14.0,2.0,22.0,28.0,23.79929292929293,23.79929292929293],\"sibsp\":[\"0\",\"1\",\"0\",\"8\",\"5\",\"4\",\"0\",\"0\",\"0\",\"0\"],\"parch\":[\"0\",\"0\",\"0\",\"2\",\"2\",\"2\",\"0\",\"0\",\"0\",\"0\"],\"fare\":[151.55,14.4542,7.925,69.55,46.9,31.275,7.8958,7.8958,7.8958,35.5],\"embarked\":[\"S\",\"C\",\"S\",\"S\",\"S\",\"S\",\"S\",\"S\",\"S\",\"S\"],\"class\":[\"First\",\"Third\",\"Third\",\"Third\",\"Third\",\"Third\",\"Third\",\"Third\",\"Third\",\"First\"],\"who\":[\"woman\",\"woman\",\"man\",\"woman\",\"child\",\"child\",\"man\",\"man\",\"man\",\"man\"],\"adult_male\":[\"True\",\"False\",\"True\",\"False\",\"False\",\"False\",\"True\",\"True\",\"True\",\"True\"],\"deck\":[\"Unknown\",\"Unknown\",\"Unknown\",\"Unknown\",\"Unknown\",\"Unknown\",\"Unknown\",\"Unknown\",\"Unknown\",\"C\"],\"embark_town\":[\"Southampton\",\"Cherbourg\",\"Southampton\",\"Southampton\",\"Southampton\",\"Southampton\",\"Southampton\",\"Southampton\",\"Southampton\",\"Southampton\"],\"alone\":[\"True\",\"False\",\"True\",\"False\",\"False\",\"False\",\"True\",\"True\",\"True\",\"True\"]}";
+        let model_name: ModelName = "titanic_model".to_string(); // catboost model
+
+        // assert
+        let prediction = manager.predict(model_name, input);
+        assert!(prediction.is_ok());
+    }
+
+    #[test]
+    #[should_panic]
+    // todo: check if we can exit gracefully
+    fn fail_to_make_predictions_via_manager_with_local_model_store_when_input_shape_is_wrong() {
+        let model_dir = "tests/model_storage/local_model_store";
+        let local_model_store = LocalModelStore::new(model_dir.to_string()).unwrap();
+        let manager = Manager::new(Arc::new(local_model_store)).unwrap();
+
+        // dummy input
+        let input = "{\"pclass\":[\"3\",\"3\",\"3\",\"3\",\"3\",\"3\",\"3\",\"3\",\"1\"],\"sex\":[\"female\",\"female\",\"male\",\"female\",\"male\",\"female\",\"male\",\"male\",\"male\",\"male\"],\"age\":[22.0,23.79929292929293,32.0,23.79929292929293,14.0,2.0,22.0,28.0,23.79929292929293,23.79929292929293],\"sibsp\":[\"0\",\"1\",\"0\",\"8\",\"5\",\"4\",\"0\",\"0\",\"0\",\"0\"],\"parch\":[\"0\",\"0\",\"0\",\"2\",\"2\",\"2\",\"0\",\"0\",\"0\",\"0\"],\"fare\":[151.55,14.4542,7.925,69.55,46.9,31.275,7.8958,7.8958,7.8958,35.5],\"embarked\":[\"S\",\"C\",\"S\",\"S\",\"S\",\"S\",\"S\",\"S\",\"S\",\"S\"],\"class\":[\"First\",\"Third\",\"Third\",\"Third\",\"Third\",\"Third\",\"Third\",\"Third\",\"Third\",\"First\"],\"who\":[\"woman\",\"woman\",\"man\",\"woman\",\"child\",\"child\",\"man\",\"man\",\"man\",\"man\"],\"adult_male\":[\"True\",\"False\",\"True\",\"False\",\"False\",\"False\",\"True\",\"True\",\"True\",\"True\"],\"deck\":[\"Unknown\",\"Unknown\",\"Unknown\",\"Unknown\",\"Unknown\",\"Unknown\",\"Unknown\",\"Unknown\",\"Unknown\",\"C\"],\"embark_town\":[\"Southampton\",\"Cherbourg\",\"Southampton\",\"Southampton\",\"Southampton\",\"Southampton\",\"Southampton\",\"Southampton\",\"Southampton\",\"Southampton\"],\"alone\":[\"True\",\"False\",\"True\",\"False\",\"False\",\"False\",\"True\",\"True\",\"True\",\"True\"]}";
+        let model_name: ModelName = "titanic_model".to_string(); // catboost model
+
+        // assert
+        let prediction = manager.predict(model_name, input);
+        assert!(prediction.is_err());
+    }
+
+    #[test]
+    fn successfully_get_models_via_manager_with_local_model_store() {
+        let model_dir = "tests/model_storage/local_model_store";
+        let local_model_store = LocalModelStore::new(model_dir.to_string()).unwrap();
+        let manager = Manager::new(Arc::new(local_model_store)).unwrap();
+
+        // models
+        let models = manager.get_models();
+
+        // assert
+        assert!(models.is_ok());
+        assert_ne!(manager.get_models().unwrap().len(), 0);
+    }
+
+    #[test]
+    fn successfully_add_model_via_manager_with_local_model_store() {
+        let model_dir = "tests/model_storage/local_model_store";
+        let local_model_store = LocalModelStore::new(model_dir.to_string()).unwrap();
+        let manager = Manager::new(Arc::new(local_model_store)).unwrap();
+        let model_name: ModelName = "my_awesome_penguin_model".to_string();
+        let model_path =
+            "tests/model_storage/local_model_store/tensorflow-my_awesome_penguin_model";
+
+        // delete a model to add it back
+        let num_model_before_deletion = manager.get_models().unwrap().len();
+        manager.delete_model(model_name.clone()).unwrap();
+
+        // add model
+        let add = manager.add_model(model_name, model_path);
+
+        // assert
+        assert!(add.is_ok());
+        assert_eq!(
+            num_model_before_deletion,
+            manager.get_models().unwrap().len()
+        );
+    }
+
+    #[test]
+    fn successfully_update_model_via_manager_with_local_model_store() {
+        let model_dir = "tests/model_storage/local_model_store";
+        let local_model_store = LocalModelStore::new(model_dir.to_string()).unwrap();
+        let manager = Manager::new(Arc::new(local_model_store)).unwrap();
+        let model_name: ModelName = "my_awesome_penguin_model".to_string();
+
+        // update model
+        let update = manager.update_model(model_name);
+
+        // assert
+        assert!(update.is_ok())
+    }
+
+    #[test]
+    fn successfully_delete_model_via_manager_with_local_model_store() {
+        let model_dir = "tests/model_storage/local_model_store";
+        let local_model_store = LocalModelStore::new(model_dir.to_string()).unwrap();
+        let manager = Manager::new(Arc::new(local_model_store)).unwrap();
+        let model_name: ModelName = "my_awesome_penguin_model".to_string();
+
+        // delete model
+        let num_model_before_deletion = manager.get_models().unwrap().len();
+        let delete = manager.delete_model(model_name);
+
+        // assert
+        assert!(delete.is_ok());
+        assert_eq!(
+            num_model_before_deletion - manager.get_models().unwrap().len(),
+            1
+        )
+    }
+}
