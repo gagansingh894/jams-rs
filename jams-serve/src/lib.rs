@@ -69,7 +69,15 @@ pub async fn start_server(config: HTTPConfig) -> anyhow::Result<()> {
     let use_debug_level = config.use_debug_level.unwrap_or(false);
     let num_workers = config.num_workers.unwrap_or(2);
 
-    let app = match build_router(model_dir, use_debug_level, num_workers) {
+    // initialize tracing
+    let mut log_level = tracing::Level::INFO;
+    if use_debug_level {
+        log_level = tracing::Level::TRACE
+    }
+
+    tracing_subscriber::fmt().with_max_level(log_level).init();
+
+    let app = match build_router(model_dir, num_workers) {
         Ok(app) => app,
         Err(_) => {
             anyhow::bail!("Failed to build the router ❌");
