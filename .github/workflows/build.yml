@@ -9,24 +9,29 @@ on:
 env:
   CARGO_TERM_COLOR: always
 
+
 jobs:
   build:
     name: Build and Publish
     runs-on: ubuntu-latest
 
-    container:
-      image: rust:1.78
-      options: --user root
-      env:
-        LIGHTGBM_LIB_DIR: /usr/local/lib
-        LIBTORCH: /usr/local/lib/libtorch
-        LIBTORCH_INCLUDE: /usr/local/lib/libtorch
-        LIBTORCH_LIB: /usr/local/lib/libtorch
-        LD_LIBRARY_PATH: /usr/local/lib/libtorch/lib:/usr/local/lib
+    env:
+      LIGHTGBM_LIB_DIR: /usr/local/lib
+      LIBTORCH: /usr/local/lib/libtorch
+      LIBTORCH_INCLUDE: /usr/local/lib/libtorch
+      LIBTORCH_LIB: /usr/local/lib/libtorch
+      LD_LIBRARY_PATH: /usr/local/lib/libtorch/lib:/usr/local/lib
 
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+
+      - name: Install Rust
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+          profile: minimal
+          override: true
 
       - name: Setup Environment
         run: bash build/setup_environment_linux_x86_64.sh
@@ -42,7 +47,7 @@ jobs:
 
 #      - name: Generate code coverage
 #        run: cargo llvm-cov --all-features --workspace --lcov --output-path lcov.info
-#
+
 #      - name: Upload coverage to Codecov
 #        uses: codecov/codecov-action@v4
 #        with:
