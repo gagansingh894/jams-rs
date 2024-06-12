@@ -19,6 +19,10 @@ pub struct AppState {
 }
 
 pub fn build_router(model_dir: String, worker_pool_threads: usize) -> anyhow::Result<Router> {
+    if worker_pool_threads < 1 {
+        anyhow::bail!("At least 1 worker is required for rayon threadpool")
+    }
+
     // setup rayon thread pool for cpu intensive task
     let cpu_pool = ThreadPoolBuilder::new()
         .num_threads(worker_pool_threads)
@@ -78,5 +82,50 @@ pub async fn shutdown_signal() {
     tokio::select! {
         _ = ctrl_c => {},
         _ = terminate => {},
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::server::build_router;
+
+    #[test]
+    fn successfully_build_router() {
+        // Arrange
+        let work_dir = "".to_string();
+        let worker_pool_threads = 1;
+
+        // Act
+        let router = build_router(work_dir, worker_pool_threads);
+
+        // Assert
+        assert!(router.is_ok())
+    }
+
+    #[test]
+    fn failed_to_build_router_due_to_zero_worker_in_rayon_threadpool() {
+        // Arrange
+        let work_dir = "".to_string();
+        let worker_pool_threads = 0;
+
+        // Act
+        let router = build_router(work_dir, worker_pool_threads);
+
+        // Assert
+        assert!(router.is_err())
+    }
+
+    #[test]
+    #[should_panic("Failed to initialize manager ❌: Failed to initialize manager ❌ - Failed to fetch models - Failed to read dir: No such file or directory")]
+    fn failed_to_build_router_because_manager_is_unable_to_initialize() {
+        // Arrange
+        let work_dir = "incorrect/or/invalid/path/".to_string();
+        let worker_pool_threads = 1;
+
+        // Act
+        let router = build_router(work_dir, worker_pool_threads);
+
+        // Assert
+        assert!(router.is_err())
     }
 }

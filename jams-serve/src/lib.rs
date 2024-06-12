@@ -69,13 +69,11 @@ pub async fn start_server(config: HTTPConfig) -> anyhow::Result<()> {
     let use_debug_level = config.use_debug_level.unwrap_or(false);
     let num_workers = config.num_workers.unwrap_or(2);
 
-    // initialize tracing
+    // set log level
     let mut log_level = tracing::Level::INFO;
     if use_debug_level {
         log_level = tracing::Level::TRACE
     }
-
-    tracing_subscriber::fmt().with_max_level(log_level).init();
 
     let app = match build_router(model_dir, num_workers) {
         Ok(app) => app,
@@ -90,6 +88,9 @@ pub async fn start_server(config: HTTPConfig) -> anyhow::Result<()> {
         .await
         .expect("Failed to create TCP listener ❌");
 
+    // initialize tracing
+    tracing_subscriber::fmt().with_max_level(log_level).init();
+
     // log that the server is running
     tracing::info!(
         "{}",
@@ -102,4 +103,44 @@ pub async fn start_server(config: HTTPConfig) -> anyhow::Result<()> {
         .await?;
 
     Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::{HTTPConfig, start_server};
+
+    #[tokio::test]
+    async fn successfully_starts_the_server() {
+        // Arrange
+        let config = HTTPConfig {
+            model_dir: Some("".to_string()),
+            port: Some(15000),
+            use_debug_level: Some(false),
+            num_workers: Some(1),
+        };
+
+        // Act
+        tokio::spawn(async move {
+            start_server(config).await.unwrap();
+        } );
+
+        // The test will fail if the server fails to start
+    }
+
+    #[tokio::test]
+    // #[should_panic]
+    async fn server_fails_to_start_due_to_zero_workers_in_worker_pool() {
+        // Arrange
+        let config = HTTPConfig {
+            model_dir: Some("".to_string()),
+            port: Some(15000),
+            use_debug_level: Some(false),
+            num_workers: Some(0),
+        };
+
+        // Act
+        tokio::spawn(async move {
+            start_server(config).await.unwrap();
+        } );
+    }
 }
