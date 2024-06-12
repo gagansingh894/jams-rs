@@ -1,4 +1,4 @@
-use crate::server::AppState;
+use crate::http::router::AppState;
 use axum::extract::{Query, State};
 use axum::http::StatusCode;
 use axum::Json;

@@ -1,5 +1,5 @@
 use axum::Router;
-use jams_serve::server::build_router;
+use jams_serve::http::router::build_router;
 
 pub fn test_router() -> Router {
     // we will not set a model for testing purpose

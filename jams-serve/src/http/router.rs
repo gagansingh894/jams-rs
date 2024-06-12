@@ -1,4 +1,4 @@
-use crate::service::{
+use crate::http::service::{
     add_model, delete_model, get_models, healthcheck, predict, root, update_model,
 };
 use axum::routing::{delete, get, post, put};
@@ -87,7 +87,7 @@ pub async fn shutdown_signal() {
 
 #[cfg(test)]
 mod tests {
-    use crate::server::build_router;
+    use crate::http::router::build_router;
 
     #[test]
     fn successfully_build_router() {
