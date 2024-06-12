@@ -29,14 +29,14 @@ J.A.M.S - Just Another Model Server
 
     match cli.cmd {
         Commands::Start(args) => {
-            let config = jams_serve::HTTPConfig {
+            let config = jams_serve::http::server::HTTPConfig {
                 model_dir: args.model_dir,
                 port: args.port,
                 use_debug_level: args.use_debug_level,
                 num_workers: args.num_workers,
             };
 
-            jams_serve::start_server(config)
+            jams_serve::http::server::start(config)
                 .await
                 .expect("Failed to start server ❌ \n");
 
