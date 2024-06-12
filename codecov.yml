@@ -1,2 +1,0 @@
-ignore:
-  - "jams" # as this only contains the cli application. The underlying components are tested in their individual crates.
