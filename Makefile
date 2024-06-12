@@ -22,8 +22,8 @@ lint:
 	cargo clippy --all-targets --all-features -- -D warnings
 
 test:
-	@echo "Testing all projects with cargo"
-	cargo test
+	@echo "Testing all projects with cargo nextest"
+	cargo nextest run
 
 check-gpu-linux:
 	sudo lshw -C display

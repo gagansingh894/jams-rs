@@ -34,6 +34,9 @@ jobs:
       - name: Lint
         run: make lint
 
+      - name: Install cargo-nextest
+        run: cargo install cargo-nextest
+
       - name: Run tests
         run: make test
 
