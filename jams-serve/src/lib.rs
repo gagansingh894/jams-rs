@@ -107,7 +107,7 @@ pub async fn start_server(config: HTTPConfig) -> anyhow::Result<()> {
 
 #[cfg(test)]
 mod tests {
-    use crate::{HTTPConfig, start_server};
+    use crate::{start_server, HTTPConfig};
 
     #[tokio::test]
     async fn successfully_starts_the_server() {
@@ -122,7 +122,7 @@ mod tests {
         // Act
         tokio::spawn(async move {
             start_server(config).await.unwrap();
-        } );
+        });
 
         // The test will fail if the server fails to start
     }
@@ -141,6 +141,6 @@ mod tests {
         // Act
         tokio::spawn(async move {
             start_server(config).await.unwrap();
-        } );
+        });
     }
 }

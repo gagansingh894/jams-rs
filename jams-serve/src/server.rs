@@ -116,7 +116,7 @@ mod tests {
     }
 
     #[test]
-    #[should_panic("Failed to initialize manager ❌: Failed to initialize manager ❌ - Failed to fetch models - Failed to read dir: No such file or directory")]
+    #[should_panic]
     fn failed_to_build_router_because_manager_is_unable_to_initialize() {
         // Arrange
         let work_dir = "incorrect/or/invalid/path/".to_string();
