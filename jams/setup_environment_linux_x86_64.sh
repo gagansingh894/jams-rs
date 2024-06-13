@@ -85,6 +85,14 @@ install_nodejs() {
     rm -rf /var/lib/apt/lists/*
 }
 
+# Function to install protoc
+install_protoc() {
+    echo "Installing protoc..."
+    apt-get update
+    apt-get install -y protobuf-compiler
+    rm -rf /var/lib/apt/lists/*
+}
+
 # Main script execution
 install_dependencies
 install_nodejs
@@ -95,6 +103,7 @@ download_lightgbm
 download_catboost
 download_libtorch
 download_tensorflow
+install_protoc
 
 # add environment variables
 # user might need to run these manually or add them to shell profile(.bashrc, .zshrc)
