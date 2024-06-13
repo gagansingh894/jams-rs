@@ -1,7 +1,6 @@
+use jams_core::manager::Manager;
 use std::sync::Arc;
 use tokio::sync::oneshot::Sender;
-use jams_core::manager::Manager;
-use crate::http::service::PredictRequest;
 
 /// Asynchronously predicts an outcome using a shared manager and sends the result or error
 /// message through a channel.

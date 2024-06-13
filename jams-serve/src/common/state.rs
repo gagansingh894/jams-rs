@@ -1,6 +1,6 @@
-use std::sync::Arc;
-use rayon::ThreadPool;
 use jams_core::manager::Manager;
+use rayon::ThreadPool;
+use std::sync::Arc;
 
 /// AppState struct holds application state.
 pub struct AppState {
