@@ -1173,6 +1173,7 @@ dependencies = [
  "jams-core",
  "log",
  "prost",
+ "prost-types",
  "rayon",
  "reqwest",
  "serde",
