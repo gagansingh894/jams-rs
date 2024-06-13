@@ -1,12 +1,12 @@
+use crate::common::state::AppState;
 use crate::http::service::{
     add_model, delete_model, get_models, healthcheck, predict, root, update_model,
 };
-use crate::common::state::AppState;
 use axum::routing::{delete, get, post, put};
 use axum::Router;
 use jams_core::manager::Manager;
 use jams_core::model_store::local::LocalModelStore;
-use rayon::{ThreadPool, ThreadPoolBuilder};
+use rayon::ThreadPoolBuilder;
 use std::sync::Arc;
 use tokio::signal;
 use tower_http::trace::TraceLayer;
@@ -53,29 +53,6 @@ pub fn build_router(model_dir: String, worker_pool_threads: usize) -> anyhow::Re
         .nest("/api", api_routes)
         .with_state(shared_state)
         .layer(TraceLayer::new_for_http()))
-}
-
-pub async fn shutdown_signal() {
-    let ctrl_c = async {
-        signal::ctrl_c()
-            .await
-            .expect("Failed to install Ctrl+C handler");
-    };
-
-    #[cfg(unix)]
-    let terminate = async {
-        signal::unix::signal(signal::unix::SignalKind::terminate())
-            .expect("Failed to install signal handler")
-            .recv()
-            .await;
-    };
-
-    #[cfg(not(unix))]
-    let terminate = std::future::pending::<()>();
-    tokio::select! {
-        _ = ctrl_c => {},
-        _ = terminate => {},
-    }
 }
 
 #[cfg(test)]

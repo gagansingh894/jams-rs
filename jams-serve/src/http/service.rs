@@ -3,12 +3,10 @@ use crate::common::worker;
 use axum::extract::{Query, State};
 use axum::http::StatusCode;
 use axum::Json;
-use jams_core::manager::Manager;
 use jams_core::model_store::storage::Metadata;
 use serde::{Deserialize, Serialize};
 use std::sync::Arc;
 use tokio::sync::oneshot;
-use tokio::sync::oneshot::Sender;
 
 #[derive(Deserialize)]
 pub struct AddModelRequest {
@@ -80,7 +78,6 @@ pub struct PredictRequest {
 /// ```
 #[derive(Deserialize, Serialize)]
 pub struct PredictResponse {
-    error: String,
     output: String,
 }
 
@@ -236,7 +233,7 @@ pub async fn get_models(
 ///
 /// // Example response for error:
 /// // StatusCode: 500 INTERNAL SERVER ERROR
-/// // Body: {"error": "error_message", "output": ""}
+/// // Body: {"output": ""}
 pub async fn predict(
     State(app_state): State<Arc<AppState>>,
     Json(payload): Json<PredictRequest>,
@@ -252,28 +249,17 @@ pub async fn predict(
 
     match rx.await {
         Ok(predictions) => match predictions {
-            Ok(output) => {
-                let error_msg = "".to_string();
-                (
-                    StatusCode::OK,
-                    Json(PredictResponse {
-                        error: error_msg,
-                        output,
-                    }),
-                )
-            }
-            Err(e) => (
+            Ok(output) => (StatusCode::OK, Json(PredictResponse { output })),
+            Err(_) => (
                 StatusCode::INTERNAL_SERVER_ERROR,
                 Json(PredictResponse {
-                    error: format!("Failed to make predictions: {}", e),
                     output: "".to_string(),
                 }),
             ),
         },
-        Err(e) => (
+        Err(_) => (
             StatusCode::INTERNAL_SERVER_ERROR,
             Json(PredictResponse {
-                error: format!("Failed to make predictions: {}", e),
                 output: "".to_string(),
             }),
         ),

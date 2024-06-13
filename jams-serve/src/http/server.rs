@@ -1,4 +1,5 @@
-use crate::http::router::{build_router, shutdown_signal};
+use crate::common::shutdown::shutdown_signal;
+use crate::http::router::build_router;
 use std::env;
 
 /// Configuration for the HTTP server.
