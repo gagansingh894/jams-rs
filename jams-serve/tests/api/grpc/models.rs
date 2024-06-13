@@ -1,16 +1,19 @@
+use tokio::net::TcpListener;
+use tonic::codegen::tokio_stream::wrappers::TcpListenerStream;
 use crate::grpc::helper::{grpc_client_stub, jams_grpc_test_router};
 use jams_serve::grpc::service::jams_v1::{AddModelRequest, DeleteModelRequest, UpdateModelRequest};
 
 #[tokio::test]
 async fn successfully_calls_the_get_models_rpc() {
     // Arrange
-    let addr = "0.0.0.0:0".parse().unwrap();
+    let listener = TcpListener::bind("0.0.0.0:0").await.unwrap();
+    let addr = listener.local_addr().unwrap();
     let test_server = jams_grpc_test_router();
 
     tokio::spawn(async move {
-        test_server.serve(addr).await.unwrap();
+        test_server
+            .serve_with_incoming(TcpListenerStream::new(listener)).await.unwrap();
     });
-
     let mut client = grpc_client_stub(addr.to_string()).await;
 
     // Act
@@ -23,13 +26,14 @@ async fn successfully_calls_the_get_models_rpc() {
 #[tokio::test]
 async fn successfully_calls_the_add_model_rpc() {
     // Arrange
-    let addr = "0.0.0.0:0".parse().unwrap();
+    let listener = TcpListener::bind("0.0.0.0:0").await.unwrap();
+    let addr = listener.local_addr().unwrap();
     let test_server = jams_grpc_test_router();
 
     tokio::spawn(async move {
-        test_server.serve(addr).await.unwrap();
+        test_server
+            .serve_with_incoming(TcpListenerStream::new(listener)).await.unwrap();
     });
-
     let mut client = grpc_client_stub(addr.to_string()).await;
 
     // Act
@@ -48,13 +52,14 @@ async fn successfully_calls_the_add_model_rpc() {
 #[tokio::test]
 async fn successfully_calls_the_update_model_rpc() {
     // Arrange
-    let addr = "0.0.0.0:0".parse().unwrap();
+    let listener = TcpListener::bind("0.0.0.0:0").await.unwrap();
+    let addr = listener.local_addr().unwrap();
     let test_server = jams_grpc_test_router();
 
     tokio::spawn(async move {
-        test_server.serve(addr).await.unwrap();
+        test_server
+            .serve_with_incoming(TcpListenerStream::new(listener)).await.unwrap();
     });
-
     let mut client = grpc_client_stub(addr.to_string()).await;
 
     // Act - 1: Add model first
@@ -81,13 +86,14 @@ async fn successfully_calls_the_update_model_rpc() {
 #[tokio::test]
 async fn fails_to_call_the_update_model_rpc_when_model_name_is_wrong() {
     // Arrange
-    let addr = "0.0.0.0:0".parse().unwrap();
+    let listener = TcpListener::bind("0.0.0.0:0").await.unwrap();
+    let addr = listener.local_addr().unwrap();
     let test_server = jams_grpc_test_router();
 
     tokio::spawn(async move {
-        test_server.serve(addr).await.unwrap();
+        test_server
+            .serve_with_incoming(TcpListenerStream::new(listener)).await.unwrap();
     });
-
     let mut client = grpc_client_stub(addr.to_string()).await;
 
     // Act - 1: Add model first
@@ -108,19 +114,20 @@ async fn fails_to_call_the_update_model_rpc_when_model_name_is_wrong() {
         .await;
 
     // Assert
-    assert!(response.is_ok());
+    assert!(response.is_err());
 }
 
 #[tokio::test]
 async fn successfully_calls_the_delete_model_rpc() {
     // Arrange
-    let addr = "0.0.0.0:0".parse().unwrap();
+    let listener = TcpListener::bind("0.0.0.0:0").await.unwrap();
+    let addr = listener.local_addr().unwrap();
     let test_server = jams_grpc_test_router();
 
     tokio::spawn(async move {
-        test_server.serve(addr).await.unwrap();
+        test_server
+            .serve_with_incoming(TcpListenerStream::new(listener)).await.unwrap();
     });
-
     let mut client = grpc_client_stub(addr.to_string()).await;
 
     // Act: Add model first
