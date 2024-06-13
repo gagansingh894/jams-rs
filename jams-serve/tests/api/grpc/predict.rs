@@ -1,7 +1,7 @@
-use tokio::net::TcpListener;
-use tonic::codegen::tokio_stream::wrappers::TcpListenerStream;
 use crate::grpc::helper::{grpc_client_stub, jams_grpc_test_router};
 use jams_serve::grpc::service::jams_v1::{AddModelRequest, PredictRequest};
+use tokio::net::TcpListener;
+use tonic::codegen::tokio_stream::wrappers::TcpListenerStream;
 
 #[tokio::test]
 async fn successfully_calls_the_predict_rpc() {
@@ -12,7 +12,9 @@ async fn successfully_calls_the_predict_rpc() {
 
     tokio::spawn(async move {
         test_server
-            .serve_with_incoming(TcpListenerStream::new(listener)).await.unwrap();
+            .serve_with_incoming(TcpListenerStream::new(listener))
+            .await
+            .unwrap();
     });
     let mut client = grpc_client_stub(addr.to_string()).await;
 

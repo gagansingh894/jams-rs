@@ -3,7 +3,7 @@ use crate::grpc::service::jams_v1::model_server_server::ModelServerServer;
 use crate::grpc::service::JamsService;
 use std::env;
 use tonic::codegen::tokio_stream::wrappers::TcpListenerStream;
-use tonic::transport::{Server};
+use tonic::transport::Server;
 
 /// Configuration for the gRPC server.
 ///
@@ -88,7 +88,6 @@ pub async fn start(config: GRPCConfig) -> anyhow::Result<()> {
     let listener = tokio::net::TcpListener::bind(address)
         .await
         .expect("Failed to create TCP listener ❌");
-
 
     // log that the server is running
     tracing::info!(

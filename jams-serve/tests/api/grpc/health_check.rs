@@ -1,6 +1,6 @@
+use crate::grpc::helper::{grpc_client_stub, jams_grpc_test_router};
 use tokio::net::TcpListener;
 use tonic::codegen::tokio_stream::wrappers::TcpListenerStream;
-use crate::grpc::helper::{grpc_client_stub, jams_grpc_test_router};
 
 #[tokio::test]
 async fn successfully_calls_the_health_check_rpc() {
@@ -11,7 +11,9 @@ async fn successfully_calls_the_health_check_rpc() {
 
     tokio::spawn(async move {
         test_server
-            .serve_with_incoming(TcpListenerStream::new(listener)).await.unwrap();
+            .serve_with_incoming(TcpListenerStream::new(listener))
+            .await
+            .unwrap();
     });
     let mut client = grpc_client_stub(addr.to_string()).await;
 
