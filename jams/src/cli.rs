@@ -34,7 +34,9 @@ pub struct StartCommands {
 
 #[derive(Subcommand, Debug)]
 pub enum StartSubCommands {
+    /// Start the HTTP server
     Http(StartCommandArgs),
+    /// Start the gRPC server
     Grpc(StartCommandArgs),
 }
 
@@ -46,9 +48,13 @@ pub struct PredictCommands {
 
 #[derive(Subcommand, Debug)]
 pub enum PredictSubCommands {
+    /// Make predictions using a Tensorflow model
     Tensorflow(PredictCommandArgs),
+    /// Make predictions using a PyTorch model
     Torch(PredictCommandArgs),
+    /// Make predictions using a Catboost model
     Catboost(PredictCommandArgs),
+    /// Make predictions using a LightGBM model
     Lightgbm(PredictCommandArgs),
 }
 
