@@ -23,9 +23,12 @@ It is primarily targeted for software and data professionals for deploying their
 
 ## Features
 - Modular Design 📦
+- (🚧) Configurable 🛠️
 - Supports PyTorch and Tensorflow Models via FFI Bindings 🤖
 - Support Tree Models - Catboost, LightGBM, (🚧) XGBoost via FFI Bindings 🌳
-- (🚧) HTTP & gRPC API 🚀
+- (🚧) Support multiple backends for model stores - local file system, AWS S3, Azure Blob 🗳️
+- (🚧) Support Redis and DynamoDB for in memory feature stores 🗂️
+- HTTP & gRPC API 🚀
 - CLI 💻  
 
 The project is divided into the following crates
