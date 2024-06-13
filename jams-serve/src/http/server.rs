@@ -126,7 +126,6 @@ mod tests {
     }
 
     #[tokio::test]
-    // #[should_panic]
     async fn server_fails_to_start_due_to_zero_workers_in_worker_pool() {
         // Arrange
         let config = server::HTTPConfig {
@@ -137,8 +136,9 @@ mod tests {
         };
 
         // Act
-        tokio::spawn(async move {
-            server::start(config).await.unwrap();
-        });
+        let server = server::start(config).await;
+
+        // Assert
+        assert!(server.is_err())
     }
 }

@@ -83,10 +83,7 @@ pub async fn start(config: GRPCConfig) -> anyhow::Result<()> {
     let jams_service =
         JamsService::new(model_dir, num_workers).expect("Failed to create J.A.M.S service ❌");
 
-    tracing::info!(
-        "Rayon threadpool started with {} workers ⚙️",
-        num_workers
-    );
+    tracing::info!("Rayon threadpool started with {} workers ⚙️", num_workers);
 
     // run our app with hyper, listening globally on specified port
     let address = format!("0.0.0.0:{}", port);
@@ -125,5 +122,22 @@ mod tests {
         tokio::spawn(async move { server::start(config).await.unwrap() });
 
         // The test will fail if the server fails to start
+    }
+
+    #[tokio::test]
+    #[should_panic]
+    async fn server_fails_to_start_due_to_zero_workers_in_worker_pool() {
+        let config = server::GRPCConfig {
+            model_dir: Some("".to_string()),
+            port: Some(15000),
+            use_debug_level: Some(false),
+            num_workers: Some(0),
+        };
+
+        // Act
+        let server = server::start(config).await;
+
+        // Assert
+        assert!(server.is_err())
     }
 }
