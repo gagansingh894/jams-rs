@@ -1,4 +1,5 @@
-use crate::http::router::AppState;
+use crate::common::state::AppState;
+use crate::common::worker;
 use axum::extract::{Query, State};
 use axum::http::StatusCode;
 use axum::Json;
@@ -244,8 +245,10 @@ pub async fn predict(
 
     let cpu_pool = &app_state.cpu_pool;
     let manager = Arc::clone(&app_state.manager);
+    let model_name = payload.model_name;
+    let model_input = payload.input;
 
-    cpu_pool.spawn(move || predict_and_send(manager, payload, tx));
+    cpu_pool.spawn(move || worker::predict_and_send(manager, model_name, model_input, tx));
 
     match rx.await {
         Ok(predictions) => match predictions {
@@ -275,28 +278,4 @@ pub async fn predict(
             }),
         ),
     }
-}
-
-/// Asynchronously predicts an outcome using a shared manager and sends the result or error
-/// message through a channel.
-///
-/// This function takes an Arc-wrapped `Manager`, a `PredictRequest` containing model name
-/// and input data, and a `Sender<anyhow::Result<String>>` channel for sending the prediction result.
-///
-/// # Arguments
-///
-/// * `manager` - An `Arc` reference to the shared `Manager` instance used for predictions.
-/// * `payload` - A `PredictRequest` containing the model name and input data for prediction.
-/// * `tx` - A `Sender<anyhow::Result<String>>` channel endpoint for sending the prediction result.
-///
-/// The function asynchronously sends the prediction result through the provided
-/// channel (`tx`) based on the result of the prediction operation using the shared `Manager`.
-fn predict_and_send(
-    manager: Arc<Manager>,
-    payload: PredictRequest,
-    tx: Sender<anyhow::Result<String>>,
-) {
-    // we do not handle the result here
-    let predictions = manager.predict(payload.model_name, payload.input.as_str());
-    let _ = tx.send(predictions);
 }

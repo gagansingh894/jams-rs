@@ -1,6 +1,7 @@
 use crate::http::service::{
     add_model, delete_model, get_models, healthcheck, predict, root, update_model,
 };
+use crate::common::state::AppState;
 use axum::routing::{delete, get, post, put};
 use axum::Router;
 use jams_core::manager::Manager;
@@ -9,14 +10,6 @@ use rayon::{ThreadPool, ThreadPoolBuilder};
 use std::sync::Arc;
 use tokio::signal;
 use tower_http::trace::TraceLayer;
-
-/// AppState struct holds application state.
-pub struct AppState {
-    /// The manager component wrapped in an Arc (atomic reference count) for shared ownership.
-    pub manager: Arc<Manager>,
-    /// A thread pool for executing CPU-bound tasks asynchronously.
-    pub cpu_pool: ThreadPool,
-}
 
 pub fn build_router(model_dir: String, worker_pool_threads: usize) -> anyhow::Result<Router> {
     if worker_pool_threads < 1 {
