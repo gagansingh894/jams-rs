@@ -106,7 +106,7 @@ async fn fails_to_calls_the_predict_endpoint_and_return_500_when_input_is_wrong(
                 "alone": ["True", "False"]
             }
     )
-        .to_string();
+    .to_string();
 
     let response = client
         .post(predict_url)

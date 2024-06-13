@@ -201,7 +201,6 @@ async fn successfully_calls_the_delete_model_endpoint_and_return_200() {
     assert!(response.status().is_success())
 }
 
-
 #[tokio::test]
 async fn fails_to_call_the_delete_model_endpoint_and_return_500_when_model_does_not_exist() {
     // Arrange
@@ -210,11 +209,8 @@ async fn fails_to_call_the_delete_model_endpoint_and_return_500_when_model_does_
     let addr = listener.local_addr().unwrap();
     let router = test_router();
     let update_url = format!("http://{}/api/models", addr).to_string();
-    let delete_url = format!(
-        "http://{}/api/models?model_name=model_does_not_exist",
-        addr
-    )
-        .to_string();
+    let delete_url =
+        format!("http://{}/api/models?model_name=model_does_not_exist", addr).to_string();
 
     tokio::spawn(async move {
         axum::serve(listener, router).await.unwrap();

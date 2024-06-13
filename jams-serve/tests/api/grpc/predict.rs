@@ -56,3 +56,49 @@ async fn successfully_calls_the_predict_rpc() {
     // Assert
     assert!(response.is_ok());
 }
+
+#[tokio::test]
+async fn fails_to_call_the_predict_rpc_when_input_is_wrong() {
+    // Arrange
+    let listener = TcpListener::bind("0.0.0.0:0").await.unwrap();
+    let addr = listener.local_addr().unwrap();
+    let test_server = jams_grpc_test_router();
+
+    tokio::spawn(async move {
+        test_server
+            .serve_with_incoming(TcpListenerStream::new(listener))
+            .await
+            .unwrap();
+    });
+    let mut client = grpc_client_stub(addr.to_string()).await;
+
+    // Act: Add model for prediction
+    let response = client
+        .add_model(AddModelRequest {
+            model_name: "titanic_model".to_string(),
+            model_path: "tests/local_model_store/catboost-titanic_model".to_string(),
+        })
+        .await;
+    assert!(response.is_ok());
+
+    // Act: Make Predictions
+    let incorrect_model_input = serde_json::json!(
+            {
+                "pclass": ["1", "3"],
+                "sex": ["male", "female"],
+                "age": [22.0, 23.79929292929293],
+                "sibsp": ["0", "1", ],
+                "parch": ["0", "0"],
+            }
+    )
+    .to_string();
+    let response = client
+        .predict(PredictRequest {
+            model_name: "titanic_model".to_string(),
+            input: incorrect_model_input,
+        })
+        .await;
+
+    // Assert
+    assert!(response.is_err());
+}
