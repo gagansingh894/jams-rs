@@ -83,6 +83,11 @@ pub async fn start(config: GRPCConfig) -> anyhow::Result<()> {
     let jams_service =
         JamsService::new(model_dir, num_workers).expect("Failed to create J.A.M.S service ❌");
 
+    tracing::info!(
+        "Rayon threadpool started with {} workers ⚙️",
+        num_workers
+    );
+
     // run our app with hyper, listening globally on specified port
     let address = format!("0.0.0.0:{}", port);
     let listener = tokio::net::TcpListener::bind(address)
