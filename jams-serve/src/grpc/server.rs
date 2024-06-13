@@ -101,3 +101,25 @@ pub async fn start(config: GRPCConfig) -> anyhow::Result<()> {
 
     Ok(())
 }
+
+#[cfg(test)]
+mod tests {
+    use crate::grpc::server;
+
+    #[tokio::test]
+    async fn successfully_starts_the_server() {
+        let config = server::GRPCConfig {
+            model_dir: Some("".to_string()),
+            port: Some(15000),
+            use_debug_level: Some(false),
+            num_workers: Some(1),
+        };
+
+        // Act
+        tokio::spawn(async move {
+            server::start(config).await.unwrap()
+        });
+
+        // The test will fail if the server fails to start
+    }
+}

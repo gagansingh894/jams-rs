@@ -149,16 +149,97 @@ impl ModelServer for JamsService {
 }
 
 fn parse_to_proto_models(models_metadata: Vec<Metadata>) -> Vec<Model> {
-    let mut out: Vec<Model> = Vec::with_capacity(models_metadata.len());
+    let mut out: Vec<Model> = Vec::new();
 
-    for (i, data) in models_metadata.into_iter().enumerate() {
-        out[i] = Model {
+    for data in models_metadata {
+        out.push(Model {
             name: data.name,
             framework: data.framework.to_string(),
             path: data.path,
             last_updated: data.last_updated,
-        }
+        })
     }
 
     out
+}
+
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use chrono::Utc;
+    use jams_core::model::frameworks::TENSORFLOW;
+    use jams_core::model_store::storage::Metadata;
+
+    #[test]
+    fn successfully_create_jams_service() {
+        // Arrange
+        let model_dir = "".to_string();
+        let worker_pool_threads = 2;
+
+        // Act
+        let service = JamsService::new(model_dir, worker_pool_threads);
+
+        // Assert
+        assert!(service.is_ok())
+    }
+
+    #[test]
+    fn failed_to_create_jams_service_due_to_zero_worker_in_rayon_threadpool() {
+        // Arrange
+        let model_dir = "".to_string();
+        let worker_pool_threads = 0;
+
+        // Act
+        let service = JamsService::new(model_dir, worker_pool_threads);
+
+        // Assert
+        assert!(service.is_err())
+    }
+
+    #[test]
+    #[should_panic]
+    fn failed_to_build_jams_service_because_manager_is_unable_to_initialize() {
+        // Arrange
+        let model_dir = "incorrect/or/invalid/path/".to_string();
+        let worker_pool_threads = 1;
+
+        // Act
+        let service = JamsService::new(model_dir, worker_pool_threads);
+
+        // Assert
+        assert!(service.is_err())
+    }
+
+    #[test]
+    fn successfully_parse_to_proto_models() {
+        // Arrange
+        let now = Utc::now();
+        let models_metadata: Vec<Metadata> = vec![
+            Metadata {
+                name: "my_model_1".to_string(),
+                framework: TENSORFLOW,
+                path: "some_path_1".to_string(),
+                last_updated: now.to_rfc3339(),
+            },
+            Metadata {
+                name: "my_model_2".to_string(),
+                framework: TENSORFLOW,
+                path: "some_path_2".to_string(),
+                last_updated: now.to_rfc3339(),
+            },
+        ];
+
+        // Act
+        let proto_models = parse_to_proto_models(models_metadata.clone());
+
+        // Assert
+        assert_eq!(proto_models.len(), models_metadata.len());
+        for i in 0..proto_models.len() {
+            assert_eq!(proto_models[i].name, models_metadata[i].name);
+            assert_eq!(proto_models[i].framework, models_metadata[i].framework);
+            assert_eq!(proto_models[i].path, models_metadata[i].path);
+            assert_eq!(proto_models[i].last_updated, models_metadata[i].last_updated);
+        }
+    }
 }
