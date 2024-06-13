@@ -63,8 +63,9 @@ impl ModelServer for JamsService {
 
         let cpu_pool = &self.app_state.cpu_pool;
         let manager = Arc::clone(&self.app_state.manager);
-        let model_name = request.get_ref().model_name.to_string();
-        let model_input = request.get_ref().input.to_string();
+        let prediction_request = request.into_inner();
+        let model_name = prediction_request.model_name;
+        let model_input = prediction_request.input;
 
         cpu_pool.spawn(move || worker::predict_and_send(manager, model_name, model_input, tx));
 
@@ -100,9 +101,10 @@ impl ModelServer for JamsService {
     }
 
     async fn add_model(&self, request: Request<AddModelRequest>) -> Result<Response<()>, Status> {
+        let add_model_request = request.into_inner();
         match self.app_state.manager.add_model(
-            request.get_ref().model_name.as_str().to_string(),
-            request.get_ref().model_path.as_str(),
+            add_model_request.model_name,
+            add_model_request.model_path.as_str(),
         ) {
             Ok(_) => Ok(Response::new(())),
             Err(_) => Err(Status::new(
@@ -119,7 +121,7 @@ impl ModelServer for JamsService {
         match self
             .app_state
             .manager
-            .update_model(request.get_ref().model_name.to_string())
+            .update_model(request.into_inner().model_name.to_string())
         {
             Ok(_) => Ok(Response::new(())),
             Err(_) => Err(Status::new(
@@ -136,7 +138,7 @@ impl ModelServer for JamsService {
         match self
             .app_state
             .manager
-            .delete_model(request.get_ref().model_name.to_string())
+            .delete_model(request.into_inner().model_name.to_string())
         {
             Ok(_) => Ok(Response::new(())),
             Err(_) => Err(Status::new(
