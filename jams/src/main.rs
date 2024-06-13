@@ -1,4 +1,4 @@
-use crate::cli::{predict, Commands, PredictSubCommands};
+use crate::cli::{predict, Commands, PredictSubCommands, StartSubCommands};
 use clap::Parser;
 
 mod cli;
@@ -28,21 +28,41 @@ J.A.M.S - Just Another Model Server
     let cli = cli::Cli::parse();
 
     match cli.cmd {
-        Commands::Start(args) => {
-            let config = jams_serve::http::server::HTTPConfig {
-                model_dir: args.model_dir,
-                port: args.port,
-                use_debug_level: args.use_debug_level,
-                num_workers: args.num_workers,
-            };
+        Commands::Start(subcommands) => {
+            match subcommands.cmd {
+                StartSubCommands::Http(args) => {
+                    let config = jams_serve::http::server::HTTPConfig {
+                        model_dir: args.model_dir,
+                        port: args.port,
+                        use_debug_level: args.use_debug_level,
+                        num_workers: args.num_workers,
+                    };
 
-            jams_serve::http::server::start(config)
-                .await
-                .expect("Failed to start server ❌ \n");
+                    jams_serve::http::server::start(config)
+                        .await
+                        .expect("Failed to start server ❌ \n");
 
-            // shutdown signal received
-            tracing::error!("Shutdown signal received ⚠️");
-            Ok(())
+                    // shutdown signal received
+                    tracing::error!("Shutdown signal received ⚠️");
+                    Ok(())
+                }
+                StartSubCommands::Grpc(args) => {
+                    let config = jams_serve::grpc::server::GRPCConfig {
+                        model_dir: args.model_dir,
+                        port: args.port,
+                        use_debug_level: args.use_debug_level,
+                        num_workers: args.num_workers,
+                    };
+
+                    jams_serve::grpc::server::start(config)
+                        .await
+                        .expect("Failed to start server ❌ \n");
+
+                    // shutdown signal received
+                    tracing::error!("Shutdown signal received ⚠️");
+                    Ok(())
+                }
+            }
         }
         Commands::Predict(subcommands) => match subcommands.cmd {
             PredictSubCommands::Tensorflow(args) => {
