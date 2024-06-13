@@ -73,6 +73,9 @@ pub async fn start(config: HTTPConfig) -> anyhow::Result<()> {
         log_level = tracing::Level::TRACE
     }
 
+    // initialize tracing
+    tracing_subscriber::fmt().with_max_level(log_level).init();
+
     let app = match build_router(model_dir, num_workers) {
         Ok(app) => app,
         Err(_) => {
@@ -85,9 +88,6 @@ pub async fn start(config: HTTPConfig) -> anyhow::Result<()> {
     let listener = tokio::net::TcpListener::bind(address)
         .await
         .expect("Failed to create TCP listener ❌");
-
-    // initialize tracing
-    tracing_subscriber::fmt().with_max_level(log_level).init();
 
     // log that the server is running
     tracing::info!(
