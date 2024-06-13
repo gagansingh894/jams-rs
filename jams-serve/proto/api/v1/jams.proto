@@ -1,0 +1,106 @@
+syntax = "proto3";
+
+import "google/protobuf/empty.proto";
+import "google/protobuf/timestamp.proto";
+
+package jams_serve;
+
+// ModelFramework represents various model frameworks.
+enum ModelFramework {
+  // Default value, unspecified framework.
+  MODEL_FRAMEWORK_UNSPECIFIED = 0;
+  // TensorFlow framework.
+  MODEL_FRAMEWORK_TENSORFLOW = 1;
+  // PyTorch/Torch framework.
+  MODEL_FRAMEWORK_PYTORCH = 2;
+  // CatBoost framework.
+  MODEL_FRAMEWORK_CATBOOST = 3;
+  // LightGBM framework.
+  MODEL_FRAMEWORK_LIGHTGBM = 4;
+}
+
+// PredictRequest represent request for prediction.
+message PredictRequest {
+  // model_name is the model to use for making predictions
+  string model_name = 1;
+  // input represents the model input in JSON string where key is the feature name
+  // and value is a list of int/float/string
+  // {
+  //     "model_name": "example_model",
+  //     "input": "{\"key1\": \["value1]\", \"key2\": \["value2]\"}"
+  // }
+  string input = 2;
+}
+
+// PredictResponse represents the prediction output from the model.
+message PredictResponse {
+  // error is the error message from the server. It is an empty string in case of success response
+  string error = 1;
+  // output is json like string with key as `predictions` and value as nested lists with either single element
+  // in case of regression output or multiple in case of classification
+  // # Example 1 - Single Output
+  // {
+  //     "output": "{\"result_key\": \"[[result_value]]\"}"
+  // }
+  // # Example 2 - MultiClass Output
+  // {
+  //     "output": "{\"result_key\": \"[[result_value_1, result_value_3, result_value_2]]\"}"
+  // }
+  string output = 2;
+}
+
+// GetModelsResponse represents the response for getting models from the server.
+message GetModelsResponse {
+  // total is the total number of models loaded into model server.
+  int32 total = 1;
+
+  // Nested message representing a single model.
+  message Model {
+    // name of the model.
+    string name = 1;
+    // framework represents the framework used by the model.
+    ModelFramework framework = 2;
+    // path is the location of the model from where it was loaded into memory.
+    string path = 3;
+    // last_updated is the timestamp when the model was last updated.
+    google.protobuf.Timestamp last_updated = 4;
+  }
+
+  // models represent the list of models which are currently loaded in the server.
+  repeated Model models = 2;
+}
+
+// AddModelRequest represents a request to add a new model.
+message AddModelRequest {
+  // model_name is the name of the model to add.
+  string model_name = 1;
+  // model_path is the path of the model where it is located.
+  // It can either be local file system path, S3 path or Azure blob path.
+  string model_path = 2;
+}
+
+// UpdateModelRequest represents a request to update a model.
+message UpdateModelRequest {
+  // model_name is the name of the model to be updated.
+  string model_name = 1;
+}
+
+// DeleteModelRequest represents a request to delete a model.
+message DeleteModelRequest {
+  // model_name is the name of the model to be deleted.
+  string model_name = 1;
+}
+
+// Service definition for model server.
+service ModelServer {
+  // Predict is used to make predictions based on provided input.
+  rpc Predict(PredictRequest) returns (PredictResponse);
+  // GetModels is used to get the list of models which are loaded into memory.
+  rpc GetModels(google.protobuf.Empty) returns (GetModelsResponse);
+  // AddModel adds a new model to the model server.
+  rpc AddModel(AddModelRequest) returns (google.protobuf.Empty);
+  // UpdateModel updates an existing model in the model server.
+  rpc UpdateModel(UpdateModelRequest) returns (google.protobuf.Empty);
+  // DeleteModel deletes an existing model from the server.
+  rpc DeleteModel(DeleteModelRequest) returns (google.protobuf.Empty);
+}
