@@ -121,7 +121,7 @@ Please refer to [OpenAPI Spec](https://github.com/gagansingh894/jams-rs/blob/mai
 
 `/api/models`: Endpoint for managing models
 
-Alternatively, you can refer also refer to the [proto definition](https://github.com/gagansingh894/jams-rs/blob/main/jams-serve/proto/api/v1/jams.proto). It provides the following **RPCs**
+Alternatively, you can also refer to the [proto definition](https://github.com/gagansingh894/jams-rs/blob/main/jams-serve/proto/api/v1/jams.proto). It provides the following **RPCs**
 
 - `HealthCheck`
 - `Predict`
