@@ -10,7 +10,6 @@ use jams_core::model_store::local::LocalModelStore;
 use jams_core::model_store::storage::Metadata;
 use jams_v1::model_server_server::ModelServer;
 use rayon::ThreadPoolBuilder;
-use std::str::FromStr;
 use std::sync::Arc;
 use tokio::sync::oneshot;
 use tonic::{Request, Response, Status};
@@ -163,7 +162,6 @@ fn parse_to_proto_models(models_metadata: Vec<Metadata>) -> Vec<Model> {
     out
 }
 
-
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -239,7 +237,10 @@ mod tests {
             assert_eq!(proto_models[i].name, models_metadata[i].name);
             assert_eq!(proto_models[i].framework, models_metadata[i].framework);
             assert_eq!(proto_models[i].path, models_metadata[i].path);
-            assert_eq!(proto_models[i].last_updated, models_metadata[i].last_updated);
+            assert_eq!(
+                proto_models[i].last_updated,
+                models_metadata[i].last_updated
+            );
         }
     }
 }

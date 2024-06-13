@@ -3,7 +3,6 @@ use crate::grpc::service::jams_v1::model_server_server::ModelServerServer;
 use crate::grpc::service::JamsService;
 use std::env;
 use tonic::transport::Server;
-use tower_http::trace::TraceLayer;
 
 /// Configuration for the gRPC server.
 ///
@@ -76,23 +75,22 @@ pub async fn start(config: GRPCConfig) -> anyhow::Result<()> {
         log_level = tracing::Level::TRACE
     }
 
+    // initialize tracing
+    tracing_subscriber::fmt().with_max_level(log_level).init();
+
     // create service
     let jams_service =
         JamsService::new(model_dir, num_workers).expect("Failed to create J.A.M.S service ❌");
 
-    let addr = format!("[::1]:{}", port)
+    let addr = format!("0.0.0.0:{}", port)
         .parse()
         .expect("Failed to parse address ❌");
-
-    // initialize tracing
-    tracing_subscriber::fmt().with_max_level(log_level).init();
 
     // log that the server is running
     tracing::info!(
         "{}",
-        format!("Server is running on {} 🚀 \n", addr)
+        format!("Server is running on http://0.0.0.0:{} 🚀 \n", port)
     );
-
 
     Server::builder()
         .add_service(ModelServerServer::new(jams_service))
@@ -116,9 +114,7 @@ mod tests {
         };
 
         // Act
-        tokio::spawn(async move {
-            server::start(config).await.unwrap()
-        });
+        tokio::spawn(async move { server::start(config).await.unwrap() });
 
         // The test will fail if the server fails to start
     }
