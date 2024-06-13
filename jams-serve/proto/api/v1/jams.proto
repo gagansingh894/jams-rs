@@ -1,23 +1,8 @@
 syntax = "proto3";
 
 import "google/protobuf/empty.proto";
-import "google/protobuf/timestamp.proto";
 
-package jams_serve;
-
-// ModelFramework represents various model frameworks.
-enum ModelFramework {
-  // Default value, unspecified framework.
-  MODEL_FRAMEWORK_UNSPECIFIED = 0;
-  // TensorFlow framework.
-  MODEL_FRAMEWORK_TENSORFLOW = 1;
-  // PyTorch/Torch framework.
-  MODEL_FRAMEWORK_PYTORCH = 2;
-  // CatBoost framework.
-  MODEL_FRAMEWORK_CATBOOST = 3;
-  // LightGBM framework.
-  MODEL_FRAMEWORK_LIGHTGBM = 4;
-}
+package jams_v1;
 
 // PredictRequest represent request for prediction.
 message PredictRequest {
@@ -34,8 +19,6 @@ message PredictRequest {
 
 // PredictResponse represents the prediction output from the model.
 message PredictResponse {
-  // error is the error message from the server. It is an empty string in case of success response
-  string error = 1;
   // output is json like string with key as `predictions` and value as nested lists with either single element
   // in case of regression output or multiple in case of classification
   // # Example 1 - Single Output
@@ -46,7 +29,7 @@ message PredictResponse {
   // {
   //     "output": "{\"result_key\": \"[[result_value_1, result_value_3, result_value_2]]\"}"
   // }
-  string output = 2;
+  string output = 1;
 }
 
 // GetModelsResponse represents the response for getting models from the server.
@@ -58,12 +41,12 @@ message GetModelsResponse {
   message Model {
     // name of the model.
     string name = 1;
-    // framework represents the framework used by the model.
-    ModelFramework framework = 2;
+    // framework represents the framework used by the model. https://github.com/gagansingh894/jams-rs/blob/main/jams-core/src/model/frameworks.rs
+    string framework = 2;
     // path is the location of the model from where it was loaded into memory.
     string path = 3;
-    // last_updated is the timestamp when the model was last updated.
-    google.protobuf.Timestamp last_updated = 4;
+    // last_updated is the timestamp(RFC 3339) when the model was last updated.
+    string last_updated = 4;
   }
 
   // models represent the list of models which are currently loaded in the server.
