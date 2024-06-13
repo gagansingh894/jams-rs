@@ -145,7 +145,7 @@ paths:
                   example: "model-dir/model_framework-new_model_name"
               required:
                 - model_name
-                - location
+                - model_path
       responses:
         '200':
           description: Model added successfully

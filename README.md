@@ -23,9 +23,12 @@ It is primarily targeted for software and data professionals for deploying their
 
 ## Features
 - Modular Design 📦
+- (🚧) Configurable 🛠️
 - Supports PyTorch and Tensorflow Models via FFI Bindings 🤖
 - Support Tree Models - Catboost, LightGBM, (🚧) XGBoost via FFI Bindings 🌳
-- (🚧) HTTP & gRPC API 🚀
+- (🚧) Support multiple backends for model stores - local file system, AWS S3, Azure Blob 🗳️
+- (🚧) Support Redis and DynamoDB for in memory feature stores 🗂️
+- HTTP & gRPC API 🚀
 - CLI 💻  
 
 The project is divided into the following crates
@@ -112,15 +115,20 @@ Once **J.A.M.S** is up and running, these endpoints will help you interact with 
 
 Please refer to [OpenAPI Spec](https://github.com/gagansingh894/jams-rs/blob/main/openapi.yml) for details.
 
-**The API is tested on a locally running server as well as a server running on GitHub codespaces. 
-API tests are failing due to memory errors in CI/CD**
-
-
 `/healthcheck`: Endpoint for health checks
 
 `/api/predict`: Endpoint for making predictions
 
 `/api/models`: Endpoint for managing models
+
+Alternatively, you can also refer to the [proto definition](https://github.com/gagansingh894/jams-rs/blob/main/jams-serve/proto/api/v1/jams.proto). It provides the following **RPCs**
+
+- `HealthCheck`
+- `Predict`
+- `GetModels`
+- `AddModel`
+- `UpdateModel`
+- `DeleteModel`
 
 ---
 
@@ -133,17 +141,23 @@ The CLI provides the following commands
 ```
 
 ### start
-Use this command to start the model server on `0.0.0.0:3000` with separate rayon threadpool for computing predictions
+Use this command to start either the HTTP/gRPC model server on `0.0.0.0:3000`/`0.0.0.0:4000` with separate rayon threadpool for computing predictions
 
 The server expects a model directory containing the models. This can be either passed using the
 ```--model-dir``` flag
 
+To start HTTP server
 ```
-jams start --model-dir path/to/model_dir
+jams start http --model-dir path/to/model_dir
+```
+
+To start gRPC server
+```
+jams start grpc --model-dir path/to/model_dir
 ```
 
 Alternatively, you can set the **MODEL_STORE_DIR** env variable pointing to the model directory
-and run `jams start`
+and run `jams start http` or `jams start grpc`
 ```
 export MODEL_STORE_DIR=path/to/model_dir
 ```

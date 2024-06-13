@@ -19,11 +19,25 @@ pub struct Cli {
 pub enum Commands {
     /// Start the model server with a separate rayon threadpool for computing predictions
     #[clap(name = "start")]
-    Start(StartCommandArgs),
+    Start(StartCommands),
 
     /// Make prediction directly from CLI
     #[clap(name = "predict")]
     Predict(PredictCommands),
+}
+
+#[derive(Parser, Debug)]
+pub struct StartCommands {
+    #[clap(subcommand)]
+    pub cmd: StartSubCommands,
+}
+
+#[derive(Subcommand, Debug)]
+pub enum StartSubCommands {
+    /// Start the HTTP server
+    Http(StartCommandArgs),
+    /// Start the gRPC server
+    Grpc(StartCommandArgs),
 }
 
 #[derive(Parser, Debug)]
@@ -34,9 +48,13 @@ pub struct PredictCommands {
 
 #[derive(Subcommand, Debug)]
 pub enum PredictSubCommands {
+    /// Make predictions using a Tensorflow model
     Tensorflow(PredictCommandArgs),
+    /// Make predictions using a PyTorch model
     Torch(PredictCommandArgs),
+    /// Make predictions using a Catboost model
     Catboost(PredictCommandArgs),
+    /// Make predictions using a LightGBM model
     Lightgbm(PredictCommandArgs),
 }
 

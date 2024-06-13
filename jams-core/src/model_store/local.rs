@@ -93,8 +93,7 @@ impl LocalModelStore {
                         )
                     }
                     Some(model_name) => {
-                        let predictor =
-                            model::tensorflow::Tensorflow::load(full_path.as_str()).unwrap();
+                        let predictor = model::tensorflow::Tensorflow::load(full_path.as_str())?;
                         let now = Utc::now();
                         let model = Model::new(
                             Arc::new(predictor),
@@ -122,8 +121,7 @@ impl LocalModelStore {
                                 )
                             }
                             Some(model_name) => {
-                                let predictor =
-                                    model::torch::Torch::load(full_path.as_str()).unwrap();
+                                let predictor = model::torch::Torch::load(full_path.as_str())?;
                                 let now = Utc::now();
                                 let model = Model::new(
                                     Arc::new(predictor),
@@ -138,7 +136,7 @@ impl LocalModelStore {
                         }
                     }
                     Some(model_name) => {
-                        let predictor = model::torch::Torch::load(full_path.as_str()).unwrap();
+                        let predictor = model::torch::Torch::load(full_path.as_str())?;
                         let now = Utc::now();
                         let model = Model::new(
                             Arc::new(predictor),
@@ -162,8 +160,7 @@ impl LocalModelStore {
                         )
                     }
                     Some(model_name) => {
-                        let predictor =
-                            model::catboost::Catboost::load(full_path.as_str()).unwrap();
+                        let predictor = model::catboost::Catboost::load(full_path.as_str())?;
                         let now = Utc::now();
                         let model = Model::new(
                             Arc::new(predictor),
@@ -187,8 +184,7 @@ impl LocalModelStore {
                         )
                     }
                     Some(model_name) => {
-                        let predictor =
-                            model::lightgbm::LightGBM::load(full_path.as_str()).unwrap();
+                        let predictor = model::lightgbm::LightGBM::load(full_path.as_str())?;
                         let now = Utc::now();
                         let model = Model::new(
                             Arc::new(predictor),

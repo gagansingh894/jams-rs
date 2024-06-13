@@ -1,4 +1,4 @@
-use crate::helper::test_router;
+use crate::http::helper::test_router;
 use reqwest::Client;
 use tokio::net::TcpListener;
 
@@ -54,6 +54,36 @@ async fn successfully_calls_the_add_model_endpoint_and_return_200() {
 
     // Assert
     assert!(response.status().is_success())
+}
+
+#[tokio::test]
+async fn fails_to_call_the_add_model_endpoint_and_return_500_when_model_path_is_wrong() {
+    // Arrange
+    let client = Client::new();
+    let listener = TcpListener::bind("0.0.0.0:0").await.unwrap();
+    let addr = listener.local_addr().unwrap();
+    let router = test_router();
+    let url = format!("http://{}/api/models", addr).to_string();
+
+    tokio::spawn(async move {
+        axum::serve(listener, router).await.unwrap();
+    });
+
+    // Act
+    let response = client
+        .post(url)
+        .json(&serde_json::json!(
+            {
+                "model_name": "my_awesome_penguin_model",
+                "model_path": "incorrect/path"
+            }
+        ))
+        .send()
+        .await
+        .expect("Failed to make request");
+
+    // Assert
+    assert!(response.status().is_server_error())
 }
 
 #[tokio::test]
@@ -135,8 +165,9 @@ async fn successfully_calls_the_delete_model_endpoint_and_return_200() {
     let listener = TcpListener::bind("0.0.0.0:0").await.unwrap();
     let addr = listener.local_addr().unwrap();
     let router = test_router();
-    let url = format!(
-        "http://{}/api/models?model_name=my_awesome_penguin_model",
+    let update_url = format!("http://{}/api/models", addr).to_string();
+    let delete_url = format!(
+        "http://{}/api/models?model_name=my_awesome_californiahousing_model",
         addr
     )
     .to_string();
@@ -147,10 +178,10 @@ async fn successfully_calls_the_delete_model_endpoint_and_return_200() {
 
     // Act - 1: Add model first
     let response = client
-        .post(url.clone())
+        .post(update_url)
         .json(&serde_json::json!(
             {
-                "model_name": "my_awesome_penguin_model",
+                "model_name": "my_awesome_californiahousing_model",
                 "model_path": "tests/local_model_store/pytorch-my_awesome_californiahousing_model.pt"
             }
         ))
@@ -161,11 +192,51 @@ async fn successfully_calls_the_delete_model_endpoint_and_return_200() {
 
     // Act: Make delete call
     let response = client
-        .delete(url)
+        .delete(delete_url)
         .send()
         .await
         .expect("Failed to make request");
 
     // Assert
     assert!(response.status().is_success())
+}
+
+#[tokio::test]
+async fn fails_to_call_the_delete_model_endpoint_and_return_500_when_model_does_not_exist() {
+    // Arrange
+    let client = Client::new();
+    let listener = TcpListener::bind("0.0.0.0:0").await.unwrap();
+    let addr = listener.local_addr().unwrap();
+    let router = test_router();
+    let update_url = format!("http://{}/api/models", addr).to_string();
+    let delete_url =
+        format!("http://{}/api/models?model_name=model_does_not_exist", addr).to_string();
+
+    tokio::spawn(async move {
+        axum::serve(listener, router).await.unwrap();
+    });
+
+    // Act - 1: Add model first
+    let response = client
+        .post(update_url)
+        .json(&serde_json::json!(
+            {
+                "model_name": "my_awesome_californiahousing_model",
+                "model_path": "tests/local_model_store/pytorch-my_awesome_californiahousing_model.pt"
+            }
+        ))
+        .send()
+        .await
+        .expect("Failed to make request");
+    assert!(response.status().is_success());
+
+    // Act: Make delete call
+    let response = client
+        .delete(delete_url)
+        .send()
+        .await
+        .expect("Failed to make request");
+
+    // Assert
+    assert!(response.status().is_server_error())
 }

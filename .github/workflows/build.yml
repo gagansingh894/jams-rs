@@ -23,6 +23,7 @@ jobs:
         LIBTORCH_INCLUDE: /usr/local/lib/libtorch
         LIBTORCH_LIB: /usr/local/lib/libtorch
         LD_LIBRARY_PATH: /usr/local/lib/libtorch/lib:/usr/local/lib
+        PROTOC: /usr/bin/protoc
 
     steps:
       - name: Checkout
