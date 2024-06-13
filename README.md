@@ -25,9 +25,9 @@ It is primarily targeted for software and data professionals for deploying their
 - Modular Design 📦
 - (🚧) Configurable 🛠️
 - Supports PyTorch and Tensorflow Models via FFI Bindings 🤖
-- Support Tree Models - Catboost, LightGBM, (🚧) XGBoost via FFI Bindings 🌳
-- (🚧) Support multiple backends for model stores - local file system, AWS S3, Azure Blob 🗳️
-- (🚧) Support Redis and DynamoDB for in memory feature stores 🗂️
+- Supports Tree Models - Catboost, LightGBM, (🚧) XGBoost via FFI Bindings 🌳
+- (🚧) Supports multiple backends for model stores - local file system, AWS S3, Azure Blob 🗳️
+- (🚧) Supports Redis and DynamoDB for in memory feature stores 🗂️
 - HTTP & gRPC API 🚀
 - CLI 💻  
 
