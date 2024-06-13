@@ -1134,7 +1134,7 @@ checksum = "49f1f14873335454500d59611f1cf4a4b0f786f9ac11f4312a78e4cf2566695b"
 
 [[package]]
 name = "jams"
-version = "0.1.5"
+version = "0.1.6"
 dependencies = [
  "anyhow",
  "clap",
@@ -1165,10 +1165,11 @@ dependencies = [
 
 [[package]]
 name = "jams-serve"
-version = "0.1.13"
+version = "0.1.14"
 dependencies = [
  "anyhow",
  "axum 0.7.5",
+ "chrono",
  "clap",
  "jams-core",
  "log",
@@ -1181,6 +1182,7 @@ dependencies = [
  "tokio",
  "tonic",
  "tonic-build",
+ "tonic-reflection",
  "tower-http",
  "tracing",
  "tracing-subscriber",
@@ -2424,6 +2426,19 @@ dependencies = [
  "prost-build",
  "quote",
  "syn 2.0.66",
+]
+
+[[package]]
+name = "tonic-reflection"
+version = "0.11.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "548c227bd5c0fae5925812c4ec6c66ffcfced23ea370cb823f4d18f0fc1cb6a7"
+dependencies = [
+ "prost",
+ "prost-types",
+ "tokio",
+ "tokio-stream",
+ "tonic",
 ]
 
 [[package]]
