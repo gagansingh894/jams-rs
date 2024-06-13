@@ -136,7 +136,7 @@ async fn successfully_calls_the_delete_model_endpoint_and_return_200() {
     let addr = listener.local_addr().unwrap();
     let router = test_router();
     let url = format!(
-        "http://{}/api/models?model_name=my_awesome_penguin_model",
+        "http://{}/api/models?model_name=my_awesome_californiahousing_model",
         addr
     )
     .to_string();
@@ -150,7 +150,7 @@ async fn successfully_calls_the_delete_model_endpoint_and_return_200() {
         .post(url.clone())
         .json(&serde_json::json!(
             {
-                "model_name": "my_awesome_penguin_model",
+                "model_name": "my_awesome_californiahousing_model",
                 "model_path": "tests/local_model_store/pytorch-my_awesome_californiahousing_model.pt"
             }
         ))
