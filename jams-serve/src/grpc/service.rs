@@ -52,6 +52,10 @@ impl JamsService {
 
 #[tonic::async_trait]
 impl ModelServer for JamsService {
+    async fn health_check(&self, _request: Request<()>) -> Result<Response<()>, Status> {
+        Ok(Response::new(()))
+    }
+
     async fn predict(
         &self,
         request: Request<PredictRequest>,

@@ -76,6 +76,8 @@ message DeleteModelRequest {
 
 // Service definition for model server.
 service ModelServer {
+  // HealthCheck is used to check the server health
+  rpc HealthCheck(google.protobuf.Empty) returns (google.protobuf.Empty);
   // Predict is used to make predictions based on provided input.
   rpc Predict(PredictRequest) returns (PredictResponse);
   // GetModels is used to get the list of models which are loaded into memory.
