@@ -107,6 +107,7 @@ install_protoc
 
 # add environment variables
 # user might need to run these manually or add them to shell profile(.bashrc, .zshrc)
+export PROTOC=/usr/bin/protoc
 export COMMON_LIBS_PATH=/usr/local/lib
 export LIGHTGBM_LIB_DIR=$COMMON_LIBS_PATH
 export LIBTORCH=$COMMON_LIBS_PATH/libtorch
