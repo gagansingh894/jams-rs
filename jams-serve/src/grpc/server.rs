@@ -2,7 +2,8 @@ use crate::common::shutdown::shutdown_signal;
 use crate::grpc::service::jams_v1::model_server_server::ModelServerServer;
 use crate::grpc::service::JamsService;
 use std::env;
-use tonic::transport::Server;
+use tonic::codegen::tokio_stream::wrappers::TcpListenerStream;
+use tonic::transport::{Server};
 
 /// Configuration for the gRPC server.
 ///
@@ -82,9 +83,12 @@ pub async fn start(config: GRPCConfig) -> anyhow::Result<()> {
     let jams_service =
         JamsService::new(model_dir, num_workers).expect("Failed to create J.A.M.S service ❌");
 
-    let addr = format!("0.0.0.0:{}", port)
-        .parse()
-        .expect("Failed to parse address ❌");
+    // run our app with hyper, listening globally on specified port
+    let address = format!("0.0.0.0:{}", port);
+    let listener = tokio::net::TcpListener::bind(address)
+        .await
+        .expect("Failed to create TCP listener ❌");
+
 
     // log that the server is running
     tracing::info!(
@@ -94,7 +98,7 @@ pub async fn start(config: GRPCConfig) -> anyhow::Result<()> {
 
     Server::builder()
         .add_service(ModelServerServer::new(jams_service))
-        .serve_with_shutdown(addr, shutdown_signal())
+        .serve_with_incoming_shutdown(TcpListenerStream::new(listener), shutdown_signal())
         .await?;
 
     Ok(())
