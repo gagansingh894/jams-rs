@@ -81,22 +81,6 @@ pub struct PredictResponse {
     output: String,
 }
 
-/// Root endpoint for the API.
-///
-/// This endpoint returns a simple message indicating that the server is running.
-///
-/// # Returns
-///
-/// A tuple containing:
-/// * `StatusCode::OK` - The HTTP status code indicating success.
-/// * A static string message indicating that the server is running.
-pub async fn root() -> (StatusCode, &'static str) {
-    (
-        StatusCode::OK,
-        "J.A.M.S - Just Another Model Server is running 🚀\n",
-    )
-}
-
 /// Health check endpoint handler.
 ///
 /// This function handles the health check ("/health") endpoint and returns a simple status code indicating the server is healthy.

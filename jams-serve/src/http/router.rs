@@ -1,6 +1,6 @@
 use crate::common::state::AppState;
 use crate::http::service::{
-    add_model, delete_model, get_models, healthcheck, predict, root, update_model,
+    add_model, delete_model, get_models, healthcheck, predict, update_model,
 };
 use axum::routing::{delete, get, post, put};
 use axum::Router;
