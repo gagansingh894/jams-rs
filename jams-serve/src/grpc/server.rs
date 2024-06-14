@@ -1,6 +1,6 @@
 use crate::common::shutdown::shutdown_signal;
 use crate::grpc::service::jams_v1::model_server_server::ModelServerServer;
-use crate::grpc::service::JamsService;
+use crate::grpc::service::{jams_v1, JamsService};
 use std::env;
 use tonic::codegen::tokio_stream::wrappers::TcpListenerStream;
 use tonic::transport::Server;
@@ -85,6 +85,12 @@ pub async fn start(config: GRPCConfig) -> anyhow::Result<()> {
 
     tracing::info!("Rayon threadpool started with {} workers ⚙️", num_workers);
 
+    // add reflection
+    let reflection_service = tonic_reflection::server::Builder::configure()
+        .register_encoded_file_descriptor_set(jams_v1::FILE_DESCRIPTOR_SET)
+        .build()
+        .unwrap();
+
     // run our app with hyper, listening globally on specified port
     let address = format!("0.0.0.0:{}", port);
     let listener = tokio::net::TcpListener::bind(address)
@@ -98,6 +104,7 @@ pub async fn start(config: GRPCConfig) -> anyhow::Result<()> {
     );
 
     Server::builder()
+        .add_service(reflection_service)
         .add_service(ModelServerServer::new(jams_service))
         .serve_with_incoming_shutdown(TcpListenerStream::new(listener), shutdown_signal())
         .await?;
