@@ -71,7 +71,7 @@ jobs:
           password: ${{ secrets.DOCKER_PASSWORD }}
 
       - name: Build Docker image
-        run: docker build -t jams:latest -f build/Dockerfile .
+        run: docker build -t ${{ secrets.DOCKER_USERNAME }}/jams:latest -f build/Dockerfile .
 
       - name: Push Docker image
-        run: docker push jams:latest
+        run: docker push ${{ secrets.DOCKER_USERNAME }}/jams:latest
