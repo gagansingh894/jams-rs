@@ -1265,7 +1265,7 @@ checksum = "49f1f14873335454500d59611f1cf4a4b0f786f9ac11f4312a78e4cf2566695b"
 
 [[package]]
 name = "jams"
-version = "0.1.8"
+version = "0.1.9"
 dependencies = [
  "anyhow",
  "clap",
@@ -1296,7 +1296,7 @@ dependencies = [
 
 [[package]]
 name = "jams-serve"
-version = "0.1.15"
+version = "0.1.16"
 dependencies = [
  "anyhow",
  "axum 0.7.5",
