@@ -47,7 +47,6 @@ pub fn build_router(model_dir: String, worker_pool_threads: usize) -> anyhow::Re
 
     // build router
     Ok(Router::new()
-        .route("/", get(root))
         .route("/healthcheck", get(healthcheck))
         .nest("/api", api_routes)
         .with_state(shared_state)

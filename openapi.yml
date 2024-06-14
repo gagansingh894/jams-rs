@@ -5,8 +5,6 @@ info:
   version: 0.1.0
 
 tags:
-  - name: Root
-    description: Endpoint related to the root of the API
   - name: Healthcheck
     description: Endpoint related to health checks
   - name: Predict
@@ -15,15 +13,6 @@ tags:
     description: Endpoints related to managing models
 
 paths:
-  /:
-    get:
-      summary: Root Endpoint
-      responses:
-        '200':
-          description: A simple root response
-      tags:
-        - Root
-
   /healthcheck:
     get:
       summary: Health Check Endpoint
