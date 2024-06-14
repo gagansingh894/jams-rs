@@ -49,6 +49,9 @@ Please refer to examples for different types of setup.
 
 (🚧)`jams` is an easy-to-use CLI allowing user to make predictions by specifying model and an input string.
 
+
+**J.A.M.S** also provides HTTP & gRPC client implementations in multiple languages. [See here](). 🚧
+
 ⚠️ **DISCLAIMER: jams is currently unstable and may not run properly on your machines. I have
 tested the above on Apple Silicon and Linux x86_64 machines. Future releases will fix this**
 
