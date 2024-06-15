@@ -81,14 +81,11 @@ impl S3ModelStore {
 #[async_trait]
 impl Storage for S3ModelStore {
     async fn add_model(&self, model_name: ModelName, _model_path: &str) -> anyhow::Result<()> {
-        // Prepare the S3 key from model_name
-        let object_key = format!("{}.tar.gz", model_name);
-
         // Download the model
         match download_objects(
             &self.client,
             self.bucket_name.clone(),
-            vec![object_key],
+            vec![model_name.clone()],
             self.model_store_dir.as_str(),
         )
         .await
@@ -364,8 +361,8 @@ async fn download_objects(
                     }
                 }
             }
-            Err(_) => {
-                log::warn!("Failed to get object key: {} from S3 ⚠️", object_key)
+            Err(e) => {
+                log::warn!("Failed to get object key: {} from S3 ⚠️: {}", object_key, e.into_service_error())
             }
         }
     }
@@ -403,7 +400,7 @@ fn unpack_tarball(tarball_path: &str, out_dir: &str) -> anyhow::Result<()> {
             log::info!(
                 "Unpacked tarball: {:?} at location: {}",
                 tarball_path,
-                DOWNLOADED_MODELS_DIRECTORY_NAME
+                out_dir
             );
             Ok(())
         }
@@ -411,7 +408,7 @@ fn unpack_tarball(tarball_path: &str, out_dir: &str) -> anyhow::Result<()> {
             log::warn!(
                 "Failed to unpack tarball ⚠️: {:?} at location: {}",
                 tarball_path,
-                DOWNLOADED_MODELS_DIRECTORY_NAME
+                out_dir
             );
             Ok(())
         }
