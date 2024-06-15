@@ -1,6 +1,12 @@
 use crate::common::shutdown::shutdown_signal;
 use crate::http::router::build_router;
 use std::env;
+use std::sync::Arc;
+use rayon::ThreadPoolBuilder;
+use jams_core::manager::Manager;
+use jams_core::model_store::local::LocalModelStore;
+use jams_core::model_store::s3::S3ModelStore;
+use crate::common::state::AppState;
 
 /// Configuration for the HTTP server.
 ///
@@ -29,6 +35,19 @@ pub struct HTTPConfig {
     /// This thread pool is different from the I/O thread pool and is used for computing CPU-intensive tasks.
     /// This is an optional field. If not provided, the default number of worker threads is 2.
     pub num_workers: Option<usize>,
+
+    /// An optional boolean flag indicating whether to use S3 as the model store.
+    ///
+    /// - `Some(true)`: Use S3 for model storage.
+    /// - `Some(false)`: Do not use S3 for model storage.
+    /// - `None`: The configuration for using S3 is not specified.
+    pub with_s3_model_store: Option<bool>,
+
+    /// An optional string specifying the name of the S3 bucket to be used for model storage.
+    ///
+    /// - `Some(String)`: The name of the S3 bucket.
+    /// - `None`: No S3 bucket name is specified.
+    pub s3_bucket_name: Option<String>,
 }
 
 /// Starts the HTTP server with the provided configuration.
@@ -65,7 +84,8 @@ pub async fn start(config: HTTPConfig) -> anyhow::Result<()> {
 
     let port = config.port.unwrap_or(3000);
     let use_debug_level = config.use_debug_level.unwrap_or(false);
-    let num_workers = config.num_workers.unwrap_or(2);
+    let worker_pool_threads = config.num_workers.unwrap_or(2);
+    let with_s3_model_store = config.with_s3_model_store.unwrap_or(false);
 
     // set log level
     let mut log_level = tracing::Level::INFO;
@@ -76,7 +96,34 @@ pub async fn start(config: HTTPConfig) -> anyhow::Result<()> {
     // initialize tracing
     tracing_subscriber::fmt().with_max_level(log_level).init();
 
-    let app = match build_router(model_dir, num_workers) {
+    // initialize threadpool for cpu intensive tasks
+    if worker_pool_threads < 1 {
+        anyhow::bail!("At least 1 worker is required for rayon threadpool")
+    }
+    let cpu_pool = ThreadPoolBuilder::new()
+        .num_threads(worker_pool_threads)
+        .build()
+        .expect("Failed to build rayon threadpool ❌");
+
+    // initialize manager with madel store
+    let manager = match with_s3_model_store {
+        true => {
+            let model_store = S3ModelStore::new(config.s3_bucket_name.unwrap())
+                .await
+                .expect("Failed to create model store ❌");
+            Arc::new(Manager::new(Arc::new(model_store)).expect("Failed to initialize manager ❌"))
+        }
+        false => {
+            let model_store = LocalModelStore::new(model_dir)
+                .expect("Failed to create model store ❌");
+            Arc::new(Manager::new(Arc::new(model_store)).expect("Failed to initialize manager ❌"))
+        }
+    };
+
+    // setup shared state
+    let shared_state = Arc::new(AppState {manager, cpu_pool});
+
+    let app = match build_router(shared_state) {
         Ok(app) => app,
         Err(_) => {
             anyhow::bail!("Failed to build the router ❌");
@@ -115,6 +162,8 @@ mod tests {
             port: Some(15000),
             use_debug_level: Some(false),
             num_workers: Some(1),
+            with_s3_model_store: Some(false),
+            s3_bucket_name: Some("".to_string())
         };
 
         // Act
@@ -133,6 +182,8 @@ mod tests {
             port: Some(15000),
             use_debug_level: Some(false),
             num_workers: Some(0),
+            with_s3_model_store: Some(false),
+            s3_bucket_name: Some("".to_string())
         };
 
         // Act

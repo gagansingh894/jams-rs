@@ -2,8 +2,14 @@ use crate::common::shutdown::shutdown_signal;
 use crate::grpc::service::jams_v1::model_server_server::ModelServerServer;
 use crate::grpc::service::{jams_v1, JamsService};
 use std::env;
+use std::sync::Arc;
+use rayon::ThreadPoolBuilder;
 use tonic::codegen::tokio_stream::wrappers::TcpListenerStream;
 use tonic::transport::Server;
+use jams_core::manager::Manager;
+use jams_core::model_store::local::LocalModelStore;
+use jams_core::model_store::s3::S3ModelStore;
+use crate::common::state::AppState;
 
 /// Configuration for the gRPC server.
 ///
@@ -32,6 +38,19 @@ pub struct GRPCConfig {
     /// This thread pool is different from the I/O thread pool and is used for computing CPU-intensive tasks.
     /// This is an optional field. If not provided, the default number of worker threads is 2.
     pub num_workers: Option<usize>,
+
+    /// An optional boolean flag indicating whether to use S3 as the model store.
+    ///
+    /// - `Some(true)`: Use S3 for model storage.
+    /// - `Some(false)`: Do not use S3 for model storage.
+    /// - `None`: The configuration for using S3 is not specified.
+    pub with_s3_model_store: Option<bool>,
+
+    /// An optional string specifying the name of the S3 bucket to be used for model storage.
+    ///
+    /// - `Some(String)`: The name of the S3 bucket.
+    /// - `None`: No S3 bucket name is specified.
+    pub s3_bucket_name: Option<String>,
 }
 
 /// Starts the gRPC server with the provided configuration.
@@ -68,7 +87,8 @@ pub async fn start(config: GRPCConfig) -> anyhow::Result<()> {
 
     let port = config.port.unwrap_or(4000);
     let use_debug_level = config.use_debug_level.unwrap_or(false);
-    let num_workers = config.num_workers.unwrap_or(2);
+    let worker_pool_threads = config.num_workers.unwrap_or(2);
+    let with_s3_model_store = config.with_s3_model_store.unwrap_or(false);
 
     // set log level
     let mut log_level = tracing::Level::INFO;
@@ -79,11 +99,39 @@ pub async fn start(config: GRPCConfig) -> anyhow::Result<()> {
     // initialize tracing
     tracing_subscriber::fmt().with_max_level(log_level).init();
 
+    // initialize threadpool for cpu intensive tasks
+    if worker_pool_threads < 1 {
+        anyhow::bail!("At least 1 worker is required for rayon threadpool")
+    }
+    let cpu_pool = ThreadPoolBuilder::new()
+        .num_threads(worker_pool_threads)
+        .build()
+        .expect("Failed to build rayon threadpool ❌");
+
+    // initialize manager with madel store
+    let manager = match with_s3_model_store {
+        true => {
+            let model_store = S3ModelStore::new(config.s3_bucket_name.unwrap())
+                .await
+                .expect("Failed to create model store ❌");
+            Arc::new(Manager::new(Arc::new(model_store)).expect("Failed to initialize manager ❌"))
+        }
+        false => {
+            let model_store = LocalModelStore::new(model_dir)
+                .expect("Failed to create model store ❌");
+            Arc::new(Manager::new(Arc::new(model_store)).expect("Failed to initialize manager ❌"))
+        }
+    };
+
+    // setup app state
+    let app_state = Arc::new(AppState {manager, cpu_pool});
+
+
     // create service
     let jams_service =
-        JamsService::new(model_dir, num_workers).expect("Failed to create J.A.M.S service ❌");
+        JamsService::new(app_state).expect("Failed to create J.A.M.S service ❌");
 
-    tracing::info!("Rayon threadpool started with {} workers ⚙️", num_workers);
+    tracing::info!("Rayon threadpool started with {} workers ⚙️", worker_pool_threads);
 
     // add reflection
     let reflection_service = tonic_reflection::server::Builder::configure()
@@ -123,6 +171,8 @@ mod tests {
             port: Some(15000),
             use_debug_level: Some(false),
             num_workers: Some(1),
+            with_s3_model_store: Some(false),
+            s3_bucket_name: Some("".to_string())
         };
 
         // Act
@@ -132,13 +182,14 @@ mod tests {
     }
 
     #[tokio::test]
-    #[should_panic]
     async fn server_fails_to_start_due_to_zero_workers_in_worker_pool() {
         let config = server::GRPCConfig {
             model_dir: Some("".to_string()),
             port: Some(15000),
             use_debug_level: Some(false),
             num_workers: Some(0),
+            with_s3_model_store: Some(false),
+            s3_bucket_name: Some("".to_string())
         };
 
         // Act
