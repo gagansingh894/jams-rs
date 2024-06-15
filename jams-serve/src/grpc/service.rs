@@ -105,10 +105,15 @@ impl ModelServer for JamsService {
 
     async fn add_model(&self, request: Request<AddModelRequest>) -> Result<Response<()>, Status> {
         let add_model_request = request.into_inner();
-        match self.app_state.manager.add_model(
-            add_model_request.model_name,
-            add_model_request.model_path.as_str(),
-        ) {
+        match self
+            .app_state
+            .manager
+            .add_model(
+                add_model_request.model_name,
+                add_model_request.model_path.as_str(),
+            )
+            .await
+        {
             Ok(_) => Ok(Response::new(())),
             Err(_) => Err(Status::new(
                 tonic::Code::Internal,
@@ -125,6 +130,7 @@ impl ModelServer for JamsService {
             .app_state
             .manager
             .update_model(request.into_inner().model_name.to_string())
+            .await
         {
             Ok(_) => Ok(Response::new(())),
             Err(_) => Err(Status::new(

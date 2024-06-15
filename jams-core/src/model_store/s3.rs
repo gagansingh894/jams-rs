@@ -1,3 +1,4 @@
+use async_trait::async_trait;
 use aws_config::meta::region::RegionProviderChain;
 use aws_sdk_s3 as s3;
 use dashmap::mapref::one::Ref;
@@ -74,12 +75,13 @@ impl S3ModelStore {
     }
 }
 
+#[async_trait]
 impl Storage for S3ModelStore {
-    fn add_model(&self, model_name: ModelName, _model_path: &str) -> anyhow::Result<()> {
+    async fn add_model(&self, _model_name: ModelName, _model_path: &str) -> anyhow::Result<()> {
         todo!()
     }
 
-    fn update_model(&self, _model_name: ModelName) -> anyhow::Result<()> {
+    async fn update_model(&self, _model_name: ModelName) -> anyhow::Result<()> {
         todo!()
     }
 

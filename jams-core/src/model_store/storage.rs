@@ -1,13 +1,13 @@
 use crate::model;
 use crate::model::frameworks::{ModelFramework, CATBOOST, LIGHTGBM, PYTORCH, TENSORFLOW, TORCH};
 use crate::model::predictor::Predictor;
+use async_trait::async_trait;
 use chrono::Utc;
 use dashmap::mapref::one::Ref;
 use dashmap::DashMap;
 use serde::Serialize;
 use std::fs;
 use std::sync::Arc;
-use async_trait::async_trait;
 
 pub type ModelName = String;
 
@@ -15,10 +15,10 @@ pub type ModelName = String;
 #[async_trait]
 pub trait Storage: Send + Sync + 'static {
     /// Adds a specific machine learning/deep learning model
-    fn add_model(&self, model_name: ModelName, model_path: &str) -> anyhow::Result<()>;
+    async fn add_model(&self, model_name: ModelName, model_path: &str) -> anyhow::Result<()>;
 
     /// Updates a specific machine learning/deep learning model based on model name
-    fn update_model(&self, model_name: ModelName) -> anyhow::Result<()>;
+    async fn update_model(&self, model_name: ModelName) -> anyhow::Result<()>;
 
     /// Retrieves a specific machine learning/deep learning model by its name.
     fn get_model(&self, model_name: ModelName) -> Option<Ref<ModelName, Arc<Model>>>;
