@@ -1,5 +1,6 @@
 use aws_config::meta::region::RegionProviderChain;
 use aws_sdk_s3 as s3;
+use dashmap::mapref::one::Ref;
 use dashmap::DashMap;
 use flate2::read::GzDecoder;
 use std::fs::File;
@@ -8,7 +9,7 @@ use std::sync::Arc;
 use tar::Archive;
 use tokio::io::AsyncWriteExt;
 
-use crate::model_store::storage::{load_models, Model, ModelName};
+use crate::model_store::storage::{load_models, Metadata, Model, ModelName, Storage};
 
 /// A struct representing a model store that interfaces with S3.
 #[allow(dead_code)]
@@ -19,6 +20,8 @@ pub struct S3ModelStore {
     client: s3::Client,
     /// The name S3 bucket where models are stored.
     bucket_name: String,
+    /// Directory, which stores the model artifacts downloaded from S3
+    model_store_dir: String,
 }
 
 const DOWNLOADED_MODELS_DIRECTORY_NAME: &str = "model_store";
@@ -44,8 +47,15 @@ impl S3ModelStore {
         let config = aws_config::from_env().region(region_provider).load().await;
         // Create an S3 client with the loaded configuration
         let client = s3::Client::new(&config);
+        // Directory which stores the models downloaded from S3
+        let model_store_dir = format!(
+            "{}/{}",
+            std::env::var("HOME").unwrap(),
+            DOWNLOADED_MODELS_DIRECTORY_NAME
+        );
         // Fetch the models from S3
-        let models = match fetch_models(&client, bucket_name.clone()).await {
+        let models = match fetch_models(&client, bucket_name.clone(), model_store_dir.clone()).await
+        {
             Ok(models) => {
                 log::info!("Successfully fetched valid models from S3 ✅");
                 models
@@ -59,23 +69,87 @@ impl S3ModelStore {
             models,
             client,
             bucket_name,
+            model_store_dir,
         })
+    }
+}
+
+impl Storage for S3ModelStore {
+    fn add_model(&self, model_name: ModelName, _model_path: &str) -> anyhow::Result<()> {
+        todo!()
+    }
+
+    fn update_model(&self, _model_name: ModelName) -> anyhow::Result<()> {
+        todo!()
+    }
+
+    /// Retrieves a model from the model store.
+    ///
+    /// This function returns a reference to the model with the specified name if it exists.
+    ///
+    /// # Arguments
+    ///
+    /// * `model_name` - The name of the model to be retrieved.
+    ///
+    /// # Returns
+    ///
+    /// This function returns an `Option`:
+    /// * `Some(Ref<ModelName, Arc<Model>>)` if the model exists.
+    /// * `None` if the model does not exist.
+    ///
+    fn get_model(&self, model_name: ModelName) -> Option<Ref<ModelName, Arc<Model>>> {
+        self.models.get(model_name.as_str())
+    }
+
+    /// Retrieves metadata for all models in the model store.
+    ///
+    /// This function returns a vector of `Metadata` containing information about all the models in the store.
+    ///
+    /// # Returns
+    ///
+    /// This function returns an `anyhow::Result` containing a vector of `Metadata`.
+    ///
+    fn get_models(&self) -> anyhow::Result<Vec<Metadata>> {
+        let model: Vec<Metadata> = self
+            .models
+            .iter()
+            .map(|f| f.value().info.to_owned())
+            .collect();
+        Ok(model)
+    }
+
+    /// Deletes a model from the model store.
+    ///
+    /// This function removes the model with the specified name from the store.
+    ///
+    /// # Arguments
+    ///
+    /// * `model_name` - The name of the model to be deleted.
+    ///
+    /// # Errors
+    ///
+    /// This function returns an error if the specified model does not exist in the store.
+    fn delete_model(&self, model_name: ModelName) -> anyhow::Result<()> {
+        match self.models.remove(&model_name) {
+            None => {
+                anyhow::bail!(
+                    "Failed to delete model as the specified model {} does not exist",
+                    model_name
+                )
+            }
+            Some(_) => Ok(()),
+        }
     }
 }
 
 async fn fetch_models(
     client: &s3::Client,
     bucket_name: String,
+    model_store_dir: String,
 ) -> anyhow::Result<DashMap<ModelName, Arc<Model>>> {
     let keys = get_keys(client, bucket_name.clone()).await;
 
-    let output_dir = format!(
-        "{}/{}",
-        std::env::var("HOME").unwrap(),
-        DOWNLOADED_MODELS_DIRECTORY_NAME
-    );
-
-    match download_objects(client, bucket_name, keys.unwrap(), output_dir.as_str()).await {
+    match download_objects(client, bucket_name, keys.unwrap(), model_store_dir.as_str()).await {
         Ok(_) => {
             log::info!("Downloaded objects from s3 ✅")
         }
@@ -84,7 +158,7 @@ async fn fetch_models(
         }
     }
 
-    let models = match load_models(output_dir.clone()) {
+    let models = match load_models(model_store_dir) {
         Ok(models) => {
             log::info!("Successfully loaded models from directory ✅");
             models
@@ -244,17 +318,6 @@ fn unpack_tarball(tarball_path: &str, out_dir: &str) -> anyhow::Result<()> {
 // todo: use Mocks
 #[cfg(test)]
 mod tests {
-    // use super::*;
-    //
-    // fn cleanup_temp_dir() {
-    //     let output_dir = format!(
-    //         "{}/{}",
-    //         std::env::var("HOME").unwrap(),
-    //         DOWNLOADED_MODELS_DIRECTORY_NAME
-    //     );
-    //     std::fs::remove_dir_all(output_dir).unwrap();
-    // }
-    //
     // #[tokio::test]
     // async fn successfully_load_models_from_s3_model_store() {
     //     // Arrange
@@ -267,6 +330,6 @@ mod tests {
     //     assert!(model_store.is_ok());
     //
     //     // Cleanup
-    //     cleanup_temp_dir()
+    //     std::fs::remove_dir_all(model_store.unwrap().model_store_dir).unwrap();
     // }
 }
