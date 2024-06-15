@@ -1,6 +1,6 @@
 [package]
 name = "jams-serve"
-version = "0.1.16"
+version = "0.1.17"
 edition = "2021"
 description = "jams-serve provides a http and gRPC API for jams-core."
 homepage = "https://github.com/gagansingh894/jams-rs"
@@ -16,7 +16,7 @@ crate-type = ["lib"]
 
 
 [dependencies]
-jams-core = {path = "../jams-core", version = "0.1" }
+jams-core = {path = "../jams-core", version = "0.2" }
 axum = "0.7"
 clap = { version = "4.5", features = ["derive"] }
 anyhow = "1"
