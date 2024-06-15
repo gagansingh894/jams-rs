@@ -1,6 +1,7 @@
 use async_trait::async_trait;
 use aws_config::meta::region::RegionProviderChain;
 use aws_sdk_s3 as s3;
+use chrono::Utc;
 use dashmap::mapref::one::Ref;
 use dashmap::DashMap;
 use flate2::read::GzDecoder;
@@ -10,7 +11,9 @@ use std::sync::Arc;
 use tar::Archive;
 use tokio::io::AsyncWriteExt;
 
-use crate::model_store::storage::{load_models, Metadata, Model, ModelName, Storage};
+use crate::model_store::storage::{
+    extract_framework_from_path, load_models, load_predictor, Metadata, Model, ModelName, Storage,
+};
 
 /// A struct representing a model store that interfaces with S3.
 #[allow(dead_code)]
@@ -48,10 +51,10 @@ impl S3ModelStore {
         let config = aws_config::from_env().region(region_provider).load().await;
         // Create an S3 client with the loaded configuration
         let client = s3::Client::new(&config);
-        // Directory which stores the models downloaded from S3
+        // Directory, which stores the models downloaded from S3
         let model_store_dir = format!(
             "{}/{}",
-            std::env::var("HOME").unwrap(),
+            std::env::var("HOME").unwrap_or("/usr/local".to_string()),
             DOWNLOADED_MODELS_DIRECTORY_NAME
         );
         // Fetch the models from S3
@@ -77,12 +80,110 @@ impl S3ModelStore {
 
 #[async_trait]
 impl Storage for S3ModelStore {
-    async fn add_model(&self, _model_name: ModelName, _model_path: &str) -> anyhow::Result<()> {
-        todo!()
+    async fn add_model(&self, model_name: ModelName, _model_path: &str) -> anyhow::Result<()> {
+        // Prepare the S3 key from model_name
+        let object_key = format!("{}.tar.gz", model_name);
+
+        // Download the model
+        match download_objects(
+            &self.client,
+            self.bucket_name.clone(),
+            vec![object_key],
+            self.model_store_dir.as_str(),
+        )
+        .await
+        {
+            Ok(_) => {
+                log::info!("Downloaded object from s3 ✅");
+            }
+            Err(_) => {
+                log::warn!("Failed to download object from s3 ⚠️");
+            }
+        };
+
+        // We will not be using the model_path from the request
+        // as we have all the information to load the model
+        let model_path = format!("{}/{}", self.model_store_dir, model_name);
+
+        // Load the model into memory
+        match extract_framework_from_path(model_path.clone()) {
+            None => {
+                anyhow::bail!("Failed to extract framework from path");
+            }
+            Some(framework) => match load_predictor(framework, model_path.as_str()) {
+                Ok(predictor) => {
+                    let now = Utc::now();
+                    let model = Model::new(
+                        predictor,
+                        model_name.clone(),
+                        framework,
+                        model_path.to_string(),
+                        now.to_rfc2822(),
+                    );
+                    self.models.insert(model_name, Arc::new(model));
+                    Ok(())
+                }
+                Err(e) => {
+                    anyhow::bail!("Failed to add new model: {e}")
+                }
+            },
+        }
     }
 
-    async fn update_model(&self, _model_name: ModelName) -> anyhow::Result<()> {
-        todo!()
+    async fn update_model(&self, model_name: ModelName) -> anyhow::Result<()> {
+        // Here model name will be the actual name and not the s3 key as used in add_model.
+        // By calling remove on the hashmap, the object is returned on success/
+        // We use the returned object, in this case the model to extract the framework and model path
+        match self.models.remove(model_name.as_str()) {
+            None => {
+                anyhow::bail!(
+                    "Failed to update as the specified model {} does not exist",
+                    model_name
+                )
+            }
+            Some(model) => {
+                let (model_framework, model_path) =
+                    (model.1.info.framework, model.1.info.path.as_str());
+
+                // Prepare the S3 key from model_name
+                let object_key = format!("{}.tar.gz", model_name);
+
+                // Fetch the latest model from S3
+                match download_objects(
+                    &self.client,
+                    self.bucket_name.clone(),
+                    vec![object_key],
+                    self.model_store_dir.as_str(),
+                )
+                .await
+                {
+                    Ok(_) => {
+                        log::info!("Downloaded object from s3 ✅");
+                    }
+                    Err(_) => {
+                        log::warn!("Failed to download object from s3 ⚠️");
+                    }
+                };
+
+                match load_predictor(model_framework, model_path) {
+                    Ok(predictor) => {
+                        let now = Utc::now();
+                        let model = Model::new(
+                            predictor,
+                            model_name.clone(),
+                            model_framework,
+                            model_path.to_string(), // todo: use S3 path here and not the local model dir path
+                            now.to_rfc2822(),
+                        );
+                        self.models.insert(model_name.clone(), Arc::new(model));
+                        Ok(())
+                    }
+                    Err(e) => {
+                        anyhow::bail!("Failed to update the specified model {}: {}", model_name, e)
+                    }
+                }
+            }
+        }
     }
 
     /// Retrieves a model from the model store.
