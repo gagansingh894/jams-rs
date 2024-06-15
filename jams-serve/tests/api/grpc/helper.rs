@@ -1,14 +1,14 @@
-use std::sync::Arc;
-use jams_serve::grpc::service::jams_v1::model_server_client::ModelServerClient;
-use jams_serve::grpc::service::jams_v1::model_server_server::ModelServerServer;
-use jams_serve::grpc::service::JamsService;
-use std::time::Duration;
-use rayon::ThreadPoolBuilder;
-use tonic::transport::server::Router;
-use tonic::transport::{Channel, Server};
 use jams_core::manager::Manager;
 use jams_core::model_store::local::LocalModelStore;
 use jams_serve::common::state::AppState;
+use jams_serve::grpc::service::jams_v1::model_server_client::ModelServerClient;
+use jams_serve::grpc::service::jams_v1::model_server_server::ModelServerServer;
+use jams_serve::grpc::service::JamsService;
+use rayon::ThreadPoolBuilder;
+use std::sync::Arc;
+use std::time::Duration;
+use tonic::transport::server::Router;
+use tonic::transport::{Channel, Server};
 
 fn setup_shared_state() -> Arc<AppState> {
     let cpu_pool = ThreadPoolBuilder::new()
@@ -16,12 +16,13 @@ fn setup_shared_state() -> Arc<AppState> {
         .build()
         .expect("Failed to build rayon threadpool ❌");
 
-    let model_store = LocalModelStore::new("".to_string())
-        .expect("Failed to create model store ❌");
+    let model_store =
+        LocalModelStore::new("".to_string()).expect("Failed to create model store ❌");
 
-    let manager =  Arc::new(Manager::new(Arc::new(model_store)).expect("Failed to initialize manager ❌"));
+    let manager =
+        Arc::new(Manager::new(Arc::new(model_store)).expect("Failed to initialize manager ❌"));
 
-    Arc::new(AppState{manager, cpu_pool})
+    Arc::new(AppState { manager, cpu_pool })
 }
 
 pub fn jams_grpc_test_router() -> Router {

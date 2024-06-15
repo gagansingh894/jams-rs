@@ -1,15 +1,15 @@
 use crate::common::shutdown::shutdown_signal;
+use crate::common::state::AppState;
 use crate::grpc::service::jams_v1::model_server_server::ModelServerServer;
 use crate::grpc::service::{jams_v1, JamsService};
-use std::env;
-use std::sync::Arc;
-use rayon::ThreadPoolBuilder;
-use tonic::codegen::tokio_stream::wrappers::TcpListenerStream;
-use tonic::transport::Server;
 use jams_core::manager::Manager;
 use jams_core::model_store::local::LocalModelStore;
 use jams_core::model_store::s3::S3ModelStore;
-use crate::common::state::AppState;
+use rayon::ThreadPoolBuilder;
+use std::env;
+use std::sync::Arc;
+use tonic::codegen::tokio_stream::wrappers::TcpListenerStream;
+use tonic::transport::Server;
 
 /// Configuration for the gRPC server.
 ///
@@ -117,21 +117,22 @@ pub async fn start(config: GRPCConfig) -> anyhow::Result<()> {
             Arc::new(Manager::new(Arc::new(model_store)).expect("Failed to initialize manager ❌"))
         }
         false => {
-            let model_store = LocalModelStore::new(model_dir)
-                .expect("Failed to create model store ❌");
+            let model_store =
+                LocalModelStore::new(model_dir).expect("Failed to create model store ❌");
             Arc::new(Manager::new(Arc::new(model_store)).expect("Failed to initialize manager ❌"))
         }
     };
 
     // setup app state
-    let app_state = Arc::new(AppState {manager, cpu_pool});
-
+    let app_state = Arc::new(AppState { manager, cpu_pool });
 
     // create service
-    let jams_service =
-        JamsService::new(app_state).expect("Failed to create J.A.M.S service ❌");
+    let jams_service = JamsService::new(app_state).expect("Failed to create J.A.M.S service ❌");
 
-    tracing::info!("Rayon threadpool started with {} workers ⚙️", worker_pool_threads);
+    tracing::info!(
+        "Rayon threadpool started with {} workers ⚙️",
+        worker_pool_threads
+    );
 
     // add reflection
     let reflection_service = tonic_reflection::server::Builder::configure()
@@ -172,7 +173,7 @@ mod tests {
             use_debug_level: Some(false),
             num_workers: Some(1),
             with_s3_model_store: Some(false),
-            s3_bucket_name: Some("".to_string())
+            s3_bucket_name: Some("".to_string()),
         };
 
         // Act
@@ -189,7 +190,7 @@ mod tests {
             use_debug_level: Some(false),
             num_workers: Some(0),
             with_s3_model_store: Some(false),
-            s3_bucket_name: Some("".to_string())
+            s3_bucket_name: Some("".to_string()),
         };
 
         // Act

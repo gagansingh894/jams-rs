@@ -1,12 +1,12 @@
 use crate::common::shutdown::shutdown_signal;
+use crate::common::state::AppState;
 use crate::http::router::build_router;
-use std::env;
-use std::sync::Arc;
-use rayon::ThreadPoolBuilder;
 use jams_core::manager::Manager;
 use jams_core::model_store::local::LocalModelStore;
 use jams_core::model_store::s3::S3ModelStore;
-use crate::common::state::AppState;
+use rayon::ThreadPoolBuilder;
+use std::env;
+use std::sync::Arc;
 
 /// Configuration for the HTTP server.
 ///
@@ -114,14 +114,14 @@ pub async fn start(config: HTTPConfig) -> anyhow::Result<()> {
             Arc::new(Manager::new(Arc::new(model_store)).expect("Failed to initialize manager ❌"))
         }
         false => {
-            let model_store = LocalModelStore::new(model_dir)
-                .expect("Failed to create model store ❌");
+            let model_store =
+                LocalModelStore::new(model_dir).expect("Failed to create model store ❌");
             Arc::new(Manager::new(Arc::new(model_store)).expect("Failed to initialize manager ❌"))
         }
     };
 
     // setup shared state
-    let shared_state = Arc::new(AppState {manager, cpu_pool});
+    let shared_state = Arc::new(AppState { manager, cpu_pool });
 
     let app = match build_router(shared_state) {
         Ok(app) => app,
@@ -163,7 +163,7 @@ mod tests {
             use_debug_level: Some(false),
             num_workers: Some(1),
             with_s3_model_store: Some(false),
-            s3_bucket_name: Some("".to_string())
+            s3_bucket_name: Some("".to_string()),
         };
 
         // Act
@@ -183,7 +183,7 @@ mod tests {
             use_debug_level: Some(false),
             num_workers: Some(0),
             with_s3_model_store: Some(false),
-            s3_bucket_name: Some("".to_string())
+            s3_bucket_name: Some("".to_string()),
         };
 
         // Act

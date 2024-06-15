@@ -154,11 +154,11 @@ fn parse_to_proto_models(models_metadata: Vec<Metadata>) -> Vec<Model> {
 mod tests {
     use super::*;
     use chrono::Utc;
-    use rayon::ThreadPoolBuilder;
     use jams_core::manager::Manager;
     use jams_core::model::frameworks::TENSORFLOW;
     use jams_core::model_store::local::LocalModelStore;
     use jams_core::model_store::storage::Metadata;
+    use rayon::ThreadPoolBuilder;
 
     fn setup_shared_state() -> Arc<AppState> {
         let cpu_pool = ThreadPoolBuilder::new()
@@ -166,12 +166,13 @@ mod tests {
             .build()
             .expect("Failed to build rayon threadpool ❌");
 
-        let model_store = LocalModelStore::new("".to_string())
-            .expect("Failed to create model store ❌");
+        let model_store =
+            LocalModelStore::new("".to_string()).expect("Failed to create model store ❌");
 
-        let manager =  Arc::new(Manager::new(Arc::new(model_store)).expect("Failed to initialize manager ❌"));
+        let manager =
+            Arc::new(Manager::new(Arc::new(model_store)).expect("Failed to initialize manager ❌"));
 
-        Arc::new(AppState{manager, cpu_pool})
+        Arc::new(AppState { manager, cpu_pool })
     }
 
     #[test]
