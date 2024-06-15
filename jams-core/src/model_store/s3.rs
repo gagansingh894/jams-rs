@@ -16,7 +16,7 @@ use crate::model_store::storage::{load_models, Metadata, Model, ModelName, Stora
 #[allow(dead_code)]
 pub struct S3ModelStore {
     /// A thread-safe map of model names to their corresponding models.
-    pub models: DashMap<ModelName, Arc<Model>>,
+    pub models: Arc<DashMap<ModelName, Arc<Model>>>,
     /// An S3 client for interacting with the S3 service.
     client: s3::Client,
     /// The name S3 bucket where models are stored.
@@ -67,7 +67,7 @@ impl S3ModelStore {
         };
 
         Ok(Self {
-            models,
+            models: Arc::new(models),
             client,
             bucket_name,
             model_store_dir,
