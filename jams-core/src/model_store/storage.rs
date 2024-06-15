@@ -7,10 +7,12 @@ use dashmap::DashMap;
 use serde::Serialize;
 use std::fs;
 use std::sync::Arc;
+use async_trait::async_trait;
 
 pub type ModelName = String;
 
 /// Trait representing a storage system for machine learning models.
+#[async_trait]
 pub trait Storage: Send + Sync + 'static {
     /// Adds a specific machine learning/deep learning model
     fn add_model(&self, model_name: ModelName, model_path: &str) -> anyhow::Result<()>;
