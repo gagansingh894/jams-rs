@@ -18,7 +18,7 @@ use tokio::task;
 /// - `models` (DashMap<ModelName, Arc&ltModel&gt>): A thread-safe map of model names to their respective Model struct instances.
 /// - `model_dir` (String): The directory where models are stored.
 pub struct LocalModelStore {
-    pub models: DashMap<ModelName, Arc<Model>>,
+    pub models: Arc<DashMap<ModelName, Arc<Model>>>,
     pub model_dir: String,
 }
 
@@ -52,7 +52,10 @@ impl LocalModelStore {
             },
         };
 
-        Ok(LocalModelStore { models, model_dir })
+        Ok(LocalModelStore {
+            models: Arc::new(models),
+            model_dir,
+        })
     }
 }
 
@@ -76,7 +79,8 @@ impl Storage for LocalModelStore {
     async fn add_model(&self, model_name: ModelName, model_path: &str) -> anyhow::Result<()> {
         let model_name = model_name.clone();
         let model_path = model_path.to_string();
-        let models = self.models.clone();
+        let models = Arc::clone(&self.models);
+        // println!("{}", models.len());
 
         match task::spawn_blocking(move || {
             // Blocking code inside spawn_blocking closure
@@ -94,7 +98,7 @@ impl Storage for LocalModelStore {
                             model_path.to_string(),
                             now.to_rfc2822(),
                         );
-                        models.insert(model_name, Arc::from(model));
+                        models.insert(model_name, Arc::new(model));
                         Ok(())
                     }
                     Err(e) => {
