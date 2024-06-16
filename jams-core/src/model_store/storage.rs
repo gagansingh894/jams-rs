@@ -391,6 +391,30 @@ fn sanitize_model_name(input: &str) -> String {
     }
 }
 
+/// Appends a file extension to the `model_path` based on the specified `model_framework`.
+///
+/// # Arguments
+///
+/// * `model_framework` - The framework type of the model.
+/// * `model_path` - The base path of the model file.
+///
+/// # Returns
+///
+/// A `String` representing the `model_path` appended with the appropriate file extension
+/// based on the `model_framework`.
+///
+pub fn append_model_format(model_framework: ModelFramework, model_path: String) -> String {
+    if (model_framework == TORCH) || (model_framework == PYTORCH) {
+        return format!("{}.pt", model_path);
+    }
+
+    if model_framework == LIGHTGBM {
+        return format!("{}.txt", model_path);
+    }
+
+    model_path
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

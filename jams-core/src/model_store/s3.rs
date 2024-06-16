@@ -1,3 +1,7 @@
+use crate::model_store::storage::{
+    append_model_format, extract_framework_from_path, load_models, load_predictor, Metadata, Model,
+    ModelName, Storage,
+};
 use async_trait::async_trait;
 use aws_config::meta::region::RegionProviderChain;
 use aws_sdk_s3 as s3;
@@ -11,10 +15,6 @@ use std::path::Path;
 use std::sync::Arc;
 use tar::Archive;
 use tokio::io::AsyncWriteExt;
-
-use crate::model_store::storage::{
-    extract_framework_from_path, load_models, load_predictor, Metadata, Model, ModelName, Storage,
-};
 
 /// A struct representing a model store that interfaces with S3.
 #[allow(dead_code)]
@@ -134,6 +134,8 @@ impl Storage for S3ModelStore {
     /// * The model cannot be loaded into memory.
     async fn add_model(&self, model_name: ModelName, _model_path: &str) -> anyhow::Result<()> {
         // Prepare the S3 key from model_name
+        // It is assumed that model will always be present as a .tar.gz file in S3
+        // Panic otherwise
         let object_key = format!("{}.tar.gz", model_name);
 
         // Download the model
@@ -153,6 +155,13 @@ impl Storage for S3ModelStore {
             }
         };
 
+        // todo: Figure out a better approach or provide utils function in python which pack the artefacts in the required format
+        // At this point we have extracted the tar ball from S3
+        // It is assumed that the name of tar ball and the actual mode name is the same
+        // Based on the framework, the path is modified by appending the format
+        // If pytorch -> append '.pt'
+        // If lightgbm -> append '.txt'
+
         // We will not be using the model_path from the request
         // as we have all the information to load the model
         let model_path = format!("{}/{}", self.model_store_dir, model_name);
@@ -162,7 +171,10 @@ impl Storage for S3ModelStore {
             None => {
                 anyhow::bail!("Failed to extract framework from path");
             }
-            Some(framework) => match load_predictor(framework, model_path.as_str()) {
+            Some(framework) => match load_predictor(
+                framework,
+                append_model_format(framework, model_path.clone()).as_str(),
+            ) {
                 Ok(predictor) => {
                     let now = Utc::now();
                     let model = Model::new(
