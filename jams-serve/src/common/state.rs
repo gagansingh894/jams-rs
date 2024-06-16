@@ -14,6 +14,31 @@ pub struct AppState {
     pub cpu_pool: ThreadPool,
 }
 
+/// Builds the application state from the provided configuration.
+///
+/// This function initializes the necessary components based on the given configuration,
+/// including the model store (local or S3-based) and a thread pool for CPU-intensive tasks.
+///
+/// # Arguments
+///
+/// * `config` - The server configuration.
+///
+/// # Returns
+///
+/// * `Result<Arc<AppState>>` - The application state wrapped in a `Result` and an `Arc`.
+///
+/// # Errors
+///
+/// This function returns an error if:
+/// * The number of worker threads is less than 1.
+/// * The S3 bucket name is not specified when `with_s3_model_store` is true.
+/// * Any failure occurs during the initialization of the thread pool, model store, or manager.
+///
+/// # Environment Variables
+///
+/// * `MODEL_STORE_DIR` - The directory to store models locally (optional).
+/// * `S3_BUCKET_NAME` - The name of the S3 bucket to store models (required if `with_s3_model_store` is true).
+///
 pub async fn build_app_state_from_config(config: server::Config) -> anyhow::Result<Arc<AppState>> {
     let model_dir = config.model_dir.unwrap_or_else(|| {
         // search for environment variable

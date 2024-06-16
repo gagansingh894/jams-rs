@@ -5,30 +5,25 @@ use crate::http::router::build_router;
 
 /// Starts the HTTP server with the provided configuration.
 ///
-/// This function initializes and starts the HTTP server using the provided configuration. It handles
-/// the following:
-/// - Determines the model directory from the configuration or environment variable.
-/// - Sets the port number, log level, and number of CPU worker threads based on the configuration.
-/// - Builds the router and starts the server, listening on the specified port.
-/// - Logs server status and handles graceful shutdown signals.
+/// This function initializes the necessary components and starts the server,
+/// including setting up logging, building the shared application state, configuring the router,
+/// and running the server with graceful shutdown.
 ///
 /// # Arguments
-/// - `config`: The configuration for the HTTP server, including the model directory, port number, log level,
-///   and the number of CPU worker threads.
 ///
-/// # Panics
-/// This function will panic if:
-/// - The router fails to build.
-/// - The TCP listener fails to bind to the specified address.
-/// - The server fails to start.
+/// * `config` - The server configuration.
 ///
-/// # Environment Variables
-/// - `MODEL_STORE_DIR`: If the `model_dir` is not provided in the configuration, this environment variable
-///   is used to determine the model directory.
+/// # Returns
 ///
-/// # Logging
-/// - Logs errors if the `model_dir` is not provided and the `MODEL_STORE_DIR` environment variable is not set.
-/// - Log the server status, including the address it's running on and any shutdown signals received.
+/// * `Result<()>` - An empty result indicating success or an error.
+///
+/// # Errors
+///
+/// This function will return an error if:
+/// * The shared state cannot be built.
+/// * The router cannot be built.
+/// * The TCP listener cannot be created.
+/// * Any failure occurs during the initialization of the services or the server.
 pub async fn start(config: server::Config) -> anyhow::Result<()> {
     // init port number
     let port = config.port.unwrap_or(3000);
