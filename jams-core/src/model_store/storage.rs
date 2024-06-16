@@ -590,4 +590,34 @@ mod tests {
         // assert
         assert_eq!(result, "my_torch_model");
     }
+
+    #[test]
+    fn append_model_format_when_model_framework_is_torch() {
+        let path = "model/directory/my_torch_model";
+
+        let result = append_model_format(TORCH, path.to_string());
+
+        // assert
+        assert_eq!(result, "model/directory/my_torch_model.pt")
+    }
+
+    #[test]
+    fn append_model_format_when_model_framework_is_lightgbm() {
+        let path = "model/directory/my_lightgbm_model";
+
+        let result = append_model_format(LIGHTGBM, path.to_string());
+
+        // assert
+        assert_eq!(result, "model/directory/my_lightgbm_model.txt")
+    }
+
+    #[test]
+    fn do_not_append_model_format_when_model_framework_not_torch_or_lightgbm() {
+        let path = "model/directory/catboost-my_model";
+
+        let result = append_model_format(CATBOOST, path.to_string());
+
+        // assert
+        assert_eq!(result, "model/directory/catboost-my_model")
+    }
 }

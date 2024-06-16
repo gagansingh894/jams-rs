@@ -80,7 +80,6 @@ impl Storage for LocalModelStore {
         let model_name = model_name.clone();
         let model_path = model_path.to_string();
         let models = Arc::clone(&self.models);
-        // println!("{}", models.len());
 
         match task::spawn_blocking(move || {
             // Blocking code inside spawn_blocking closure
