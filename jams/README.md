@@ -26,7 +26,7 @@ docker run --rm -v /your/path/to/model_store:/model_store -p 4000:4000 gagansing
 ```
 
 To run with a S3 backend
-- Create a S3 bucket with some models in it. The structure should be similar to the one shown in the example below (local model store)
+- Create a S3 bucket with some models in it. Please refer to the structure of S3 model store [here](https://github.com/gagansingh894/jams-rs?tab=readme-ov-file#s3-model-store).
 - Set the environment variables - `AWS_REGION`, `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`. Alternatively if you have multiple AWS profiles then just set the `AWS_PROFILE-<profile_name>`
   You also need to set the bucket name. This can either be set via `S3_BUCKET_NAME` env variable or passed via `--s3-bucket-name` flag
 - Run the command to start HTTP server with S3 model store. It assumes that bucket name is already set via `S3_BUCKET_NAME`
@@ -169,48 +169,84 @@ By default, the server runs on port `3000` and `2` workers in the rayon threadpo
 the `--port` and `--num-workers` flags respectively. The log level can also be changed to
 `DEBUG` level using `--use-debug-level=true`.
 
-Below is an example of local model dir.
+Below are examples of different model stores.
+
+#### Local Model Store
 Notice the model naming convention
-**<model_framework>-model_name**
+**<model_framework>-model_name** followed by **format** if applicable
+
 
 ```
 .
-└── local_model_store
-    ├── catboost-my_awesome_binary_model
-    ├── catboost-my_awesome_multiclass_model
-    ├── catboost-my_awesome_regressor_model
-    ├── catboost-titanic_model
-    ├── lightgbm-my_awesome_binary_model_2.txt
-    ├── lightgbm-my_awesome_reg_model.txt
-    ├── lightgbm-my_awesome_xen_binary_model.txt
-    ├── lightgbm-my_awesome_xen_prob_model.txt
-    ├── pytorch-my_awesome_californiahousing_model.pt
-    ├── tensorflow-my_awesome_autompg_model
-    │   ├── assets
-    │   ├── fingerprint.pb
-    │   ├── keras_metadata.pb
-    │   ├── saved_model.pb
-    │   └── variables
-    │       ├── variables.data-00000-of-00001
-    │       └── variables.index
-    ├── tensorflow-my_awesome_penguin_model
-    │   ├── assets
-    │   ├── fingerprint.pb
-    │   ├── keras_metadata.pb
-    │   ├── saved_model.pb
-    │   └── variables
-    │       ├── variables.data-00000-of-00001
-    │       └── variables.index
-    ├── tensorflow-my_awesome_sequential_model
-    │   ├── assets
-    │   ├── fingerprint.pb
-    │   ├── keras_metadata.pb
-    │   ├── saved_model.pb
-    │   └── variables
-    │       ├── variables.data-00000-of-00001
-    │       └── variables.index
-    └── torch-my_awesome_penguin_model.pt
+├── local_model_store
+│   ├── catboost-my_awesome_binary_model
+│   ├── catboost-my_awesome_multiclass_model
+│   ├── catboost-my_awesome_regressor_model
+│   ├── catboost-titanic_model
+│   ├── lightgbm-my_awesome_binary_model_2.txt
+│   ├── lightgbm-my_awesome_reg_model.txt
+│   ├── lightgbm-my_awesome_xen_binary_model.txt
+│   ├── lightgbm-my_awesome_xen_prob_model.txt
+│   ├── pytorch-my_awesome_californiahousing_model.pt
+│   ├── tensorflow-large_features_model
+│   │   ├── assets
+│   │   ├── saved_model.pb
+│   │   └── variables
+│   │       ├── variables.data-00000-of-00001
+│   │       └── variables.index
+│   ├── tensorflow-my_awesome_autompg_model
+│   │   ├── assets
+│   │   ├── fingerprint.pb
+│   │   ├── keras_metadata.pb
+│   │   ├── saved_model.pb
+│   │   └── variables
+│   │       ├── variables.data-00000-of-00001
+│   │       └── variables.index
+│   ├── tensorflow-my_awesome_penguin_model
+│   │   ├── assets
+│   │   ├── fingerprint.pb
+│   │   ├── keras_metadata.pb
+│   │   ├── saved_model.pb
+│   │   └── variables
+│   │       ├── variables.data-00000-of-00001
+│   │       └── variables.index
+│   ├── tensorflow-my_awesome_sequential_model
+│   │   ├── assets
+│   │   ├── fingerprint.pb
+│   │   ├── keras_metadata.pb
+│   │   ├── saved_model.pb
+│   │   └── variables
+│   │       ├── variables.data-00000-of-00001
+│   │       └── variables.index
+│   └── torch-my_awesome_penguin_model.pt
+
 ```
+
+#### S3 Model Store
+- Notice the model naming convention
+  **<model_framework>-model_name.tar.gz**.
+
+- The server unpacks and loads the model files.
+- The server will warn about the unsupported formats and continue to load other models
+
+```
+└── s3_model_store
+    ├── catboost-my_awesome_binary_model.tar.gz
+    ├── catboost-my_awesome_multiclass_model.tar.gz
+    ├── catboost-my_awesome_regressor_model.tar.gz
+    ├── catboost-titanic_model.tar.gz
+    ├── lightgbm-my_awesome_binary_model_2.tar.gz
+    ├── lightgbm-my_awesome_reg_model.tar.gz
+    ├── lightgbm-my_awesome_xen_binary_model.tar.gz
+    ├── lightgbm-my_awesome_xen_prob_model.tar.gz
+    ├── pytorch-my_awesome_californiahousing_model.tar.gz
+    ├── tensorflow-my_awesome_autompg_model.tar.gz
+    ├── tensorflow-my_awesome_penguin_model.tar.gz
+    ├── tensorflow-my_awesome_sequential_model.tar.gz
+    └── torch-my_awesome_penguin_model.tar.gz
+
+```
+
 
 ### predict
 Use this command for making predictions via CLI for making predictions for the following models
