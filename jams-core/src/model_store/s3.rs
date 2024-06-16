@@ -32,8 +32,11 @@ pub struct S3ModelStore {
 const DOWNLOADED_MODELS_DIRECTORY_NAME: &str = "model_store";
 
 impl S3ModelStore {
-    /// Creates a new `S3ModelStore`.
+    /// Creates a new instance of `S3ModelStore`.
     ///
+    /// This function initializes an `S3ModelStore` by loading the AWS configuration, creating an S3 client,
+    /// and fetching models from the specified S3 bucket. It also sets up a local directory to store the
+    /// downloaded models.
     /// # Arguments
     ///
     /// * `bucket_name` - Name of the S3 bucket where models are stored.
@@ -79,6 +82,16 @@ impl S3ModelStore {
     }
 }
 
+/// Implements the `Drop` trait for `S3ModelStore`.
+///
+/// This implementation ensures that the temporary directory used for the model store is cleaned up
+/// when the `S3ModelStore` instance is dropped. This helps to avoid leaving temporary files on disk
+/// and ensures proper resource cleanup.
+///
+/// # Fields
+///
+/// * `model_store_dir` - The directory path for the temporary local model store which contains models downloaded from S3.
+///
 impl Drop for S3ModelStore {
     fn drop(&mut self) {
         match remove_dir_all(self.model_store_dir.clone()) {
@@ -92,8 +105,33 @@ impl Drop for S3ModelStore {
     }
 }
 
+/// Implements the `Storage` trait for `S3ModelStore`, allowing models to be added and updated.
+///
+/// This implementation interacts with an S3 bucket to add and update machine learning models.
+/// It downloads models from S3, loads them into memory, and manages them using a hash map.
+///
 #[async_trait]
 impl Storage for S3ModelStore {
+    /// Adds a new model to the S3 model store.
+    ///
+    /// This method downloads the model from S3, extracts the framework, loads the model into memory,
+    /// and stores it in the `models` hashmap.
+    ///
+    /// # Arguments
+    ///
+    /// * `model_name` - The name of the model.
+    /// * `_model_path` - The path to the model file (unused in this implementation as models are fetched from S3).
+    ///
+    /// # Returns
+    ///
+    /// * `Result<()>` - An empty result indicating success or an error.
+    ///
+    /// # Errors
+    ///
+    /// This method will return an error if:
+    /// * The model cannot be downloaded from S3.
+    /// * The framework cannot be extracted from the model path.
+    /// * The model cannot be loaded into memory.
     async fn add_model(&self, model_name: ModelName, _model_path: &str) -> anyhow::Result<()> {
         // Prepare the S3 key from model_name
         let object_key = format!("{}.tar.gz", model_name);
@@ -144,6 +182,26 @@ impl Storage for S3ModelStore {
         }
     }
 
+    /// Updates an existing model in the S3 model store.
+    ///
+    /// This method updates the specified model by fetching the latest version from S3,
+    /// extracting the framework, reloading the model into memory, and updating the `models` hashmap.
+    ///
+    /// # Arguments
+    ///
+    /// * `model_name` - The name of the model to update.
+    ///
+    /// # Returns
+    ///
+    /// * `Result<()>` - An empty result indicating success or an error.
+    ///
+    /// # Errors
+    ///
+    /// This method will return an error if:
+    /// * The specified model does not exist in the `models` hashmap.
+    /// * The latest model version cannot be downloaded from S3.
+    /// * The framework cannot be extracted from the model path.
+    /// * The model cannot be loaded into memory.
     async fn update_model(&self, model_name: ModelName) -> anyhow::Result<()> {
         // Here model name will be the actual name and not the s3 key as used in add_model.
         // By calling remove on the hashmap, the object is returned on success/
@@ -259,6 +317,30 @@ impl Storage for S3ModelStore {
     }
 }
 
+/// Fetches models from an S3 bucket, downloads them to a local directory, and loads them into memory.
+///
+/// This function first retrieves object keys from the S3 bucket, downloads corresponding objects,
+/// saves and unpacks them into the specified local directory, and finally loads the models into memory.
+///
+/// # Arguments
+///
+/// * `client` - An `s3::Client` instance for interacting with AWS S3.
+/// * `bucket_name` - The name of the S3 bucket from which to fetch models.
+/// * `model_store_dir` - The local directory where downloaded models will be stored and loaded from.
+///
+/// # Returns
+///
+/// * `Result<DashMap<ModelName, Arc<Model>>>` - A `DashMap` containing loaded models mapped by their names,
+///   or an error if fetching or loading models fails.
+///
+/// # Errors
+///
+/// This function will return an error if:
+/// * The object keys cannot be retrieved from the S3 bucket.
+/// * Objects cannot be downloaded from S3.
+/// * Downloaded tarballs cannot be unpacked.
+/// * Models cannot be loaded from the local directory.
+///
 async fn fetch_models(
     client: &s3::Client,
     bucket_name: String,
@@ -288,6 +370,25 @@ async fn fetch_models(
     Ok(models)
 }
 
+/// Retrieves object keys from an S3 bucket.
+///
+/// This function uses an `s3::Client` instance to list object keys from the specified S3 bucket.
+///
+/// # Arguments
+///
+/// * `client` - An `s3::Client` instance for interacting with AWS S3.
+/// * `bucket_name` - The name of the S3 bucket from which to retrieve object keys.
+///
+/// # Returns
+///
+/// * `Result<Vec<String>>` - A vector containing object keys retrieved from the S3 bucket,
+///   or an error if object keys cannot be retrieved.
+///
+/// # Errors
+///
+/// This function will return an error if:
+/// * Object keys cannot be listed from the S3 bucket.
+///
 async fn get_keys(client: &s3::Client, bucket_name: String) -> anyhow::Result<Vec<String>> {
     let mut keys: Vec<String> = Vec::new();
 
@@ -329,6 +430,28 @@ async fn get_keys(client: &s3::Client, bucket_name: String) -> anyhow::Result<Ve
     Ok(keys)
 }
 
+/// Downloads objects from an S3 bucket and saves them to a local directory.
+///
+/// This function downloads objects with specified keys from the S3 bucket using an `s3::Client` instance,
+/// saves them to a temporary directory, and unpacks them into the specified output directory.
+///
+/// # Arguments
+///
+/// * `client` - An `s3::Client` instance for interacting with AWS S3.
+/// * `bucket_name` - The name of the S3 bucket from which to download objects.
+/// * `object_keys` - A vector of object keys to download from the S3 bucket.
+/// * `out_dir` - The local directory where downloaded objects will be unpacked.
+///
+/// # Returns
+///
+/// * `Result<()>` - An empty result indicating success or an error.
+///
+/// # Errors
+///
+/// This function will return an error if:
+/// * Objects cannot be downloaded from the S3 bucket.
+/// * Downloaded tarballs cannot be saved or unpacked.
+///
 async fn download_objects(
     client: &s3::Client,
     bucket_name: String,
@@ -398,6 +521,28 @@ async fn download_objects(
     Ok(())
 }
 
+/// Saves and unpacks a tarball file into a specified output directory.
+///
+/// This function saves a tarball file received as bytes to a temporary location,
+/// then unpacks it into the specified output directory.
+///
+/// # Arguments
+///
+/// * `path` - The temporary directory path where the tarball will be saved.
+/// * `key` - The key or name of the tarball file.
+/// * `data` - The tarball file data as bytes.
+/// * `out_dir` - The output directory where the tarball will be unpacked.
+///
+/// # Returns
+///
+/// * `Result<()>` - An empty result indicating success or an error.
+///
+/// # Errors
+///
+/// This function will return an error if:
+/// * The tarball file cannot be saved or created.
+/// * The tarball file cannot be unpacked into the output directory.
+///
 async fn save_and_upack_tarball(
     path: &str,
     key: String,
@@ -442,6 +587,26 @@ async fn save_and_upack_tarball(
     }
 }
 
+/// Unpacks a `.tar.gz` file into a specified output directory.
+///
+/// This function opens a `.tar.gz` file located at `tarball_path`, extracts its contents,
+/// and unpacks them into the directory specified by `out_dir`.
+///
+/// # Arguments
+///
+/// * `tarball_path` - The path to the `.tar.gz` file to unpack.
+/// * `out_dir` - The directory where the contents of the `.tar.gz` file will be unpacked.
+///
+/// # Returns
+///
+/// * `Result<()>` - An empty result indicating success or an error.
+///
+/// # Errors
+///
+/// This function will return an error if:
+/// * The `.tar.gz` file cannot be opened or read.
+/// * The contents of the `.tar.gz` file cannot be unpacked into the output directory.
+///
 fn unpack_tarball(tarball_path: &str, out_dir: &str) -> anyhow::Result<()> {
     match File::open(tarball_path) {
         Ok(tar_gz) => {
