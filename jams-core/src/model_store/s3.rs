@@ -3,7 +3,6 @@ use crate::model_store::storage::{
     ModelName, Storage,
 };
 use async_trait::async_trait;
-use aws_config::meta::region::RegionProviderChain;
 use aws_sdk_s3 as s3;
 use chrono::Utc;
 use dashmap::mapref::one::Ref;
@@ -49,10 +48,7 @@ impl S3ModelStore {
         if bucket_name.is_empty() {
             anyhow::bail!("S3 bucket name must be specified ❌")
         }
-        // Use the default region provider chain to load the region from the configuration file
-        let region_provider = RegionProviderChain::default_provider();
-        // Load the AWS configuration from the environment
-        let config = aws_config::from_env().region(region_provider).load().await;
+        let config = aws_config::load_from_env().await;
         // Create an S3 client with the loaded configuration
         let client = s3::Client::new(&config);
         // Directory, which stores the models downloaded from S3
