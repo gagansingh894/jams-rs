@@ -31,7 +31,7 @@ J.A.M.S - Just Another Model Server
         Commands::Start(subcommands) => {
             match subcommands.cmd {
                 StartSubCommands::Http(args) => {
-                    let config = jams_serve::http::server::HTTPConfig {
+                    let config = jams_serve::common::server::Config {
                         model_dir: args.model_dir,
                         port: args.port,
                         use_debug_level: args.use_debug_level,
@@ -49,7 +49,7 @@ J.A.M.S - Just Another Model Server
                     Ok(())
                 }
                 StartSubCommands::Grpc(args) => {
-                    let config = jams_serve::grpc::server::GRPCConfig {
+                    let config = jams_serve::common::server::Config {
                         model_dir: args.model_dir,
                         port: args.port,
                         use_debug_level: args.use_debug_level,
