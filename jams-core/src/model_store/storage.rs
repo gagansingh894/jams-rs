@@ -1,22 +1,24 @@
 use crate::model;
 use crate::model::frameworks::{ModelFramework, CATBOOST, LIGHTGBM, PYTORCH, TENSORFLOW, TORCH};
 use crate::model::predictor::Predictor;
+use async_trait::async_trait;
+use chrono::Utc;
 use dashmap::mapref::one::Ref;
+use dashmap::DashMap;
 use serde::Serialize;
+use std::fs;
 use std::sync::Arc;
 
 pub type ModelName = String;
 
 /// Trait representing a storage system for machine learning models.
+#[async_trait]
 pub trait Storage: Send + Sync + 'static {
-    /// Fetches all available models from the storage.
-    fn fetch_models(&self) -> anyhow::Result<()>;
-
     /// Adds a specific machine learning/deep learning model
-    fn add_model(&self, model_name: ModelName, model_path: &str) -> anyhow::Result<()>;
+    async fn add_model(&self, model_name: ModelName, model_path: &str) -> anyhow::Result<()>;
 
     /// Updates a specific machine learning/deep learning model based on model name
-    fn update_model(&self, model_name: ModelName) -> anyhow::Result<()>;
+    async fn update_model(&self, model_name: ModelName) -> anyhow::Result<()>;
 
     /// Retrieves a specific machine learning/deep learning model by its name.
     fn get_model(&self, model_name: ModelName) -> Option<Ref<ModelName, Arc<Model>>>;
@@ -101,6 +103,190 @@ impl Model {
     }
 }
 
+/// Loads models from the specified directory and returns a DashMap containing the models.
+///
+/// The models have a specific name format which allows us to identify the model framework
+/// `<model_framework>-<model_name>`
+/// The `model_framework` and `model_name` are separated by `-`
+///
+/// This function reads the contents of the provided directory, identifies model files based on
+/// their filenames, and loads them into a `DashMap` where the keys are model names and the values
+/// are `Arc`-wrapped `Model` instances.
+///
+/// # Arguments
+///
+/// * `model_dir` - A `String` specifying the path to the directory containing model files.
+///
+/// # Returns
+///
+/// A `Result` containing a `DashMap` with model names as keys and `Arc<Model>` as values.
+/// On failure, returns an `anyhow::Error` with details about the error.
+///
+/// # Errors
+///
+/// This function will return an error if it fails to read the directory, convert file paths, or
+/// load any of the models.
+pub fn load_models(model_dir: String) -> anyhow::Result<DashMap<ModelName, Arc<Model>>> {
+    let models: DashMap<ModelName, Arc<Model>> = DashMap::new();
+
+    let dir = match fs::read_dir(model_dir) {
+        Ok(dir) => dir,
+        Err(e) => {
+            anyhow::bail!("Failed to read dir: {}", e)
+        }
+    };
+
+    for file in dir {
+        let file = match file {
+            Ok(file) => file,
+            Err(e) => {
+                anyhow::bail!("Failed to read file: {}", e)
+            }
+        };
+        let (file_path, file_name) = (file.path(), file.file_name());
+        let full_path = match file_path.into_os_string().into_string() {
+            Ok(full_path) => full_path,
+            Err(_) => {
+                anyhow::bail!("Failed to convert OsString to String")
+            }
+        };
+        let file_name = match file_name.to_str() {
+            None => {
+                anyhow::bail!("Failed to convert OsString to str")
+            }
+            Some(file_name) => file_name,
+        };
+
+        if file_name.contains(TENSORFLOW) {
+            let prefix = format!("{}-", TENSORFLOW);
+            match file_name.to_string().strip_prefix(&prefix) {
+                None => {
+                    anyhow::bail!(
+                        "Failed to strip prefix {} from file name {}",
+                        prefix,
+                        file_name
+                    )
+                }
+                Some(model_name) => {
+                    let predictor = model::tensorflow::Tensorflow::load(full_path.as_str())?;
+                    let now = Utc::now();
+                    let sanitised_model_name = sanitize_model_name(model_name);
+                    let model = Model::new(
+                        Arc::new(predictor),
+                        sanitised_model_name.clone(),
+                        TENSORFLOW,
+                        full_path.clone(),
+                        now.to_rfc3339(),
+                    );
+                    models.insert(sanitised_model_name, Arc::new(model));
+                    log::info!("Successfully loaded model from path: {} ✅", full_path);
+                }
+            }
+        } else if file_name.contains(TORCH) {
+            // Torch and PyTorch are same models. PyTorch is a python wrapper around Torch
+            let prefix = format!("{}-", TORCH);
+            match file_name.to_string().strip_prefix(&prefix) {
+                None => {
+                    let prefix = format!("{}-", PYTORCH);
+                    match file_name.to_string().strip_prefix(&prefix) {
+                        None => {
+                            anyhow::bail!(
+                                "Failed to strip prefix {} from file name {}",
+                                prefix,
+                                file_name
+                            )
+                        }
+                        Some(model_name) => {
+                            let predictor = model::torch::Torch::load(full_path.as_str())?;
+                            let now = Utc::now();
+                            let sanitised_model_name = sanitize_model_name(model_name);
+                            let model = Model::new(
+                                Arc::new(predictor),
+                                sanitised_model_name.clone(),
+                                PYTORCH, // TORCH can also be used, but they are aliases
+                                full_path.clone(),
+                                now.to_rfc3339(),
+                            );
+                            models.insert(sanitised_model_name, Arc::new(model));
+                            log::info!("Successfully loaded model from path: {} ✅", full_path);
+                        }
+                    }
+                }
+                Some(model_name) => {
+                    let predictor = model::torch::Torch::load(full_path.as_str())?;
+                    let now = Utc::now();
+                    let sanitised_model_name = sanitize_model_name(model_name);
+                    let model = Model::new(
+                        Arc::new(predictor),
+                        sanitised_model_name.clone(),
+                        PYTORCH, // TORCH can also be used, but they are aliases
+                        full_path.clone(),
+                        now.to_rfc2822(),
+                    );
+                    models.insert(sanitised_model_name, Arc::new(model));
+                    log::info!("Successfully loaded model from path: {} ✅", full_path);
+                }
+            }
+        } else if file_name.contains(CATBOOST) {
+            let prefix = format!("{}-", CATBOOST);
+            match file_name.to_string().strip_prefix(&prefix) {
+                None => {
+                    anyhow::bail!(
+                        "Failed to strip prefix {} from file name {}",
+                        prefix,
+                        file_name
+                    )
+                }
+                Some(model_name) => {
+                    let predictor = model::catboost::Catboost::load(full_path.as_str())?;
+                    let now = Utc::now();
+                    let sanitised_model_name = sanitize_model_name(model_name);
+                    let model = Model::new(
+                        Arc::new(predictor),
+                        sanitised_model_name.clone(),
+                        CATBOOST,
+                        full_path.clone(),
+                        now.to_rfc2822(),
+                    );
+                    models.insert(sanitised_model_name, Arc::new(model));
+                    log::info!("Successfully loaded model from path: {} ✅", full_path);
+                }
+            }
+        } else if file_name.contains(LIGHTGBM) {
+            let prefix = format!("{}-", LIGHTGBM);
+            match file_name.to_string().strip_prefix(&prefix) {
+                None => {
+                    anyhow::bail!(
+                        "Failed to strip prefix {} from file name {}",
+                        prefix,
+                        file_name
+                    )
+                }
+                Some(model_name) => {
+                    let predictor = model::lightgbm::LightGBM::load(full_path.as_str())?;
+                    let now = Utc::now();
+                    let sanitised_model_name = sanitize_model_name(model_name);
+                    let model = Model::new(
+                        Arc::new(predictor),
+                        sanitised_model_name.clone(),
+                        LIGHTGBM,
+                        full_path.clone(),
+                        now.to_rfc2822(),
+                    );
+                    models.insert(sanitised_model_name, Arc::new(model));
+                    log::info!("Successfully loaded model from path: {} ✅", full_path);
+                }
+            }
+        } else {
+            log::warn!(
+                "Unexpected model framework encountered in file ⚠️. \n File: {} \n",
+                file_name
+            );
+        }
+    }
+    Ok(models)
+}
+
 /// Loads a machine learning model based on the specified framework and model path.
 ///
 /// # Arguments
@@ -183,6 +369,50 @@ pub fn extract_framework_from_path(model_path: String) -> Option<ModelFramework>
     } else {
         None
     }
+}
+
+/// Removes everything after the first dot ('.') from the input string.
+///
+/// # Arguments
+///
+/// * `input` - A reference to a string slice (`&str`) that contains the input string.
+///
+/// # Returns
+///
+/// A new `String` that contains the substring of `input` up to (but not including) the first dot ('.').
+/// If no dot is found in `input`, the function returns a new `String` containing the entire `input`.
+///
+fn sanitize_model_name(input: &str) -> String {
+    if let Some(index) = input.find('.') {
+        let result = &input[..index];
+        result.to_string()
+    } else {
+        input.to_string()
+    }
+}
+
+/// Appends a file extension to the `model_path` based on the specified `model_framework`.
+///
+/// # Arguments
+///
+/// * `model_framework` - The framework type of the model.
+/// * `model_path` - The base path of the model file.
+///
+/// # Returns
+///
+/// A `String` representing the `model_path` appended with the appropriate file extension
+/// based on the `model_framework`.
+///
+pub fn append_model_format(model_framework: ModelFramework, model_path: String) -> String {
+    if (model_framework == TORCH) || (model_framework == PYTORCH) {
+        return format!("{}.pt", model_path);
+    }
+
+    if model_framework == LIGHTGBM {
+        return format!("{}.txt", model_path);
+    }
+
+    model_path
 }
 
 #[cfg(test)]
@@ -339,5 +569,25 @@ mod tests {
 
         // assert
         assert!(result.is_none());
+    }
+
+    #[test]
+    fn sanitize_model_name_when_the_name_has_period() {
+        let model_name = "my_torch_model.pt";
+
+        let result = sanitize_model_name(model_name);
+
+        // assert
+        assert_eq!(result, "my_torch_model");
+    }
+
+    #[test]
+    fn do_not_sanitize_model_name_when_the_name_is_already_in_correct_form() {
+        let model_name = "my_torch_model";
+
+        let result = sanitize_model_name(model_name);
+
+        // assert
+        assert_eq!(result, "my_torch_model");
     }
 }

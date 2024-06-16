@@ -5,11 +5,8 @@ use crate::grpc::service::jams_v1::{
     AddModelRequest, DeleteModelRequest, GetModelsResponse, PredictRequest, PredictResponse,
     UpdateModelRequest,
 };
-use jams_core::manager::Manager;
-use jams_core::model_store::local::LocalModelStore;
 use jams_core::model_store::storage::Metadata;
 use jams_v1::model_server_server::ModelServer;
-use rayon::ThreadPoolBuilder;
 use std::sync::Arc;
 use tokio::sync::oneshot;
 use tonic::{Request, Response, Status};
@@ -27,27 +24,7 @@ pub struct JamsService {
 }
 
 impl JamsService {
-    pub fn new(model_dir: String, worker_pool_threads: usize) -> anyhow::Result<Self> {
-        if worker_pool_threads < 1 {
-            anyhow::bail!("At least 1 worker is required for rayon threadpool")
-        }
-
-        // setup rayon thread pool for cpu intensive task
-        let cpu_pool = ThreadPoolBuilder::new()
-            .num_threads(worker_pool_threads)
-            .build()
-            .expect("Failed to build rayon threadpool ❌");
-
-        // setup model store
-        let model_store = LocalModelStore::new(model_dir).expect("Failed to create model store ❌");
-        let manager = Manager::new(Arc::new(model_store)).expect("Failed to initialize manager ❌");
-
-        // app state
-        let app_state = Arc::new(AppState {
-            manager: Arc::new(manager),
-            cpu_pool,
-        });
-
+    pub fn new(app_state: Arc<AppState>) -> anyhow::Result<Self> {
         Ok(JamsService { app_state })
     }
 }
@@ -105,10 +82,15 @@ impl ModelServer for JamsService {
 
     async fn add_model(&self, request: Request<AddModelRequest>) -> Result<Response<()>, Status> {
         let add_model_request = request.into_inner();
-        match self.app_state.manager.add_model(
-            add_model_request.model_name,
-            add_model_request.model_path.as_str(),
-        ) {
+        match self
+            .app_state
+            .manager
+            .add_model(
+                add_model_request.model_name,
+                add_model_request.model_path.as_str(),
+            )
+            .await
+        {
             Ok(_) => Ok(Response::new(())),
             Err(_) => Err(Status::new(
                 tonic::Code::Internal,
@@ -125,6 +107,7 @@ impl ModelServer for JamsService {
             .app_state
             .manager
             .update_model(request.into_inner().model_name.to_string())
+            .await
         {
             Ok(_) => Ok(Response::new(())),
             Err(_) => Err(Status::new(
@@ -171,47 +154,37 @@ fn parse_to_proto_models(models_metadata: Vec<Metadata>) -> Vec<Model> {
 mod tests {
     use super::*;
     use chrono::Utc;
+    use jams_core::manager::Manager;
     use jams_core::model::frameworks::TENSORFLOW;
+    use jams_core::model_store::local::LocalModelStore;
     use jams_core::model_store::storage::Metadata;
+    use rayon::ThreadPoolBuilder;
+
+    fn setup_shared_state() -> Arc<AppState> {
+        let cpu_pool = ThreadPoolBuilder::new()
+            .num_threads(1)
+            .build()
+            .expect("Failed to build rayon threadpool ❌");
+
+        let model_store =
+            LocalModelStore::new("".to_string()).expect("Failed to create model store ❌");
+
+        let manager =
+            Arc::new(Manager::new(Arc::new(model_store)).expect("Failed to initialize manager ❌"));
+
+        Arc::new(AppState { manager, cpu_pool })
+    }
 
     #[test]
     fn successfully_create_jams_service() {
         // Arrange
-        let model_dir = "".to_string();
-        let worker_pool_threads = 2;
+        let shared_state = setup_shared_state();
 
         // Act
-        let service = JamsService::new(model_dir, worker_pool_threads);
+        let service = JamsService::new(shared_state);
 
         // Assert
         assert!(service.is_ok())
-    }
-
-    #[test]
-    fn failed_to_create_jams_service_due_to_zero_worker_in_rayon_threadpool() {
-        // Arrange
-        let model_dir = "".to_string();
-        let worker_pool_threads = 0;
-
-        // Act
-        let service = JamsService::new(model_dir, worker_pool_threads);
-
-        // Assert
-        assert!(service.is_err())
-    }
-
-    #[test]
-    #[should_panic]
-    fn failed_to_build_jams_service_because_manager_is_unable_to_initialize() {
-        // Arrange
-        let model_dir = "incorrect/or/invalid/path/".to_string();
-        let worker_pool_threads = 1;
-
-        // Act
-        let service = JamsService::new(model_dir, worker_pool_threads);
-
-        // Assert
-        assert!(service.is_err())
     }
 
     #[test]

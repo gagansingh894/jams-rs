@@ -26,14 +26,6 @@ impl Manager {
     /// - `Err(anyhow::Error)`: If there was an error fetching the models.
     ///
     pub fn new(model_store: Arc<dyn Storage>) -> anyhow::Result<Self> {
-        match model_store.fetch_models() {
-            Ok(_) => {
-                log::info!("Successfully initialized manager with a model store ✅")
-            }
-            Err(e) => {
-                anyhow::bail!("Failed to initialize manager ❌ - {}", e.to_string());
-            }
-        }
         Ok(Manager { model_store })
     }
 
@@ -60,8 +52,8 @@ impl Manager {
     ///
     /// * `Ok(())` if the model is successfully added.
     /// * `Err(anyhow::Error)` if there is an error during the addition process.
-    pub fn add_model(&self, model_name: ModelName, model_path: &str) -> anyhow::Result<()> {
-        self.model_store.add_model(model_name, model_path)
+    pub async fn add_model(&self, model_name: ModelName, model_path: &str) -> anyhow::Result<()> {
+        self.model_store.add_model(model_name, model_path).await
     }
 
     /// Updates an existing model in the model store.
@@ -74,8 +66,8 @@ impl Manager {
     ///
     /// * `Ok(())` if the model is successfully updated.
     /// * `Err(anyhow::Error)` if there is an error during the update process or if the model does not exist.
-    pub fn update_model(&self, model_name: ModelName) -> anyhow::Result<()> {
-        self.model_store.update_model(model_name)
+    pub async fn update_model(&self, model_name: ModelName) -> anyhow::Result<()> {
+        self.model_store.update_model(model_name).await
     }
 
     /// Deletes an existing model from the model store.
@@ -201,8 +193,8 @@ mod tests {
         assert_ne!(manager.get_models().unwrap().len(), 0);
     }
 
-    #[test]
-    fn successfully_add_model_via_manager_with_local_model_store() {
+    #[tokio::test]
+    async fn successfully_add_model_via_manager_with_local_model_store() {
         let model_dir = "tests/model_storage/local_model_store";
         let local_model_store = LocalModelStore::new(model_dir.to_string()).unwrap();
         let manager = Manager::new(Arc::new(local_model_store)).unwrap();
@@ -215,7 +207,7 @@ mod tests {
         manager.delete_model(model_name.clone()).unwrap();
 
         // add model
-        let add = manager.add_model(model_name, model_path);
+        let add = manager.add_model(model_name, model_path).await;
 
         // assert
         assert!(add.is_ok());
@@ -225,15 +217,15 @@ mod tests {
         );
     }
 
-    #[test]
-    fn successfully_update_model_via_manager_with_local_model_store() {
+    #[tokio::test]
+    async fn successfully_update_model_via_manager_with_local_model_store() {
         let model_dir = "tests/model_storage/local_model_store";
         let local_model_store = LocalModelStore::new(model_dir.to_string()).unwrap();
         let manager = Manager::new(Arc::new(local_model_store)).unwrap();
         let model_name: ModelName = "my_awesome_penguin_model".to_string();
 
         // update model
-        let update = manager.update_model(model_name);
+        let update = manager.update_model(model_name).await;
 
         // assert
         assert!(update.is_ok())

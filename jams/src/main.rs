@@ -31,11 +31,13 @@ J.A.M.S - Just Another Model Server
         Commands::Start(subcommands) => {
             match subcommands.cmd {
                 StartSubCommands::Http(args) => {
-                    let config = jams_serve::http::server::HTTPConfig {
+                    let config = jams_serve::common::server::Config {
                         model_dir: args.model_dir,
                         port: args.port,
                         use_debug_level: args.use_debug_level,
                         num_workers: args.num_workers,
+                        with_s3_model_store: args.with_s3_model_store,
+                        s3_bucket_name: args.s3_bucket_name,
                     };
 
                     jams_serve::http::server::start(config)
@@ -47,11 +49,13 @@ J.A.M.S - Just Another Model Server
                     Ok(())
                 }
                 StartSubCommands::Grpc(args) => {
-                    let config = jams_serve::grpc::server::GRPCConfig {
+                    let config = jams_serve::common::server::Config {
                         model_dir: args.model_dir,
                         port: args.port,
                         use_debug_level: args.use_debug_level,
                         num_workers: args.num_workers,
+                        with_s3_model_store: args.with_s3_model_store,
+                        s3_bucket_name: args.s3_bucket_name,
                     };
 
                     jams_serve::grpc::server::start(config)
