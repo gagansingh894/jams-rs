@@ -218,7 +218,7 @@ impl Storage for S3ModelStore {
                     (model.1.info.framework, model.1.info.path.as_str());
 
                 // Prepare the S3 key from model_name
-                let object_key = format!("{}.tar.gz", model_name);
+                let object_key = format!("{}-{}.tar.gz", model_framework, model_name);
 
                 // Fetch the latest model from S3
                 match download_objects(
@@ -231,27 +231,31 @@ impl Storage for S3ModelStore {
                 {
                     Ok(_) => {
                         log::info!("Downloaded object from s3 ✅");
+
+                        match load_predictor(model_framework, model_path) {
+                            Ok(predictor) => {
+                                let now = Utc::now();
+                                let model = Model::new(
+                                    predictor,
+                                    model_name.clone(),
+                                    model_framework,
+                                    model_path.to_string(), // todo: use S3 path here and not the local model dir path
+                                    now.to_rfc2822(),
+                                );
+                                self.models.insert(model_name.clone(), Arc::new(model));
+                                Ok(())
+                            }
+                            Err(e) => {
+                                anyhow::bail!(
+                                    "Failed to update the specified model {}: {}",
+                                    model_name,
+                                    e
+                                )
+                            }
+                        }
                     }
                     Err(_) => {
-                        log::warn!("Failed to download object from s3 ⚠️");
-                    }
-                };
-
-                match load_predictor(model_framework, model_path) {
-                    Ok(predictor) => {
-                        let now = Utc::now();
-                        let model = Model::new(
-                            predictor,
-                            model_name.clone(),
-                            model_framework,
-                            model_path.to_string(), // todo: use S3 path here and not the local model dir path
-                            now.to_rfc2822(),
-                        );
-                        self.models.insert(model_name.clone(), Arc::new(model));
-                        Ok(())
-                    }
-                    Err(e) => {
-                        anyhow::bail!("Failed to update the specified model {}: {}", model_name, e)
+                        anyhow::bail!("Failed to download object from s3 ❌");
                     }
                 }
             }
@@ -510,7 +514,7 @@ async fn download_objects(
                 }
             }
             Err(e) => {
-                log::warn!(
+                anyhow::bail!(
                     "Failed to get object key: {} from S3 ⚠️: {}",
                     object_key,
                     e.into_service_error()
@@ -623,12 +627,11 @@ fn unpack_tarball(tarball_path: &str, out_dir: &str) -> anyhow::Result<()> {
                     Ok(())
                 }
                 Err(_) => {
-                    log::warn!(
+                    anyhow::bail!(
                         "Failed to unpack tarball ⚠️: {:?} at location: {}",
                         tarball_path,
                         out_dir
-                    );
-                    Ok(())
+                    )
                 }
             }
         }
