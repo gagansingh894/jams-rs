@@ -173,12 +173,12 @@ pub fn load_models(model_dir: String) -> anyhow::Result<DashMap<ModelName, Arc<M
                     let sanitised_model_name = sanitize_model_name(model_name);
                     let model = Model::new(
                         Arc::new(predictor),
-                        sanitised_model_name,
+                        sanitised_model_name.clone(),
                         TENSORFLOW,
                         full_path.clone(),
                         now.to_rfc3339(),
                     );
-                    models.insert(model_name.to_string(), Arc::new(model));
+                    models.insert(sanitised_model_name, Arc::new(model));
                     log::info!("Successfully loaded model from path: {} ✅", full_path);
                 }
             }
@@ -202,12 +202,12 @@ pub fn load_models(model_dir: String) -> anyhow::Result<DashMap<ModelName, Arc<M
                             let sanitised_model_name = sanitize_model_name(model_name);
                             let model = Model::new(
                                 Arc::new(predictor),
-                                sanitised_model_name,
+                                sanitised_model_name.clone(),
                                 PYTORCH, // TORCH can also be used, but they are aliases
                                 full_path.clone(),
                                 now.to_rfc3339(),
                             );
-                            models.insert(model_name.to_string(), Arc::new(model));
+                            models.insert(sanitised_model_name, Arc::new(model));
                             log::info!("Successfully loaded model from path: {} ✅", full_path);
                         }
                     }
@@ -218,12 +218,12 @@ pub fn load_models(model_dir: String) -> anyhow::Result<DashMap<ModelName, Arc<M
                     let sanitised_model_name = sanitize_model_name(model_name);
                     let model = Model::new(
                         Arc::new(predictor),
-                        sanitised_model_name,
+                        sanitised_model_name.clone(),
                         PYTORCH, // TORCH can also be used, but they are aliases
                         full_path.clone(),
                         now.to_rfc2822(),
                     );
-                    models.insert(model_name.to_string(), Arc::new(model));
+                    models.insert(sanitised_model_name, Arc::new(model));
                     log::info!("Successfully loaded model from path: {} ✅", full_path);
                 }
             }
@@ -243,12 +243,12 @@ pub fn load_models(model_dir: String) -> anyhow::Result<DashMap<ModelName, Arc<M
                     let sanitised_model_name = sanitize_model_name(model_name);
                     let model = Model::new(
                         Arc::new(predictor),
-                        sanitised_model_name,
+                        sanitised_model_name.clone(),
                         CATBOOST,
                         full_path.clone(),
                         now.to_rfc2822(),
                     );
-                    models.insert(model_name.to_string(), Arc::new(model));
+                    models.insert(sanitised_model_name, Arc::new(model));
                     log::info!("Successfully loaded model from path: {} ✅", full_path);
                 }
             }
@@ -268,12 +268,12 @@ pub fn load_models(model_dir: String) -> anyhow::Result<DashMap<ModelName, Arc<M
                     let sanitised_model_name = sanitize_model_name(model_name);
                     let model = Model::new(
                         Arc::new(predictor),
-                        sanitised_model_name,
+                        sanitised_model_name.clone(),
                         LIGHTGBM,
                         full_path.clone(),
                         now.to_rfc2822(),
                     );
-                    models.insert(model_name.to_string(), Arc::new(model));
+                    models.insert(sanitised_model_name, Arc::new(model));
                     log::info!("Successfully loaded model from path: {} ✅", full_path);
                 }
             }
