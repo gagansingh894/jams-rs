@@ -6,8 +6,52 @@ This crate provides a CLI for interacting [**J.A.M.S - Just Another Model Server
 
 ⚠️ **DISCLAIMER: jams is currently unstable and may not run properly on your machines. I have
 tested the above on Apple Silicon and Linux x86_64 machines. Future releases will fix this**
+---
 
-## Setup
+## Docker Setup
+J.A.M.S is also hosted on [DockerHub](https://hub.docker.com/r/gagansingh894/jams).
+
+Please follow the following commands to start the server inside docker
+
+1. Run `docker pull gagansingh894/jams`
+
+To run HTTP server, use
+```
+docker run --rm -v /your/path/to/model_store:/model_store -p 3000:3000 gagansingh894/jams start http
+```
+
+To run gRPC server, use
+```
+docker run --rm -v /your/path/to/model_store:/model_store -p 4000:4000 gagansingh894/jams start grpc
+```
+
+To run with a S3 backend
+- Create a S3 bucket with some models in it. The structure should be similar to the one shown in the example below (local model store)
+- Set the environment variables - `AWS_REGION`, `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`. Alternatively if you have multiple AWS profiles then just set the `AWS_PROFILE-<profile_name>`
+  You also need to set the bucket name. This can either be set via `S3_BUCKET_NAME` env variable or passed via `--s3-bucket-name` flag
+- Run the command to start HTTP server with S3 model store. It assumes that bucket name is already set via `S3_BUCKET_NAME`
+
+```
+docker run --rm -p 3000:3000 gagansingh894/jams start http --with-s3-model-store=true
+```
+
+- For gRPC server, use
+```
+docker run --rm -p 4000:4000 gagansingh894/jams start grpc --with-s3-model-store=true
+```
+
+- If you want to pass bucket name, use
+```
+docker run --rm -p 3000:3000 gagansingh894/jams start http --with-s3-model-store=true --s3-bucket-name=<bucket_name>
+```
+
+Please refer to [OpenAPI Spec](https://github.com/gagansingh894/jams-rs/blob/main/openapi.yml) for API endpoints.
+
+Alternatively, you can also refer to the [proto definition](https://github.com/gagansingh894/jams-rs/blob/main/jams-serve/proto/api/v1/jams.proto).
+
+---
+
+## Local Setup
 **Ensure that Cargo and Rust compiler are installed. Follow instructions [here](https://www.rust-lang.org/tools/install) if not installed**
 
 This project relies on a couple of shared libraries. To easily set up, please follow the steps below
@@ -213,20 +257,4 @@ jams predict catboost --model-path=catboost_titanic --input-path=catboost_input.
 3. Run the following command(example) and pass in the path for model file and input file
 ```
 jams predict lightgbm --model-path=lightgbm_iris.txt --input-path=lightgbm_input.json
-```
----
-
-## Docker
-J.A.M.S is also hosted on [DockerHub](https://hub.docker.com/r/gagansingh894/jams).
-
-Please follow the following commands to start the server inside docker
-
-1. Run `docker pull gagansingh894/jams`
-2. To run HTTP server, use
-```
-docker run --rm -v /your/path/to/model_store:/model_store -p 3000:3000 gagansingh894/jams start http
-```
-3. To run gRPC server, use
-```
-docker run --rm -v /your/path/to/model_store:/model_store -p 4000:4000 gagansingh894/jams start grpc
 ```
