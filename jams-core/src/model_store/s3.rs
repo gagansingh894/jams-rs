@@ -5,6 +5,7 @@ use chrono::Utc;
 use dashmap::mapref::one::Ref;
 use dashmap::DashMap;
 use flate2::read::GzDecoder;
+use std::fs::remove_dir_all;
 use std::fs::File;
 use std::path::Path;
 use std::sync::Arc;
@@ -78,14 +79,30 @@ impl S3ModelStore {
     }
 }
 
+impl Drop for S3ModelStore {
+    fn drop(&mut self) {
+        match remove_dir_all(self.model_store_dir.clone()) {
+            Ok(_) => {
+                log::info!("Cleaning up temporary location for model store on disk 🧹")
+            }
+            Err(_) => {
+                log::error!("Failed to clean up temporary location for model store on disk");
+            }
+        }
+    }
+}
+
 #[async_trait]
 impl Storage for S3ModelStore {
     async fn add_model(&self, model_name: ModelName, _model_path: &str) -> anyhow::Result<()> {
+        // Prepare the S3 key from model_name
+        let object_key = format!("{}.tar.gz", model_name);
+
         // Download the model
         match download_objects(
             &self.client,
             self.bucket_name.clone(),
-            vec![model_name.clone()],
+            vec![object_key],
             self.model_store_dir.as_str(),
         )
         .await
@@ -93,8 +110,8 @@ impl Storage for S3ModelStore {
             Ok(_) => {
                 log::info!("Downloaded object from s3 ✅");
             }
-            Err(_) => {
-                log::warn!("Failed to download object from s3 ⚠️");
+            Err(e) => {
+                log::warn!("Failed to download object from s3 ⚠️: {}", e.to_string());
             }
         };
 
@@ -322,8 +339,8 @@ async fn download_objects(
     // This will be deleted when the program exits
     let dir = match tempfile::Builder::new().prefix("models").tempdir() {
         Ok(dir) => dir,
-        Err(_) => {
-            anyhow::bail!("Failed to create temporary directory ❌");
+        Err(e) => {
+            anyhow::bail!("Failed to create temporary directory ❌: {}", e.to_string());
         }
     };
     let temp_path = dir.path().to_str().unwrap();
@@ -351,18 +368,30 @@ async fn download_objects(
                             Ok(_) => {
                                 // Do nothing
                             }
-                            Err(_) => {
-                                log::warn!("Failed to save artefact {} ⚠️", object_key)
+                            Err(e) => {
+                                log::warn!(
+                                    "Failed to save artefact {} ⚠️: {}",
+                                    object_key,
+                                    e.to_string()
+                                )
                             }
                         }
                     }
-                    Err(_) => {
-                        log::warn!("Failed to download artefact {} ⚠️", object_key)
+                    Err(e) => {
+                        log::warn!(
+                            "Failed to download artefact {} ⚠️: {}",
+                            object_key,
+                            e.to_string()
+                        )
                     }
                 }
             }
             Err(e) => {
-                log::warn!("Failed to get object key: {} from S3 ⚠️: {}", object_key, e.into_service_error())
+                log::warn!(
+                    "Failed to get object key: {} from S3 ⚠️: {}",
+                    object_key,
+                    e.into_service_error()
+                )
             }
         }
     }
@@ -379,38 +408,67 @@ async fn save_and_upack_tarball(
 
     // Create parent directories if they do not exist
     if let Some(parent) = file_path.parent() {
-        tokio::fs::create_dir_all(parent).await?;
+        match tokio::fs::create_dir_all(parent).await {
+            Ok(_) => {}
+            Err(e) => {
+                anyhow::bail!("Failed to create directory ⚠️: {}", e.to_string())
+            }
+        }
     }
 
-    let mut file = tokio::fs::File::create(&file_path).await?;
-    file.write_all(&data).await?;
-    log::info!("Saved file to: {:?}", file_path);
+    match tokio::fs::File::create(&file_path).await {
+        Ok(mut file) => match file.write_all(&data).await {
+            Ok(_) => {
+                log::info!("Saved file to {:?}", file_path);
+            }
+            Err(e) => {
+                anyhow::bail!(
+                    "Failed to save file to {:?} ⚠️: {}",
+                    file_path,
+                    e.to_string()
+                )
+            }
+        },
+        Err(e) => {
+            anyhow::bail!("Failed to create file {:?} ⚠️: {}", file_path, e.to_string())
+        }
+    }
 
-    unpack_tarball(file_path.to_str().unwrap(), out_dir).unwrap();
-    Ok(())
+    match unpack_tarball(file_path.to_str().unwrap(), out_dir) {
+        Ok(_) => Ok(()),
+        Err(e) => {
+            anyhow::bail!("Failed to unpack ⚠️: {}", e.to_string())
+        }
+    }
 }
 
 fn unpack_tarball(tarball_path: &str, out_dir: &str) -> anyhow::Result<()> {
-    let tar_gz = File::open(tarball_path)?;
-    let tar = GzDecoder::new(tar_gz);
-    let mut archive = Archive::new(tar);
+    match File::open(tarball_path) {
+        Ok(tar_gz) => {
+            let tar = GzDecoder::new(tar_gz);
+            let mut archive = Archive::new(tar);
 
-    match archive.unpack(out_dir) {
-        Ok(_) => {
-            log::info!(
-                "Unpacked tarball: {:?} at location: {}",
-                tarball_path,
-                out_dir
-            );
-            Ok(())
+            match archive.unpack(out_dir) {
+                Ok(_) => {
+                    log::info!(
+                        "Unpacked tarball: {:?} at location: {}",
+                        tarball_path,
+                        out_dir
+                    );
+                    Ok(())
+                }
+                Err(_) => {
+                    log::warn!(
+                        "Failed to unpack tarball ⚠️: {:?} at location: {}",
+                        tarball_path,
+                        out_dir
+                    );
+                    Ok(())
+                }
+            }
         }
-        Err(_) => {
-            log::warn!(
-                "Failed to unpack tarball ⚠️: {:?} at location: {}",
-                tarball_path,
-                out_dir
-            );
-            Ok(())
+        Err(e) => {
+            anyhow::bail!("Failed to open tarball ⚠️: {}", e.to_string())
         }
     }
 }
