@@ -170,9 +170,10 @@ pub fn load_models(model_dir: String) -> anyhow::Result<DashMap<ModelName, Arc<M
                 Some(model_name) => {
                     let predictor = model::tensorflow::Tensorflow::load(full_path.as_str())?;
                     let now = Utc::now();
+                    let sanitised_model_name = sanitize_model_name(model_name);
                     let model = Model::new(
                         Arc::new(predictor),
-                        model_name.to_string(),
+                        sanitised_model_name,
                         TENSORFLOW,
                         full_path.clone(),
                         now.to_rfc3339(),
@@ -198,9 +199,10 @@ pub fn load_models(model_dir: String) -> anyhow::Result<DashMap<ModelName, Arc<M
                         Some(model_name) => {
                             let predictor = model::torch::Torch::load(full_path.as_str())?;
                             let now = Utc::now();
+                            let sanitised_model_name = sanitize_model_name(model_name);
                             let model = Model::new(
                                 Arc::new(predictor),
-                                model_name.to_string(),
+                                sanitised_model_name,
                                 PYTORCH, // TORCH can also be used, but they are aliases
                                 full_path.clone(),
                                 now.to_rfc3339(),
@@ -213,9 +215,10 @@ pub fn load_models(model_dir: String) -> anyhow::Result<DashMap<ModelName, Arc<M
                 Some(model_name) => {
                     let predictor = model::torch::Torch::load(full_path.as_str())?;
                     let now = Utc::now();
+                    let sanitised_model_name = sanitize_model_name(model_name);
                     let model = Model::new(
                         Arc::new(predictor),
-                        model_name.to_string(),
+                        sanitised_model_name,
                         PYTORCH, // TORCH can also be used, but they are aliases
                         full_path.clone(),
                         now.to_rfc2822(),
@@ -237,9 +240,10 @@ pub fn load_models(model_dir: String) -> anyhow::Result<DashMap<ModelName, Arc<M
                 Some(model_name) => {
                     let predictor = model::catboost::Catboost::load(full_path.as_str())?;
                     let now = Utc::now();
+                    let sanitised_model_name = sanitize_model_name(model_name);
                     let model = Model::new(
                         Arc::new(predictor),
-                        model_name.to_string(),
+                        sanitised_model_name,
                         CATBOOST,
                         full_path.clone(),
                         now.to_rfc2822(),
@@ -261,9 +265,10 @@ pub fn load_models(model_dir: String) -> anyhow::Result<DashMap<ModelName, Arc<M
                 Some(model_name) => {
                     let predictor = model::lightgbm::LightGBM::load(full_path.as_str())?;
                     let now = Utc::now();
+                    let sanitised_model_name = sanitize_model_name(model_name);
                     let model = Model::new(
                         Arc::new(predictor),
-                        model_name.to_string(),
+                        sanitised_model_name,
                         LIGHTGBM,
                         full_path.clone(),
                         now.to_rfc2822(),
@@ -363,6 +368,26 @@ pub fn extract_framework_from_path(model_path: String) -> Option<ModelFramework>
         Some(LIGHTGBM)
     } else {
         None
+    }
+}
+
+/// Removes everything after the first dot ('.') from the input string.
+///
+/// # Arguments
+///
+/// * `input` - A reference to a string slice (`&str`) that contains the input string.
+///
+/// # Returns
+///
+/// A new `String` that contains the substring of `input` up to (but not including) the first dot ('.').
+/// If no dot is found in `input`, the function returns a new `String` containing the entire `input`.
+///
+fn sanitize_model_name(input: &str) -> String {
+    if let Some(index) = input.find('.') {
+        let result = &input[..index];
+        result.to_string()
+    } else {
+        input.to_string()
     }
 }
 
@@ -520,5 +545,25 @@ mod tests {
 
         // assert
         assert!(result.is_none());
+    }
+
+    #[test]
+    fn sanitize_model_name_when_the_name_has_period() {
+        let model_name = "my_torch_model.pt";
+
+        let result = sanitize_model_name(model_name);
+
+        // assert
+        assert_eq!(result, "my_torch_model");
+    }
+
+    #[test]
+    fn do_not_sanitize_model_name_when_the_name_is_already_in_correct_form() {
+        let model_name = "my_torch_model";
+
+        let result = sanitize_model_name(model_name);
+
+        // assert
+        assert_eq!(result, "my_torch_model");
     }
 }
