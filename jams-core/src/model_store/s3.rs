@@ -170,7 +170,9 @@ impl Storage for S3ModelStore {
             Some(framework) => match load_predictor(
                 framework,
                 append_model_format(framework, model_path.clone()).as_str(),
-            ) {
+            )
+            .await
+            {
                 Ok(predictor) => {
                     let now = Utc::now();
                     let model = Model::new(
@@ -240,7 +242,7 @@ impl Storage for S3ModelStore {
                     Ok(_) => {
                         log::info!("Downloaded object from s3 ✅");
 
-                        match load_predictor(model_framework, model_path) {
+                        match load_predictor(model_framework, model_path).await {
                             Ok(predictor) => {
                                 let now = Utc::now();
                                 let model = Model::new(
@@ -369,7 +371,7 @@ async fn fetch_models(
         }
     }
 
-    let models = match load_models(model_store_dir) {
+    let models = match load_models(model_store_dir).await {
         Ok(models) => {
             log::info!("Successfully loaded models from directory ✅");
             models

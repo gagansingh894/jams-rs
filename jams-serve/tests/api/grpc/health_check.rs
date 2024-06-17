@@ -7,7 +7,7 @@ async fn successfully_calls_the_health_check_rpc() {
     // Arrange
     let listener = TcpListener::bind("0.0.0.0:0").await.unwrap();
     let addr = listener.local_addr().unwrap();
-    let test_server = jams_grpc_test_router();
+    let test_server = jams_grpc_test_router().await;
 
     tokio::spawn(async move {
         test_server

@@ -8,7 +8,7 @@ async fn successfully_calls_the_predict_endpoint_and_return_200() {
     let client = Client::new();
     let listener = TcpListener::bind("0.0.0.0:0").await.unwrap();
     let addr = listener.local_addr().unwrap();
-    let router = test_router();
+    let router = test_router().await;
     let models_url = format!("http://{}/api/models", addr).to_string();
     let predict_url = format!("http://{}/api/predict", addr).to_string();
 
@@ -74,7 +74,7 @@ async fn fails_to_calls_the_predict_endpoint_and_return_500_when_input_is_wrong(
     let client = Client::new();
     let listener = TcpListener::bind("0.0.0.0:0").await.unwrap();
     let addr = listener.local_addr().unwrap();
-    let router = test_router();
+    let router = test_router().await;
     let models_url = format!("http://{}/api/models", addr).to_string();
     let predict_url = format!("http://{}/api/predict", addr).to_string();
 

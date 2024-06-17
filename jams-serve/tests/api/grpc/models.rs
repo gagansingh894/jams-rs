@@ -8,7 +8,7 @@ async fn successfully_calls_the_get_models_rpc() {
     // Arrange
     let listener = TcpListener::bind("0.0.0.0:0").await.unwrap();
     let addr = listener.local_addr().unwrap();
-    let test_server = jams_grpc_test_router();
+    let test_server = jams_grpc_test_router().await;
 
     tokio::spawn(async move {
         test_server
@@ -30,7 +30,7 @@ async fn successfully_calls_the_add_model_rpc() {
     // Arrange
     let listener = TcpListener::bind("0.0.0.0:0").await.unwrap();
     let addr = listener.local_addr().unwrap();
-    let test_server = jams_grpc_test_router();
+    let test_server = jams_grpc_test_router().await;
 
     tokio::spawn(async move {
         test_server
@@ -58,7 +58,7 @@ async fn fails_to_call_the_add_model_rpc_when_model_path_is_wrong() {
     // Arrange
     let listener = TcpListener::bind("0.0.0.0:0").await.unwrap();
     let addr = listener.local_addr().unwrap();
-    let test_server = jams_grpc_test_router();
+    let test_server = jams_grpc_test_router().await;
 
     tokio::spawn(async move {
         test_server
@@ -85,7 +85,7 @@ async fn successfully_calls_the_update_model_rpc() {
     // Arrange
     let listener = TcpListener::bind("0.0.0.0:0").await.unwrap();
     let addr = listener.local_addr().unwrap();
-    let test_server = jams_grpc_test_router();
+    let test_server = jams_grpc_test_router().await;
 
     tokio::spawn(async move {
         test_server
@@ -121,7 +121,7 @@ async fn fails_to_call_the_update_model_rpc_when_model_name_is_wrong() {
     // Arrange
     let listener = TcpListener::bind("0.0.0.0:0").await.unwrap();
     let addr = listener.local_addr().unwrap();
-    let test_server = jams_grpc_test_router();
+    let test_server = jams_grpc_test_router().await;
 
     tokio::spawn(async move {
         test_server
@@ -157,7 +157,7 @@ async fn successfully_calls_the_delete_model_rpc() {
     // Arrange
     let listener = TcpListener::bind("0.0.0.0:0").await.unwrap();
     let addr = listener.local_addr().unwrap();
-    let test_server = jams_grpc_test_router();
+    let test_server = jams_grpc_test_router().await;
 
     tokio::spawn(async move {
         test_server
@@ -193,7 +193,7 @@ async fn fails_to_call_the_delete_model_rpc_when_model_name_is_wrong() {
     // Arrange
     let listener = TcpListener::bind("0.0.0.0:0").await.unwrap();
     let addr = listener.local_addr().unwrap();
-    let test_server = jams_grpc_test_router();
+    let test_server = jams_grpc_test_router().await;
 
     tokio::spawn(async move {
         test_server

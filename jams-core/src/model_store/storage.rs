@@ -6,8 +6,8 @@ use chrono::Utc;
 use dashmap::mapref::one::Ref;
 use dashmap::DashMap;
 use serde::Serialize;
-use std::fs;
 use std::sync::Arc;
+use tokio::fs;
 
 pub type ModelName = String;
 
@@ -126,68 +126,27 @@ impl Model {
 ///
 /// This function will return an error if it fails to read the directory, convert file paths, or
 /// load any of the models.
-pub fn load_models(model_dir: String) -> anyhow::Result<DashMap<ModelName, Arc<Model>>> {
+pub async fn load_models(model_dir: String) -> anyhow::Result<DashMap<ModelName, Arc<Model>>> {
     let models: DashMap<ModelName, Arc<Model>> = DashMap::new();
 
-    let dir = match fs::read_dir(model_dir) {
-        Ok(dir) => dir,
-        Err(e) => {
-            anyhow::bail!("Failed to read dir: {}", e)
-        }
-    };
+    match fs::read_dir(model_dir.clone()).await {
+        Ok(mut dir) => {
+            while let Ok(Some(entry)) = dir.next_entry().await {
+                let file_path = match entry.path().to_str() {
+                    None => {
+                        anyhow::bail!("Failed to convert PathBuf to str ❌")
+                    }
+                    Some(file_path) => file_path.to_string(),
+                };
+                let file_name = match entry.file_name().into_string() {
+                    Ok(file_name) => file_name,
+                    Err(_) => {
+                        anyhow::bail!("Failed to convert OsString to String ❌")
+                    }
+                };
 
-    for file in dir {
-        let file = match file {
-            Ok(file) => file,
-            Err(e) => {
-                anyhow::bail!("Failed to read file: {}", e)
-            }
-        };
-        let (file_path, file_name) = (file.path(), file.file_name());
-        let full_path = match file_path.into_os_string().into_string() {
-            Ok(full_path) => full_path,
-            Err(_) => {
-                anyhow::bail!("Failed to convert OsString to String")
-            }
-        };
-        let file_name = match file_name.to_str() {
-            None => {
-                anyhow::bail!("Failed to convert OsString to str")
-            }
-            Some(file_name) => file_name,
-        };
-
-        if file_name.contains(TENSORFLOW) {
-            let prefix = format!("{}-", TENSORFLOW);
-            match file_name.to_string().strip_prefix(&prefix) {
-                None => {
-                    anyhow::bail!(
-                        "Failed to strip prefix {} from file name {}",
-                        prefix,
-                        file_name
-                    )
-                }
-                Some(model_name) => {
-                    let predictor = model::tensorflow::Tensorflow::load(full_path.as_str())?;
-                    let now = Utc::now();
-                    let sanitised_model_name = sanitize_model_name(model_name);
-                    let model = Model::new(
-                        Arc::new(predictor),
-                        sanitised_model_name.clone(),
-                        TENSORFLOW,
-                        full_path.clone(),
-                        now.to_rfc3339(),
-                    );
-                    models.insert(sanitised_model_name, Arc::new(model));
-                    log::info!("Successfully loaded model from path: {} ✅", full_path);
-                }
-            }
-        } else if file_name.contains(TORCH) {
-            // Torch and PyTorch are same models. PyTorch is a python wrapper around Torch
-            let prefix = format!("{}-", TORCH);
-            match file_name.to_string().strip_prefix(&prefix) {
-                None => {
-                    let prefix = format!("{}-", PYTORCH);
+                if file_name.contains(TENSORFLOW) {
+                    let prefix = format!("{}-", TENSORFLOW);
                     match file_name.to_string().strip_prefix(&prefix) {
                         None => {
                             anyhow::bail!(
@@ -197,93 +156,136 @@ pub fn load_models(model_dir: String) -> anyhow::Result<DashMap<ModelName, Arc<M
                             )
                         }
                         Some(model_name) => {
-                            let predictor = model::torch::Torch::load(full_path.as_str())?;
+                            let predictor =
+                                model::tensorflow::Tensorflow::load(file_path.as_str())?;
+                            let now = Utc::now();
+                            let sanitised_model_name = sanitize_model_name(model_name);
+                            let model = Model::new(
+                                Arc::new(predictor),
+                                sanitised_model_name.clone(),
+                                TENSORFLOW,
+                                file_path.clone(),
+                                now.to_rfc3339(),
+                            );
+                            models.insert(sanitised_model_name, Arc::new(model));
+                            log::info!("Successfully loaded model from path: {} ✅", file_path);
+                        }
+                    }
+                } else if file_name.contains(TORCH) {
+                    // Torch and PyTorch are same models. PyTorch is a python wrapper around Torch
+                    let prefix = format!("{}-", TORCH);
+                    match file_name.to_string().strip_prefix(&prefix) {
+                        None => {
+                            let prefix = format!("{}-", PYTORCH);
+                            match file_name.to_string().strip_prefix(&prefix) {
+                                None => {
+                                    anyhow::bail!(
+                                        "Failed to strip prefix {} from file name {}",
+                                        prefix,
+                                        file_name
+                                    )
+                                }
+                                Some(model_name) => {
+                                    let predictor = model::torch::Torch::load(file_path.as_str())?;
+                                    let now = Utc::now();
+                                    let sanitised_model_name = sanitize_model_name(model_name);
+                                    let model = Model::new(
+                                        Arc::new(predictor),
+                                        sanitised_model_name.clone(),
+                                        PYTORCH, // TORCH can also be used, but they are aliases
+                                        file_path.clone(),
+                                        now.to_rfc3339(),
+                                    );
+                                    models.insert(sanitised_model_name, Arc::new(model));
+                                    log::info!(
+                                        "Successfully loaded model from path: {} ✅",
+                                        file_path
+                                    );
+                                }
+                            }
+                        }
+                        Some(model_name) => {
+                            let predictor = model::torch::Torch::load(file_path.as_str())?;
                             let now = Utc::now();
                             let sanitised_model_name = sanitize_model_name(model_name);
                             let model = Model::new(
                                 Arc::new(predictor),
                                 sanitised_model_name.clone(),
                                 PYTORCH, // TORCH can also be used, but they are aliases
-                                full_path.clone(),
-                                now.to_rfc3339(),
+                                file_path.clone(),
+                                now.to_rfc2822(),
                             );
                             models.insert(sanitised_model_name, Arc::new(model));
-                            log::info!("Successfully loaded model from path: {} ✅", full_path);
+                            log::info!("Successfully loaded model from path: {} ✅", file_path);
                         }
                     }
-                }
-                Some(model_name) => {
-                    let predictor = model::torch::Torch::load(full_path.as_str())?;
-                    let now = Utc::now();
-                    let sanitised_model_name = sanitize_model_name(model_name);
-                    let model = Model::new(
-                        Arc::new(predictor),
-                        sanitised_model_name.clone(),
-                        PYTORCH, // TORCH can also be used, but they are aliases
-                        full_path.clone(),
-                        now.to_rfc2822(),
-                    );
-                    models.insert(sanitised_model_name, Arc::new(model));
-                    log::info!("Successfully loaded model from path: {} ✅", full_path);
-                }
-            }
-        } else if file_name.contains(CATBOOST) {
-            let prefix = format!("{}-", CATBOOST);
-            match file_name.to_string().strip_prefix(&prefix) {
-                None => {
-                    anyhow::bail!(
-                        "Failed to strip prefix {} from file name {}",
-                        prefix,
+                } else if file_name.contains(CATBOOST) {
+                    let prefix = format!("{}-", CATBOOST);
+                    match file_name.to_string().strip_prefix(&prefix) {
+                        None => {
+                            anyhow::bail!(
+                                "Failed to strip prefix {} from file name {}",
+                                prefix,
+                                file_name
+                            )
+                        }
+                        Some(model_name) => {
+                            let predictor = model::catboost::Catboost::load(file_path.as_str())?;
+                            let now = Utc::now();
+                            let sanitised_model_name = sanitize_model_name(model_name);
+                            let model = Model::new(
+                                Arc::new(predictor),
+                                sanitised_model_name.clone(),
+                                CATBOOST,
+                                file_path.clone(),
+                                now.to_rfc2822(),
+                            );
+                            models.insert(sanitised_model_name, Arc::new(model));
+                            log::info!("Successfully loaded model from path: {} ✅", file_path);
+                        }
+                    }
+                } else if file_name.contains(LIGHTGBM) {
+                    let prefix = format!("{}-", LIGHTGBM);
+                    match file_name.to_string().strip_prefix(&prefix) {
+                        None => {
+                            anyhow::bail!(
+                                "Failed to strip prefix {} from file name {}",
+                                prefix,
+                                file_name
+                            )
+                        }
+                        Some(model_name) => {
+                            let predictor = model::lightgbm::LightGBM::load(file_path.as_str())?;
+                            let now = Utc::now();
+                            let sanitised_model_name = sanitize_model_name(model_name);
+                            let model = Model::new(
+                                Arc::new(predictor),
+                                sanitised_model_name.clone(),
+                                LIGHTGBM,
+                                file_path.clone(),
+                                now.to_rfc2822(),
+                            );
+                            models.insert(sanitised_model_name, Arc::new(model));
+                            log::info!("Successfully loaded model from path: {} ✅", file_path);
+                        }
+                    }
+                } else {
+                    log::warn!(
+                        "Unexpected model framework encountered in file ⚠️. \n File: {} \n",
                         file_name
-                    )
-                }
-                Some(model_name) => {
-                    let predictor = model::catboost::Catboost::load(full_path.as_str())?;
-                    let now = Utc::now();
-                    let sanitised_model_name = sanitize_model_name(model_name);
-                    let model = Model::new(
-                        Arc::new(predictor),
-                        sanitised_model_name.clone(),
-                        CATBOOST,
-                        full_path.clone(),
-                        now.to_rfc2822(),
                     );
-                    models.insert(sanitised_model_name, Arc::new(model));
-                    log::info!("Successfully loaded model from path: {} ✅", full_path);
                 }
             }
-        } else if file_name.contains(LIGHTGBM) {
-            let prefix = format!("{}-", LIGHTGBM);
-            match file_name.to_string().strip_prefix(&prefix) {
-                None => {
-                    anyhow::bail!(
-                        "Failed to strip prefix {} from file name {}",
-                        prefix,
-                        file_name
-                    )
-                }
-                Some(model_name) => {
-                    let predictor = model::lightgbm::LightGBM::load(full_path.as_str())?;
-                    let now = Utc::now();
-                    let sanitised_model_name = sanitize_model_name(model_name);
-                    let model = Model::new(
-                        Arc::new(predictor),
-                        sanitised_model_name.clone(),
-                        LIGHTGBM,
-                        full_path.clone(),
-                        now.to_rfc2822(),
-                    );
-                    models.insert(sanitised_model_name, Arc::new(model));
-                    log::info!("Successfully loaded model from path: {} ✅", full_path);
-                }
-            }
-        } else {
-            log::warn!(
-                "Unexpected model framework encountered in file ⚠️. \n File: {} \n",
-                file_name
-            );
+        }
+        Err(e) => {
+            anyhow::bail!(
+                "Failed to read directory {} ❌: {}",
+                model_dir,
+                e.to_string()
+            )
         }
     }
+
     Ok(models)
 }
 
@@ -304,7 +306,7 @@ pub fn load_models(model_dir: String) -> anyhow::Result<DashMap<ModelName, Arc<M
 /// * The model framework is unsupported.
 /// * The model fails to load due to an internal error specific to the framework.
 ///
-pub fn load_predictor(
+pub async fn load_predictor(
     model_framework: ModelFramework,
     model_path: &str,
 ) -> anyhow::Result<Arc<dyn Predictor>> {
@@ -426,7 +428,7 @@ mod tests {
         let path =
             "tests/model_storage/local_model_store/pytorch-my_awesome_californiahousing_model.pt";
         let framework = PYTORCH;
-        let timestamp = chrono::Utc::now();
+        let timestamp = Utc::now();
         let predictor = model::torch::Torch::load(path).unwrap();
 
         // Create
@@ -445,62 +447,62 @@ mod tests {
         assert_eq!(timestamp.to_rfc3339(), model.info.last_updated);
     }
 
-    #[test]
-    fn successfully_load_tensorflow_framework_model() {
+    #[tokio::test]
+    async fn successfully_load_tensorflow_framework_model() {
         let path = "tests/model_storage/local_model_store/tensorflow-my_awesome_penguin_model";
         let framework = TENSORFLOW;
 
         // Load Model
-        let model = load_predictor(framework, path);
+        let model = load_predictor(framework, path).await;
 
         // Assert
         assert!(model.is_ok());
     }
 
-    #[test]
-    fn successfully_load_torch_framework_model() {
+    #[tokio::test]
+    async fn successfully_load_torch_framework_model() {
         let path = "tests/model_storage/local_model_store/torch-my_awesome_penguin_model.pt";
         let framework = TORCH;
 
         // Load Model
-        let model = load_predictor(framework, path);
+        let model = load_predictor(framework, path).await;
 
         // Assert
         assert!(model.is_ok());
     }
 
-    #[test]
-    fn successfully_load_pytorch_framework_model() {
+    #[tokio::test]
+    async fn successfully_load_pytorch_framework_model() {
         let path =
             "tests/model_storage/local_model_store/pytorch-my_awesome_californiahousing_model.pt";
         let framework = PYTORCH;
 
         // Load Model
-        let model = load_predictor(framework, path);
+        let model = load_predictor(framework, path).await;
 
         // Assert
         assert!(model.is_ok());
     }
 
-    #[test]
-    fn successfully_load_lightgbm_model() {
+    #[tokio::test]
+    async fn successfully_load_lightgbm_model() {
         let path = "tests/model_storage/local_model_store/lightgbm-my_awesome_binary_model_2.txt";
         let framework = LIGHTGBM;
 
         // Load Model
-        let model = load_predictor(framework, path);
+        let model = load_predictor(framework, path).await;
 
         // Assert
         assert!(model.is_ok());
     }
 
-    #[test]
-    fn successfully_load_catboost_model() {
+    #[tokio::test]
+    async fn successfully_load_catboost_model() {
         let path = "tests/model_storage/local_model_store/catboost-titanic_model";
         let framework = CATBOOST;
 
         // Load Model
-        let model = load_predictor(framework, path);
+        let model = load_predictor(framework, path).await;
 
         // Assert
         assert!(model.is_ok());

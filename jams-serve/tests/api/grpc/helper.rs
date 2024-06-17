@@ -10,14 +10,15 @@ use std::time::Duration;
 use tonic::transport::server::Router;
 use tonic::transport::{Channel, Server};
 
-fn setup_shared_state() -> Arc<AppState> {
+async fn setup_shared_state() -> Arc<AppState> {
     let cpu_pool = ThreadPoolBuilder::new()
         .num_threads(1)
         .build()
         .expect("Failed to build rayon threadpool ❌");
 
-    let model_store =
-        LocalModelStore::new("".to_string()).expect("Failed to create model store ❌");
+    let model_store = LocalModelStore::new("".to_string())
+        .await
+        .expect("Failed to create model store ❌");
 
     let manager =
         Arc::new(Manager::new(Arc::new(model_store)).expect("Failed to initialize manager ❌"));
@@ -25,10 +26,10 @@ fn setup_shared_state() -> Arc<AppState> {
     Arc::new(AppState { manager, cpu_pool })
 }
 
-pub fn jams_grpc_test_router() -> Router {
+pub async fn jams_grpc_test_router() -> Router {
     // we will not set a model for testing purpose
     // this will start the model server without any models loaded
-    let shared_state = setup_shared_state();
+    let shared_state = setup_shared_state().await;
 
     let jams_service = JamsService::new(shared_state).unwrap();
 
