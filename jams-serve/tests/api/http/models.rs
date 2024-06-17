@@ -8,7 +8,7 @@ async fn successfully_calls_the_get_models_endpoint_and_return_200() {
     let client = Client::new();
     let listener = TcpListener::bind("0.0.0.0:0").await.unwrap();
     let addr = listener.local_addr().unwrap();
-    let router = test_router();
+    let router = test_router().await;
     let url = format!("http://{}/api/models", addr).to_string();
 
     tokio::spawn(async move {
@@ -32,7 +32,7 @@ async fn successfully_calls_the_add_model_endpoint_and_return_200() {
     let client = Client::new();
     let listener = TcpListener::bind("0.0.0.0:0").await.unwrap();
     let addr = listener.local_addr().unwrap();
-    let router = test_router();
+    let router = test_router().await;
     let url = format!("http://{}/api/models", addr).to_string();
 
     tokio::spawn(async move {
@@ -62,7 +62,7 @@ async fn fails_to_call_the_add_model_endpoint_and_return_500_when_model_path_is_
     let client = Client::new();
     let listener = TcpListener::bind("0.0.0.0:0").await.unwrap();
     let addr = listener.local_addr().unwrap();
-    let router = test_router();
+    let router = test_router().await;
     let url = format!("http://{}/api/models", addr).to_string();
 
     tokio::spawn(async move {
@@ -92,7 +92,7 @@ async fn successfully_calls_the_update_model_endpoint_and_return_200() {
     let client = Client::new();
     let listener = TcpListener::bind("0.0.0.0:0").await.unwrap();
     let addr = listener.local_addr().unwrap();
-    let router = test_router();
+    let router = test_router().await;
     let url = format!("http://{}/api/models", addr).to_string();
 
     tokio::spawn(async move {
@@ -135,7 +135,7 @@ async fn fails_to_call_the_update_model_endpoint_and_return_500_when_model_name_
     let client = Client::new();
     let listener = TcpListener::bind("0.0.0.0:0").await.unwrap();
     let addr = listener.local_addr().unwrap();
-    let router = test_router();
+    let router = test_router().await;
     let url = format!("http://{}/api/models", addr).to_string();
 
     tokio::spawn(async move {
@@ -164,7 +164,7 @@ async fn successfully_calls_the_delete_model_endpoint_and_return_200() {
     let client = Client::new();
     let listener = TcpListener::bind("0.0.0.0:0").await.unwrap();
     let addr = listener.local_addr().unwrap();
-    let router = test_router();
+    let router = test_router().await;
     let update_url = format!("http://{}/api/models", addr).to_string();
     let delete_url = format!(
         "http://{}/api/models?model_name=my_awesome_californiahousing_model",
@@ -207,7 +207,7 @@ async fn fails_to_call_the_delete_model_endpoint_and_return_500_when_model_does_
     let client = Client::new();
     let listener = TcpListener::bind("0.0.0.0:0").await.unwrap();
     let addr = listener.local_addr().unwrap();
-    let router = test_router();
+    let router = test_router().await;
     let update_url = format!("http://{}/api/models", addr).to_string();
     let delete_url =
         format!("http://{}/api/models?model_name=model_does_not_exist", addr).to_string();

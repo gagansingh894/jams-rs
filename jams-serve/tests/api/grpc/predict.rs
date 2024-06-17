@@ -8,7 +8,7 @@ async fn successfully_calls_the_predict_rpc() {
     // Arrange
     let listener = TcpListener::bind("0.0.0.0:0").await.unwrap();
     let addr = listener.local_addr().unwrap();
-    let test_server = jams_grpc_test_router();
+    let test_server = jams_grpc_test_router().await;
 
     tokio::spawn(async move {
         test_server
@@ -62,7 +62,7 @@ async fn fails_to_call_the_predict_rpc_when_input_is_wrong() {
     // Arrange
     let listener = TcpListener::bind("0.0.0.0:0").await.unwrap();
     let addr = listener.local_addr().unwrap();
-    let test_server = jams_grpc_test_router();
+    let test_server = jams_grpc_test_router().await;
 
     tokio::spawn(async move {
         test_server

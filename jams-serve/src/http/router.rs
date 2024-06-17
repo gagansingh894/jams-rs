@@ -33,14 +33,15 @@ mod tests {
     use rayon::ThreadPoolBuilder;
     use std::sync::Arc;
 
-    fn setup_shared_state() -> Arc<AppState> {
+    async fn setup_shared_state() -> Arc<AppState> {
         let cpu_pool = ThreadPoolBuilder::new()
             .num_threads(1)
             .build()
             .expect("Failed to build rayon threadpool ❌");
 
-        let model_store =
-            LocalModelStore::new("".to_string()).expect("Failed to create model store ❌");
+        let model_store = LocalModelStore::new("".to_string())
+            .await
+            .expect("Failed to create model store ❌");
 
         let manager =
             Arc::new(Manager::new(Arc::new(model_store)).expect("Failed to initialize manager ❌"));
@@ -48,10 +49,10 @@ mod tests {
         Arc::new(AppState { manager, cpu_pool })
     }
 
-    #[test]
-    fn successfully_build_router() {
+    #[tokio::test]
+    async fn successfully_build_router() {
         // Arrange
-        let shared_state = setup_shared_state();
+        let shared_state = setup_shared_state().await;
 
         // Act
         let router = build_router(shared_state);

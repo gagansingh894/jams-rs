@@ -70,12 +70,13 @@ pub async fn build_app_state_from_config(config: server::Config) -> anyhow::Resu
             });
             let model_store = S3ModelStore::new(s3_bucket_name)
                 .await
-                .expect("Failed to create model store ❌");
+                .expect("Failed to create S3 model store ❌");
             Arc::new(Manager::new(Arc::new(model_store)).expect("Failed to initialize manager ❌"))
         }
         false => {
-            let model_store =
-                LocalModelStore::new(model_dir).expect("Failed to create model store ❌");
+            let model_store = LocalModelStore::new(model_dir)
+                .await
+                .expect("Failed to create local model store ❌");
             Arc::new(Manager::new(Arc::new(model_store)).expect("Failed to initialize manager ❌"))
         }
     };
