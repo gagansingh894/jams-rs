@@ -137,20 +137,20 @@ mod tests {
     use super::*;
     use crate::model_store::local::LocalModelStore;
 
-    #[test]
-    fn successfully_create_manager_with_local_model_store() {
+    #[tokio::test]
+    async fn successfully_create_manager_with_local_model_store() {
         let model_dir = "./tests/model_storage/local_model_store";
-        let local_model_store = LocalModelStore::new(model_dir.to_string()).unwrap();
+        let local_model_store = LocalModelStore::new(model_dir.to_string()).await.unwrap();
         let manager = Manager::new(Arc::new(local_model_store));
 
         // assert
         assert!(manager.is_ok());
     }
 
-    #[test]
-    fn successfully_make_predictions_via_manager_with_local_model_store() {
+    #[tokio::test]
+    async fn successfully_make_predictions_via_manager_with_local_model_store() {
         let model_dir = "tests/model_storage/local_model_store";
-        let local_model_store = LocalModelStore::new(model_dir.to_string()).unwrap();
+        let local_model_store = LocalModelStore::new(model_dir.to_string()).await.unwrap();
         let manager = Manager::new(Arc::new(local_model_store)).unwrap();
 
         // dummy input
@@ -162,12 +162,13 @@ mod tests {
         assert!(prediction.is_ok());
     }
 
-    #[test]
+    #[tokio::test]
     #[should_panic]
     // todo: check if we can exit gracefully
-    fn fail_to_make_predictions_via_manager_with_local_model_store_when_input_shape_is_wrong() {
+    async fn fail_to_make_predictions_via_manager_with_local_model_store_when_input_shape_is_wrong()
+    {
         let model_dir = "tests/model_storage/local_model_store";
-        let local_model_store = LocalModelStore::new(model_dir.to_string()).unwrap();
+        let local_model_store = LocalModelStore::new(model_dir.to_string()).await.unwrap();
         let manager = Manager::new(Arc::new(local_model_store)).unwrap();
 
         // dummy input
@@ -179,10 +180,10 @@ mod tests {
         assert!(prediction.is_err());
     }
 
-    #[test]
-    fn successfully_get_models_via_manager_with_local_model_store() {
+    #[tokio::test]
+    async fn successfully_get_models_via_manager_with_local_model_store() {
         let model_dir = "tests/model_storage/local_model_store";
-        let local_model_store = LocalModelStore::new(model_dir.to_string()).unwrap();
+        let local_model_store = LocalModelStore::new(model_dir.to_string()).await.unwrap();
         let manager = Manager::new(Arc::new(local_model_store)).unwrap();
 
         // models
@@ -196,7 +197,7 @@ mod tests {
     #[tokio::test]
     async fn successfully_add_model_via_manager_with_local_model_store() {
         let model_dir = "tests/model_storage/local_model_store";
-        let local_model_store = LocalModelStore::new(model_dir.to_string()).unwrap();
+        let local_model_store = LocalModelStore::new(model_dir.to_string()).await.unwrap();
         let manager = Manager::new(Arc::new(local_model_store)).unwrap();
         let model_name: ModelName = "my_awesome_penguin_model".to_string();
         let model_path =
@@ -220,7 +221,7 @@ mod tests {
     #[tokio::test]
     async fn successfully_update_model_via_manager_with_local_model_store() {
         let model_dir = "tests/model_storage/local_model_store";
-        let local_model_store = LocalModelStore::new(model_dir.to_string()).unwrap();
+        let local_model_store = LocalModelStore::new(model_dir.to_string()).await.unwrap();
         let manager = Manager::new(Arc::new(local_model_store)).unwrap();
         let model_name: ModelName = "my_awesome_penguin_model".to_string();
 
@@ -231,10 +232,10 @@ mod tests {
         assert!(update.is_ok())
     }
 
-    #[test]
-    fn successfully_delete_model_via_manager_with_local_model_store() {
+    #[tokio::test]
+    async fn successfully_delete_model_via_manager_with_local_model_store() {
         let model_dir = "tests/model_storage/local_model_store";
-        let local_model_store = LocalModelStore::new(model_dir.to_string()).unwrap();
+        let local_model_store = LocalModelStore::new(model_dir.to_string()).await.unwrap();
         let manager = Manager::new(Arc::new(local_model_store)).unwrap();
         let model_name: ModelName = "my_awesome_penguin_model".to_string();
 

@@ -8,7 +8,7 @@ async fn successfully_calls_the_healthcheck_endpoint_and_return_200() {
     let client = Client::new();
     let listener = TcpListener::bind("0.0.0.0:0").await.unwrap();
     let addr = listener.local_addr().unwrap();
-    let router = test_router();
+    let router = test_router().await;
     let url = format!("http://{}/healthcheck", addr).to_string();
 
     tokio::spawn(async move {

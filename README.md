@@ -39,7 +39,7 @@ The project is divided into the following crates
 
 (🚧)`jams-core`
 is the core library
-which provides thin abstraction around common machine learning and deep learning models as well as databases like redis,
+which provides thin abstraction around common machine learning and deep learning models, model stores like AWS S3, Azure Blob Storage, Local Filesystem as well as databases like redis,
 dynamodb which can be used as real time feature stores.
 You can think of each component as a LEGO block which can be used to build a system depending on the requirements
 

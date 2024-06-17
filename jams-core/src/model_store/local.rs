@@ -6,7 +6,6 @@ use chrono::Utc;
 use dashmap::mapref::one::Ref;
 use dashmap::DashMap;
 use std::sync::Arc;
-use tokio::task;
 
 /// A local model store that manages models stored in a specified directory.
 ///
@@ -34,14 +33,14 @@ impl LocalModelStore {
     /// - `Ok(LocalModelStore)`: If the instance was successfully created.
     /// - `Err(anyhow::Error)`: If there was an error creating the instance.
     ///
-    pub fn new(model_dir: String) -> anyhow::Result<Self> {
+    pub async fn new(model_dir: String) -> anyhow::Result<Self> {
         let models = match model_dir.is_empty() {
             true => {
                 log::warn!("No model directory specified, hence no models will be loaded ⚠️");
                 let models: DashMap<ModelName, Arc<Model>> = DashMap::new();
                 models
             }
-            false => match load_models(model_dir.clone()) {
+            false => match load_models(model_dir.clone()).await {
                 Ok(models) => {
                     log::info!("Successfully fetched valid models from directory ✅");
                     models
@@ -81,42 +80,27 @@ impl Storage for LocalModelStore {
         let model_path = model_path.to_string();
         let models = Arc::clone(&self.models);
 
-        match task::spawn_blocking(move || {
-            // Blocking code inside spawn_blocking closure
-            match extract_framework_from_path(model_path.to_string()) {
-                None => {
-                    anyhow::bail!("Failed to extract framework from path");
-                }
-                Some(framework) => match load_predictor(framework, model_path.as_str()) {
-                    Ok(predictor) => {
-                        let now = Utc::now();
-                        let model = Model::new(
-                            predictor,
-                            model_name.clone(),
-                            framework,
-                            model_path.to_string(),
-                            now.to_rfc2822(),
-                        );
-                        models.insert(model_name, Arc::new(model));
-                        Ok(())
-                    }
-                    Err(e) => {
-                        anyhow::bail!("Failed to add new model: {e}")
-                    }
-                },
+        match extract_framework_from_path(model_path.to_string()) {
+            None => {
+                anyhow::bail!("Failed to extract framework from path");
             }
-        })
-        .await
-        {
-            Ok(result) => match result {
-                Ok(_) => Ok(()),
-                Err(_) => {
-                    anyhow::bail!("Failed to add model")
+            Some(framework) => match load_predictor(framework, model_path.as_str()).await {
+                Ok(predictor) => {
+                    let now = Utc::now();
+                    let model = Model::new(
+                        predictor,
+                        model_name.clone(),
+                        framework,
+                        model_path.to_string(),
+                        now.to_rfc2822(),
+                    );
+                    models.insert(model_name, Arc::new(model));
+                    Ok(())
+                }
+                Err(e) => {
+                    anyhow::bail!("Failed to add new model: {e}")
                 }
             },
-            Err(_) => {
-                anyhow::bail!("Failed to add model due to error in task::spawn_blocking")
-            }
         }
     }
 
@@ -136,55 +120,35 @@ impl Storage for LocalModelStore {
     /// * The model fails to load.
     ///
     async fn update_model(&self, model_name: ModelName) -> anyhow::Result<()> {
-        let model_name = model_name.clone();
-        let models = self.models.clone();
-        match task::spawn_blocking(move || {
-            // By calling remove on the hashmap, the object is returned on success/
-            // We use the returned object, in this case the model to extract the framework and model path
-            match models.remove(model_name.as_str()) {
-                None => {
-                    anyhow::bail!(
-                        "Failed to update as the specified model {} does not exist",
-                        model_name
-                    )
-                }
-                Some(model) => {
-                    let (model_framework, model_path) =
-                        (model.1.info.framework, model.1.info.path.as_str());
-                    match load_predictor(model_framework, model_path) {
-                        Ok(predictor) => {
-                            let now = Utc::now();
-                            let model = Model::new(
-                                predictor,
-                                model_name.clone(),
-                                model_framework,
-                                model_path.to_string(),
-                                now.to_rfc2822(),
-                            );
-                            models.insert(model_name.clone(), Arc::new(model));
-                            Ok(())
-                        }
-                        Err(e) => {
-                            anyhow::bail!(
-                                "Failed to update the specified model {}: {}",
-                                model_name,
-                                e
-                            )
-                        }
+        // By calling remove on the hashmap, the object is returned on success/
+        // We use the returned object, in this case the model to extract the framework and model path
+        match self.models.remove(model_name.as_str()) {
+            None => {
+                anyhow::bail!(
+                    "Failed to update as the specified model {} does not exist",
+                    model_name
+                )
+            }
+            Some(model) => {
+                let (model_framework, model_path) =
+                    (model.1.info.framework, model.1.info.path.as_str());
+                match load_predictor(model_framework, model_path).await {
+                    Ok(predictor) => {
+                        let now = Utc::now();
+                        let model = Model::new(
+                            predictor,
+                            model_name.clone(),
+                            model_framework,
+                            model_path.to_string(),
+                            now.to_rfc2822(),
+                        );
+                        self.models.insert(model_name.clone(), Arc::new(model));
+                        Ok(())
+                    }
+                    Err(e) => {
+                        anyhow::bail!("Failed to update the specified model {}: {}", model_name, e)
                     }
                 }
-            }
-        })
-        .await
-        {
-            Ok(result) => match result {
-                Ok(_) => Ok(()),
-                Err(_) => {
-                    anyhow::bail!("Failed to update model")
-                }
-            },
-            Err(_) => {
-                anyhow::bail!("Failed to update model due to error in task::spawn_blocking")
             }
         }
     }
@@ -252,48 +216,48 @@ impl Storage for LocalModelStore {
 mod tests {
     use super::*;
 
-    #[test]
-    fn successfully_load_models_from_different_frameworks_into_local_model_store() {
+    #[tokio::test]
+    async fn successfully_load_models_from_different_frameworks_into_local_model_store() {
         let model_dir = "tests/model_storage/local_model_store";
 
         // initialize and load models
-        let local_model_store = LocalModelStore::new(model_dir.to_string());
+        let local_model_store = LocalModelStore::new(model_dir.to_string()).await;
 
         // assert
         assert!(local_model_store.is_ok());
         assert_ne!(local_model_store.unwrap().models.len(), 0);
     }
 
-    #[test]
-    fn successfully_get_model_from_local_model_store() {
+    #[tokio::test]
+    async fn successfully_get_model_from_local_model_store() {
         let model_dir = "tests/model_storage/local_model_store";
 
         // load models
-        let local_model_store = LocalModelStore::new(model_dir.to_string()).unwrap();
+        let local_model_store = LocalModelStore::new(model_dir.to_string()).await.unwrap();
         let model = local_model_store.get_model("my_awesome_autompg_model".to_string());
 
         // assert
         assert!(model.is_some());
     }
 
-    #[test]
-    fn fails_to_get_model_from_local_model_store_when_model_name_is_wrong() {
+    #[tokio::test]
+    async fn fails_to_get_model_from_local_model_store_when_model_name_is_wrong() {
         let model_dir = "tests/model_storage/local_model_store";
 
         // load models
-        let local_model_store = LocalModelStore::new(model_dir.to_string()).unwrap();
+        let local_model_store = LocalModelStore::new(model_dir.to_string()).await.unwrap();
         let model = local_model_store.get_model("model_which_does_not_exist".to_string());
 
         // assert
         assert!(model.is_none());
     }
 
-    #[test]
-    fn successfully_get_models_from_local_model_store() {
+    #[tokio::test]
+    async fn successfully_get_models_from_local_model_store() {
         let model_dir = "tests/model_storage/local_model_store";
 
         // load models
-        let local_model_store = LocalModelStore::new(model_dir.to_string()).unwrap();
+        let local_model_store = LocalModelStore::new(model_dir.to_string()).await.unwrap();
         let models = local_model_store.get_models();
 
         // assert
@@ -301,24 +265,24 @@ mod tests {
         assert_ne!(models.unwrap().len(), 0);
     }
 
-    #[test]
-    fn successfully_deletes_model_in_the_local_model_store() {
+    #[tokio::test]
+    async fn successfully_deletes_model_in_the_local_model_store() {
         let model_dir = "tests/model_storage/local_model_store";
 
         // load models
-        let local_model_store = LocalModelStore::new(model_dir.to_string()).unwrap();
+        let local_model_store = LocalModelStore::new(model_dir.to_string()).await.unwrap();
         let deletion = local_model_store.delete_model("my_awesome_autompg_model".to_string());
 
         // assert
         assert!(deletion.is_ok());
     }
 
-    #[test]
-    fn fails_to_deletes_model_in_the_local_model_store() {
+    #[tokio::test]
+    async fn fails_to_deletes_model_in_the_local_model_store() {
         let model_dir = "tests/model_storage/local_model_store";
 
         // load models
-        let local_model_store = LocalModelStore::new(model_dir.to_string()).unwrap();
+        let local_model_store = LocalModelStore::new(model_dir.to_string()).await.unwrap();
         let deletion = local_model_store.delete_model("model_which_does_not_exist".to_string());
 
         // assert
@@ -331,7 +295,7 @@ mod tests {
         let model_name = "my_awesome_autompg_model".to_string();
 
         // load models
-        let local_model_store = LocalModelStore::new(model_dir.to_string()).unwrap();
+        let local_model_store = LocalModelStore::new(model_dir.to_string()).await.unwrap();
 
         // retrieve timestamp from existing to model for assertion
         let model = local_model_store
@@ -359,7 +323,7 @@ mod tests {
         let incorrect_model_name = "my_awesome_autompg_model_incorrect".to_string();
 
         // load models
-        let local_model_store = LocalModelStore::new(model_dir.to_string()).unwrap();
+        let local_model_store = LocalModelStore::new(model_dir.to_string()).await.unwrap();
 
         // update model with incorrect model name
         let update = local_model_store.update_model(incorrect_model_name).await;
@@ -373,7 +337,7 @@ mod tests {
         let model_dir = "tests/model_storage/local_model_store";
 
         // load models
-        let local_model_store = LocalModelStore::new(model_dir.to_string()).unwrap();
+        let local_model_store = LocalModelStore::new(model_dir.to_string()).await.unwrap();
 
         // delete model to set up test
         local_model_store
@@ -405,7 +369,7 @@ mod tests {
         let model_dir = "tests/model_storage/local_model_store";
 
         // load models
-        let local_model_store = LocalModelStore::new(model_dir.to_string()).unwrap();
+        let local_model_store = LocalModelStore::new(model_dir.to_string()).await.unwrap();
 
         // add model
         let add = local_model_store
