@@ -9,4 +9,3 @@
 /jams-cli/examples/*.txt
 /jams-cli/examples/*.pt
 /jams/examples/*
-/jams-core/tests/model_storage/s3_model_store
