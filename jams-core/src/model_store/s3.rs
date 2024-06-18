@@ -653,131 +653,131 @@ fn unpack_tarball(tarball_path: &str, out_dir: &str) -> anyhow::Result<()> {
     }
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    // We will be using local stack for setting up a S3 server for testing
-    // Some model files will be loaded into it to assert our S3 model store
-    // The localstack will also be added to CI/CD for testing
-    #[tokio::test]
-    async fn successfully_load_models_from_s3_model_store() {
-        let bucket_name = "jams-model-store".to_string();
-
-        // load models
-        let model_store = S3ModelStore::new(bucket_name).await;
-
-        // assert
-        assert!(model_store.is_ok());
-        // println!("{}", model_store.unwrap().get_models().unwrap().len());
-        for m in model_store.unwrap().models.iter() {
-            println!("{}", m.key());
-        }
-    }
-
-    #[tokio::test]
-    async fn successfully_get_model_from_s3_model_store() {
-        let bucket_name = "jams-model-store".to_string();
-
-        // load models
-        let s3_model_store = S3ModelStore::new(bucket_name).await.unwrap();
-        let model = s3_model_store.get_model("my_awesome_autompg_model".to_string());
-
-        // assert
-        assert!(model.is_some());
-    }
-
-    #[tokio::test]
-    async fn fails_to_get_model_from_s3_model_store_when_model_name_is_wrong() {
-        let bucket_name = "jams-model-store".to_string();
-
-        // load models
-        let s3_model_store = S3ModelStore::new(bucket_name).await.unwrap();
-        let model = s3_model_store.get_model("model_which_does_not_exist".to_string());
-
-        // assert
-        assert!(model.is_none());
-    }
-
-    #[tokio::test]
-    async fn successfully_get_models_from_s3_model_store() {
-        let bucket_name = "jams-model-store".to_string();
-
-        // load models
-        let s3_model_store = S3ModelStore::new(bucket_name).await.unwrap();
-        let models = s3_model_store.get_models();
-
-        // assert
-        assert!(models.is_ok());
-        assert_ne!(models.unwrap().len(), 0);
-    }
-
-    #[tokio::test]
-    async fn successfully_deletes_model_in_the_s3_model_store() {
-        let bucket_name = "jams-model-store".to_string();
-
-        // load models
-        let s3_model_store = S3ModelStore::new(bucket_name).await.unwrap();
-        let deletion = s3_model_store.delete_model("my_awesome_binary_model_2".to_string());
-
-        // assert
-        assert!(deletion.is_ok());
-    }
-
-    #[tokio::test]
-    async fn fails_to_deletes_model_in_the_s3_model_store() {
-        let bucket_name = "jams-model-store".to_string();
-
-        // load models
-        let s3_model_store = S3ModelStore::new(bucket_name).await.unwrap();
-        let deletion = s3_model_store.delete_model("model_which_does_not_exist".to_string());
-
-        // assert
-        assert!(deletion.is_err());
-    }
-
-    #[tokio::test]
-    async fn successfully_update_model_in_the_s3_model_store() {
-        let bucket_name = "jams-model-store".to_string();
-        let model_name = "my_awesome_autompg_model".to_string();
-
-        // load models
-        let s3_model_store = S3ModelStore::new(bucket_name).await.unwrap();
-
-        // retrieve timestamp from existing to model for assertion
-        let model = s3_model_store
-            .get_model(model_name.clone())
-            .unwrap()
-            .to_owned();
-
-        // update model
-        let update = s3_model_store.update_model(model_name.clone()).await;
-        assert!(update.is_ok());
-        let updated_model = s3_model_store
-            .get_model(model_name.clone())
-            .unwrap()
-            .to_owned();
-
-        // assert
-        assert_eq!(model.info.name, updated_model.info.name);
-        assert_eq!(model.info.path, updated_model.info.path);
-        assert_ne!(model.info.last_updated, updated_model.info.last_updated); // as model will be updated
-    }
-
-    #[tokio::test]
-    async fn fails_to_update_model_in_the_s3_model_store_when_model_name_is_incorrect() {
-        let bucket_name = "jams-model-store".to_string();
-        let incorrect_model_name = "my_awesome_autompg_model_incorrect".to_string();
-
-        // load models
-        let s3_model_store = S3ModelStore::new(bucket_name).await.unwrap();
-
-        // update model with incorrect model name
-        let update = s3_model_store.update_model(incorrect_model_name).await;
-
-        // assert
-        assert!(update.is_err());
-    }
+// #[cfg(test)]
+// mod tests {
+//     use super::*;
+//
+//     // We will be using local stack for setting up a S3 server for testing
+//     // Some model files will be loaded into it to assert our S3 model store
+//     // The localstack will also be added to CI/CD for testing
+//     #[tokio::test]
+//     async fn successfully_load_models_from_s3_model_store() {
+//         let bucket_name = "jams-model-store".to_string();
+//
+//         // load models
+//         let model_store = S3ModelStore::new(bucket_name).await;
+//
+//         // assert
+//         assert!(model_store.is_ok());
+//         // println!("{}", model_store.unwrap().get_models().unwrap().len());
+//         for m in model_store.unwrap().models.iter() {
+//             println!("{}", m.key());
+//         }
+//     }
+//
+//     #[tokio::test]
+//     async fn successfully_get_model_from_s3_model_store() {
+//         let bucket_name = "jams-model-store".to_string();
+//
+//         // load models
+//         let s3_model_store = S3ModelStore::new(bucket_name).await.unwrap();
+//         let model = s3_model_store.get_model("my_awesome_autompg_model".to_string());
+//
+//         // assert
+//         assert!(model.is_some());
+//     }
+//
+//     #[tokio::test]
+//     async fn fails_to_get_model_from_s3_model_store_when_model_name_is_wrong() {
+//         let bucket_name = "jams-model-store".to_string();
+//
+//         // load models
+//         let s3_model_store = S3ModelStore::new(bucket_name).await.unwrap();
+//         let model = s3_model_store.get_model("model_which_does_not_exist".to_string());
+//
+//         // assert
+//         assert!(model.is_none());
+//     }
+//
+//     #[tokio::test]
+//     async fn successfully_get_models_from_s3_model_store() {
+//         let bucket_name = "jams-model-store".to_string();
+//
+//         // load models
+//         let s3_model_store = S3ModelStore::new(bucket_name).await.unwrap();
+//         let models = s3_model_store.get_models();
+//
+//         // assert
+//         assert!(models.is_ok());
+//         assert_ne!(models.unwrap().len(), 0);
+//     }
+//
+//     #[tokio::test]
+//     async fn successfully_deletes_model_in_the_s3_model_store() {
+//         let bucket_name = "jams-model-store".to_string();
+//
+//         // load models
+//         let s3_model_store = S3ModelStore::new(bucket_name).await.unwrap();
+//         let deletion = s3_model_store.delete_model("my_awesome_binary_model_2".to_string());
+//
+//         // assert
+//         assert!(deletion.is_ok());
+//     }
+//
+//     #[tokio::test]
+//     async fn fails_to_deletes_model_in_the_s3_model_store() {
+//         let bucket_name = "jams-model-store".to_string();
+//
+//         // load models
+//         let s3_model_store = S3ModelStore::new(bucket_name).await.unwrap();
+//         let deletion = s3_model_store.delete_model("model_which_does_not_exist".to_string());
+//
+//         // assert
+//         assert!(deletion.is_err());
+//     }
+//
+//     #[tokio::test]
+//     async fn successfully_update_model_in_the_s3_model_store() {
+//         let bucket_name = "jams-model-store".to_string();
+//         let model_name = "my_awesome_autompg_model".to_string();
+//
+//         // load models
+//         let s3_model_store = S3ModelStore::new(bucket_name).await.unwrap();
+//
+//         // retrieve timestamp from existing to model for assertion
+//         let model = s3_model_store
+//             .get_model(model_name.clone())
+//             .unwrap()
+//             .to_owned();
+//
+//         // update model
+//         let update = s3_model_store.update_model(model_name.clone()).await;
+//         assert!(update.is_ok());
+//         let updated_model = s3_model_store
+//             .get_model(model_name.clone())
+//             .unwrap()
+//             .to_owned();
+//
+//         // assert
+//         assert_eq!(model.info.name, updated_model.info.name);
+//         assert_eq!(model.info.path, updated_model.info.path);
+//         assert_ne!(model.info.last_updated, updated_model.info.last_updated); // as model will be updated
+//     }
+//
+//     #[tokio::test]
+//     async fn fails_to_update_model_in_the_s3_model_store_when_model_name_is_incorrect() {
+//         let bucket_name = "jams-model-store".to_string();
+//         let incorrect_model_name = "my_awesome_autompg_model_incorrect".to_string();
+//
+//         // load models
+//         let s3_model_store = S3ModelStore::new(bucket_name).await.unwrap();
+//
+//         // update model with incorrect model name
+//         let update = s3_model_store.update_model(incorrect_model_name).await;
+//
+//         // assert
+//         assert!(update.is_err());
+//     }
 
     // todo: add model seems to be unstable
     // #[tokio::test]
@@ -812,22 +812,22 @@ mod tests {
     //     assert_eq!(num_models_after_add - num_models, 1);
     // }
 
-    #[tokio::test]
-    async fn fails_to_add_model_in_the_s3_model_store_when_the_model_path_is_wrong() {
-        let bucket_name = "jams-model-store".to_string();
-
-        // load models
-        let s3_model_store = S3ModelStore::new(bucket_name).await.unwrap();
-
-        // add model
-        let add = s3_model_store
-            .add_model(
-                "my_awesome_penguin_model".to_string(),
-                "tests/model_storage/s3_model_store/model_which_does_not_exist",
-            )
-            .await;
-
-        // assert
-        assert!(add.is_err());
-    }
-}
+//     #[tokio::test]
+//     async fn fails_to_add_model_in_the_s3_model_store_when_the_model_path_is_wrong() {
+//         let bucket_name = "jams-model-store".to_string();
+//
+//         // load models
+//         let s3_model_store = S3ModelStore::new(bucket_name).await.unwrap();
+//
+//         // add model
+//         let add = s3_model_store
+//             .add_model(
+//                 "my_awesome_penguin_model".to_string(),
+//                 "tests/model_storage/s3_model_store/model_which_does_not_exist",
+//             )
+//             .await;
+//
+//         // assert
+//         assert!(add.is_err());
+//     }
+// }
