@@ -3,6 +3,8 @@ use crate::model_store::storage::{
     ModelName, Storage,
 };
 use async_trait::async_trait;
+use aws_config::meta::region::ProvideRegion;
+use aws_config::BehaviorVersion;
 use aws_sdk_s3 as s3;
 use chrono::Utc;
 use dashmap::mapref::one::Ref;
@@ -10,10 +12,10 @@ use dashmap::DashMap;
 use flate2::read::GzDecoder;
 use std::fs::remove_dir_all;
 use std::fs::File;
+use std::io::Write;
 use std::path::Path;
 use std::sync::Arc;
 use tar::Archive;
-use tokio::io::AsyncWriteExt;
 use uuid::Uuid;
 
 /// A struct representing a model store that interfaces with S3.
@@ -49,9 +51,13 @@ impl S3ModelStore {
         if bucket_name.is_empty() {
             anyhow::bail!("S3 bucket name must be specified ❌")
         }
-        let config = aws_config::load_from_env().await;
         // Create an S3 client with the loaded configuration
-        let client = s3::Client::new(&config);
+        let client = match build_s3_client(use_localstack()).await {
+            Ok(client) => client,
+            Err(e) => {
+                anyhow::bail!("Failed to build S3 client ❌: {}", e.to_string())
+            }
+        };
         // Directory, which stores the models downloaded from S3
         let model_store_dir = format!(
             "{}/{}_{}",
@@ -78,6 +84,46 @@ impl S3ModelStore {
             model_store_dir,
         })
     }
+}
+
+/// Asynchronously builds and returns an S3 client.
+///
+/// # Parameters
+///
+/// - `use_localstack`: A boolean flag to indicate if LocalStack should be used.
+///
+/// # Returns
+///
+/// - `Result<s3::Client, anyhow::Error>`: A result containing the configured S3 client or an error.
+///
+/// # Errors
+///
+/// - Returns an error if the AWS region cannot be determined from the configuration.
+async fn build_s3_client(use_localstack: bool) -> anyhow::Result<s3::Client> {
+    // Setup AWS configs
+    let aws_config = aws_config::defaults(BehaviorVersion::latest()).load().await;
+    let region = match aws_config.region() {
+        None => {
+            anyhow::bail!("Failed to get AWS region from config ❌")
+        }
+        Some(value) => {
+            // Convert &Region to Region
+            value.region().await
+        }
+    };
+
+    let mut s3_config = s3::Config::builder()
+        .region(region)
+        .credentials_provider(aws_config.credentials_provider().unwrap())
+        .behavior_version_latest();
+    if use_localstack {
+        s3_config = s3_config
+            .force_path_style(true)
+            .endpoint_url("http://localhost:4566/");
+    }
+    let s3_config = s3_config.build();
+    // Create an S3 client with the loaded configuration
+    Ok(s3::Client::from_conf(s3_config))
 }
 
 /// Implements the `Drop` trait for `S3ModelStore`.
@@ -501,9 +547,7 @@ async fn download_objects(
                             object_key.clone(),
                             data.into_bytes(),
                             out_dir,
-                        )
-                        .await
-                        {
+                        ) {
                             Ok(_) => {
                                 // Do nothing
                             }
@@ -559,7 +603,7 @@ async fn download_objects(
 /// * The tarball file cannot be saved or created.
 /// * The tarball file cannot be unpacked into the output directory.
 ///
-async fn save_and_upack_tarball(
+fn save_and_upack_tarball(
     path: &str,
     key: String,
     data: bytes::Bytes,
@@ -569,7 +613,7 @@ async fn save_and_upack_tarball(
 
     // Create parent directories if they do not exist
     if let Some(parent) = file_path.parent() {
-        match tokio::fs::create_dir_all(parent).await {
+        match std::fs::create_dir_all(parent) {
             Ok(_) => {}
             Err(e) => {
                 anyhow::bail!("Failed to create directory ⚠️: {}", e.to_string())
@@ -577,8 +621,8 @@ async fn save_and_upack_tarball(
         }
     }
 
-    match tokio::fs::File::create(&file_path).await {
-        Ok(mut file) => match file.write_all(&data).await {
+    match std::fs::File::create(&file_path) {
+        Ok(mut file) => match file.write_all(&data) {
             Ok(_) => {
                 log::info!("Saved file to {:?}", file_path);
             }
@@ -653,181 +697,333 @@ fn unpack_tarball(tarball_path: &str, out_dir: &str) -> anyhow::Result<()> {
     }
 }
 
-// #[cfg(test)]
-// mod tests {
-//     use super::*;
-//
-//     // We will be using local stack for setting up a S3 server for testing
-//     // Some model files will be loaded into it to assert our S3 model store
-//     // The localstack will also be added to CI/CD for testing
-//     #[tokio::test]
-//     async fn successfully_load_models_from_s3_model_store() {
-//         let bucket_name = "jams-model-store".to_string();
-//
-//         // load models
-//         let model_store = S3ModelStore::new(bucket_name).await;
-//
-//         // assert
-//         assert!(model_store.is_ok());
-//         // println!("{}", model_store.unwrap().get_models().unwrap().len());
-//         for m in model_store.unwrap().models.iter() {
-//             println!("{}", m.key());
-//         }
-//     }
-//
-//     #[tokio::test]
-//     async fn successfully_get_model_from_s3_model_store() {
-//         let bucket_name = "jams-model-store".to_string();
-//
-//         // load models
-//         let s3_model_store = S3ModelStore::new(bucket_name).await.unwrap();
-//         let model = s3_model_store.get_model("my_awesome_autompg_model".to_string());
-//
-//         // assert
-//         assert!(model.is_some());
-//     }
-//
-//     #[tokio::test]
-//     async fn fails_to_get_model_from_s3_model_store_when_model_name_is_wrong() {
-//         let bucket_name = "jams-model-store".to_string();
-//
-//         // load models
-//         let s3_model_store = S3ModelStore::new(bucket_name).await.unwrap();
-//         let model = s3_model_store.get_model("model_which_does_not_exist".to_string());
-//
-//         // assert
-//         assert!(model.is_none());
-//     }
-//
-//     #[tokio::test]
-//     async fn successfully_get_models_from_s3_model_store() {
-//         let bucket_name = "jams-model-store".to_string();
-//
-//         // load models
-//         let s3_model_store = S3ModelStore::new(bucket_name).await.unwrap();
-//         let models = s3_model_store.get_models();
-//
-//         // assert
-//         assert!(models.is_ok());
-//         assert_ne!(models.unwrap().len(), 0);
-//     }
-//
-//     #[tokio::test]
-//     async fn successfully_deletes_model_in_the_s3_model_store() {
-//         let bucket_name = "jams-model-store".to_string();
-//
-//         // load models
-//         let s3_model_store = S3ModelStore::new(bucket_name).await.unwrap();
-//         let deletion = s3_model_store.delete_model("my_awesome_binary_model_2".to_string());
-//
-//         // assert
-//         assert!(deletion.is_ok());
-//     }
-//
-//     #[tokio::test]
-//     async fn fails_to_deletes_model_in_the_s3_model_store() {
-//         let bucket_name = "jams-model-store".to_string();
-//
-//         // load models
-//         let s3_model_store = S3ModelStore::new(bucket_name).await.unwrap();
-//         let deletion = s3_model_store.delete_model("model_which_does_not_exist".to_string());
-//
-//         // assert
-//         assert!(deletion.is_err());
-//     }
-//
-//     #[tokio::test]
-//     async fn successfully_update_model_in_the_s3_model_store() {
-//         let bucket_name = "jams-model-store".to_string();
-//         let model_name = "my_awesome_autompg_model".to_string();
-//
-//         // load models
-//         let s3_model_store = S3ModelStore::new(bucket_name).await.unwrap();
-//
-//         // retrieve timestamp from existing to model for assertion
-//         let model = s3_model_store
-//             .get_model(model_name.clone())
-//             .unwrap()
-//             .to_owned();
-//
-//         // update model
-//         let update = s3_model_store.update_model(model_name.clone()).await;
-//         assert!(update.is_ok());
-//         let updated_model = s3_model_store
-//             .get_model(model_name.clone())
-//             .unwrap()
-//             .to_owned();
-//
-//         // assert
-//         assert_eq!(model.info.name, updated_model.info.name);
-//         assert_eq!(model.info.path, updated_model.info.path);
-//         assert_ne!(model.info.last_updated, updated_model.info.last_updated); // as model will be updated
-//     }
-//
-//     #[tokio::test]
-//     async fn fails_to_update_model_in_the_s3_model_store_when_model_name_is_incorrect() {
-//         let bucket_name = "jams-model-store".to_string();
-//         let incorrect_model_name = "my_awesome_autompg_model_incorrect".to_string();
-//
-//         // load models
-//         let s3_model_store = S3ModelStore::new(bucket_name).await.unwrap();
-//
-//         // update model with incorrect model name
-//         let update = s3_model_store.update_model(incorrect_model_name).await;
-//
-//         // assert
-//         assert!(update.is_err());
-//     }
+fn use_localstack() -> bool {
+    std::env::var("USE_LOCALSTACK").unwrap_or_default() == "true"
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use aws_sdk_s3::primitives::ByteStream;
+    use aws_sdk_s3::types::{
+        BucketLocationConstraint, CreateBucketConfiguration, Delete, ObjectIdentifier,
+    };
+    use rand::prelude::*;
+    use std::time::Duration;
+
+    fn generate_bucket_name() -> String {
+        let mut rng = rand::thread_rng();
+        let random_number = rng.gen_range(0..999999);
+        format!("jams-model-store-test-{}", random_number)
+    }
+
+    async fn setup_client() -> s3::Client {
+        if !use_localstack() {
+            panic!("USE_LOCALSTACK env not set")
+        }
+        build_s3_client(true).await.unwrap()
+    }
+
+    async fn setup_test_dependencies(client: s3::Client, bucket_name: String) {
+        create_test_bucket(client.clone(), bucket_name.clone()).await;
+        upload_models_for_test(client.clone(), bucket_name).await;
+    }
+
+    async fn create_test_bucket(client: s3::Client, bucket_name: String) {
+        let region = client.config().region().unwrap().to_string();
+        let constraint = BucketLocationConstraint::from(region.as_str());
+        let cfg = CreateBucketConfiguration::builder()
+            .location_constraint(constraint)
+            .build();
+        client
+            .create_bucket()
+            .create_bucket_configuration(cfg)
+            .bucket(bucket_name.clone())
+            .send()
+            .await
+            .unwrap();
+    }
+
+    async fn upload_models_for_test(client: s3::Client, bucket_name: String) {
+        let mut dir = tokio::fs::read_dir("tests/model_storage/s3_model_store")
+            .await
+            .unwrap();
+
+        while let Some(entry) = dir.next_entry().await.unwrap() {
+            let body = ByteStream::from_path(entry.path()).await.unwrap();
+            client
+                .put_object()
+                .bucket(bucket_name.clone())
+                .key(entry.file_name().to_str().unwrap())
+                .body(body)
+                .send()
+                .await
+                .unwrap();
+        }
+    }
+
+    // Code used from AWS documentation
+    async fn delete_models_for_test(client: s3::Client, bucket_name: String) {
+        let objects = client
+            .list_objects_v2()
+            .bucket(bucket_name.clone())
+            .send()
+            .await
+            .unwrap();
+
+        let mut delete_objects: Vec<ObjectIdentifier> = vec![];
+        for obj in objects.contents() {
+            let obj_id = ObjectIdentifier::builder()
+                .set_key(Some(obj.key().unwrap().to_string()))
+                .build()
+                .unwrap();
+            delete_objects.push(obj_id);
+        }
+
+        if !delete_objects.is_empty() {
+            client
+                .delete_objects()
+                .bucket(bucket_name.clone())
+                .delete(
+                    Delete::builder()
+                        .set_objects(Some(delete_objects))
+                        .build()
+                        .unwrap(),
+                )
+                .send()
+                .await
+                .unwrap();
+        }
+        client
+            .delete_bucket()
+            .bucket(bucket_name)
+            .send()
+            .await
+            .unwrap();
+    }
+
+    #[tokio::test]
+    async fn successfully_load_models_from_s3_model_store() {
+        // setup
+        let client = setup_client().await;
+        let bucket_name = generate_bucket_name();
+        setup_test_dependencies(client.clone(), bucket_name.clone()).await;
+
+        // load models
+        let model_store = S3ModelStore::new(bucket_name.clone()).await;
+
+        // assert
+        assert!(model_store.is_ok());
+        assert_ne!(model_store.unwrap().models.len(), 0);
+
+        // cleanup
+        delete_models_for_test(client.clone(), bucket_name.clone()).await
+    }
+
+    #[tokio::test]
+    async fn successfully_get_model_from_s3_model_store() {
+        // setup
+        let client = setup_client().await;
+        let bucket_name = generate_bucket_name();
+        setup_test_dependencies(client.clone(), bucket_name.clone()).await;
+
+        // load models
+        let model_store = S3ModelStore::new(bucket_name.clone()).await.unwrap();
+        let model = model_store.get_model("my_awesome_reg_model".to_string());
+
+        // assert
+        assert!(model.is_some());
+
+        // cleanup
+        delete_models_for_test(client.clone(), bucket_name.clone()).await
+    }
+
+    #[tokio::test]
+    async fn fails_to_get_model_from_s3_model_store_when_model_name_is_wrong() {
+        // setup
+        let client = setup_client().await;
+        let bucket_name = generate_bucket_name();
+        setup_test_dependencies(client.clone(), bucket_name.clone()).await;
+
+        // load models
+        let model_store = S3ModelStore::new(bucket_name.clone()).await.unwrap();
+        let model = model_store.get_model("model_which_does_not_exist".to_string());
+
+        // assert
+        assert!(model.is_none());
+
+        // cleanup
+        delete_models_for_test(client.clone(), bucket_name.clone()).await
+    }
+
+    #[tokio::test]
+    async fn successfully_get_models_from_s3_model_store() {
+        // setup
+        let client = setup_client().await;
+        let bucket_name = generate_bucket_name();
+        setup_test_dependencies(client.clone(), bucket_name.clone()).await;
+
+        // load models
+        let model_store = S3ModelStore::new(bucket_name.clone()).await.unwrap();
+        let models = model_store.get_models();
+
+        // assert
+        assert!(models.is_ok());
+        assert_ne!(models.unwrap().len(), 0);
+
+        // cleanup
+        delete_models_for_test(client.clone(), bucket_name.clone()).await
+    }
+
+    #[tokio::test]
+    async fn successfully_deletes_model_in_the_s3_model_store() {
+        // setup
+        let client = setup_client().await;
+        let bucket_name = generate_bucket_name();
+        setup_test_dependencies(client.clone(), bucket_name.clone()).await;
+
+        // load models
+        let model_store = S3ModelStore::new(bucket_name.clone()).await.unwrap();
+        let deletion = model_store.delete_model("my_awesome_penguin_model".to_string());
+
+        // assert
+        assert!(deletion.is_ok());
+
+        // cleanup
+        delete_models_for_test(client.clone(), bucket_name.clone()).await
+    }
+
+    #[tokio::test]
+    async fn fails_to_deletes_model_in_the_s3_model_store() {
+        // setup
+        let client = setup_client().await;
+        let bucket_name = generate_bucket_name();
+        setup_test_dependencies(client.clone(), bucket_name.clone()).await;
+
+        // load models
+        let model_store = S3ModelStore::new(bucket_name.clone()).await.unwrap();
+        let deletion = model_store.delete_model("model_which_does_not_exist".to_string());
+
+        // assert
+        assert!(deletion.is_err());
+
+        // cleanup
+        delete_models_for_test(client.clone(), bucket_name.clone()).await
+    }
+
+    #[tokio::test]
+    async fn successfully_update_model_in_the_s3_model_store() {
+        // setup
+        let client = setup_client().await;
+        let bucket_name = generate_bucket_name();
+        setup_test_dependencies(client.clone(), bucket_name.clone()).await;
+        let model_name = "my_awesome_reg_model".to_string();
+
+        // load models
+        let model_store = S3ModelStore::new(bucket_name.clone()).await.unwrap();
+        tokio::time::sleep(Duration::from_secs_f32(1.5)).await;
+
+        // retrieve timestamp from existing to model for assertion
+        let model = model_store
+            .get_model(model_name.clone())
+            .unwrap()
+            .to_owned();
+
+        // update model
+        let update = model_store.update_model(model_name.clone()).await;
+        assert!(update.is_ok());
+        let updated_model = model_store
+            .get_model(model_name.clone())
+            .unwrap()
+            .to_owned();
+
+        // assert
+        assert_eq!(model.info.name, updated_model.info.name);
+        assert_eq!(model.info.path, updated_model.info.path);
+        assert_ne!(model.info.last_updated, updated_model.info.last_updated); // as model will be updated
+
+        // cleanup
+        delete_models_for_test(client.clone(), bucket_name.clone()).await
+    }
+
+    #[tokio::test]
+    async fn fails_to_update_model_in_the_s3_model_store_when_model_name_is_incorrect() {
+        // setup
+        let client = setup_client().await;
+        let bucket_name = generate_bucket_name();
+        setup_test_dependencies(client.clone(), bucket_name.clone()).await;
+        let incorrect_model_name = "my_awesome_reg_model_incorrect".to_string();
+
+        // load models
+        let model_store = S3ModelStore::new(bucket_name.clone()).await.unwrap();
+
+        // update model with incorrect model name
+        let update = model_store.update_model(incorrect_model_name).await;
+
+        // assert
+        assert!(update.is_err());
+
+        // cleanup
+        delete_models_for_test(client.clone(), bucket_name.clone()).await
+    }
 
     // todo: add model seems to be unstable
-    // #[tokio::test]
-    // async fn successfully_add_model_in_the_s3_model_store() {
-    //     let bucket_name = "jams-model-store".to_string();
-    //
-    //     // load models
-    //     let s3_model_store = S3ModelStore::new(bucket_name).await.unwrap();
-    //     tokio::time::sleep(Duration::from_millis(100)).await;
-    //
-    //     // delete model to set up test
-    //     s3_model_store
-    //         .delete_model("titanic_model".to_string())
-    //         .unwrap();
-    //     // assert that model is not present
-    //     let model = s3_model_store.get_model("titanic_model".to_string());
-    //     assert!(model.is_none());
-    //     let num_models = s3_model_store.get_models().unwrap().len();
-    //
-    //     // add model - unlike local model store we will pass the s3 key without .tar.gz in the model name
-    //     // model_path is not required when adding models via S3 model store
-    //     let add = s3_model_store
-    //         .add_model("catboost-titanic_model".to_string(), "")
-    //         .await;
-    //     tokio::time::sleep(Duration::from_millis(100)).await;
-    //     let num_models_after_add = s3_model_store.get_models().unwrap().len();
-    //
-    //     // assert
-    //     assert!(add.is_ok());
-    //     let model = s3_model_store.get_model("titanic_model".to_string());
-    //     assert!(model.is_some());
-    //     assert_eq!(num_models_after_add - num_models, 1);
-    // }
+    #[tokio::test]
+    async fn successfully_add_model_in_the_s3_model_store() {
+        // setup
+        let client = setup_client().await;
+        let bucket_name = generate_bucket_name();
+        setup_test_dependencies(client.clone(), bucket_name.clone()).await;
 
-//     #[tokio::test]
-//     async fn fails_to_add_model_in_the_s3_model_store_when_the_model_path_is_wrong() {
-//         let bucket_name = "jams-model-store".to_string();
-//
-//         // load models
-//         let s3_model_store = S3ModelStore::new(bucket_name).await.unwrap();
-//
-//         // add model
-//         let add = s3_model_store
-//             .add_model(
-//                 "my_awesome_penguin_model".to_string(),
-//                 "tests/model_storage/s3_model_store/model_which_does_not_exist",
-//             )
-//             .await;
-//
-//         // assert
-//         assert!(add.is_err());
-//     }
-// }
+        // load models
+        let model_store = S3ModelStore::new(bucket_name.clone()).await.unwrap();
+
+        // delete model to set up test
+        model_store
+            .delete_model("titanic_model".to_string())
+            .unwrap();
+        // assert that model is not present
+        let model = model_store.get_model("titanic_model".to_string());
+        assert!(model.is_none());
+        let num_models = model_store.get_models().unwrap().len();
+
+        // add model - unlike local model store we will pass the s3 key without .tar.gz in the model name
+        // model_path is not required when adding models via S3 model store
+        let add = model_store
+            .add_model("catboost-titanic_model".to_string(), "")
+            .await;
+        let num_models_after_add = model_store.get_models().unwrap().len();
+
+        // assert
+        assert!(add.is_ok());
+        // todo: this is a bug which needs to fixed. When adding model the framework prefix should be removed
+        let model = model_store.get_model("catboost-titanic_model".to_string());
+        assert!(model.is_some());
+        assert_eq!(num_models_after_add - num_models, 1);
+
+        // cleanup
+        delete_models_for_test(client.clone(), bucket_name.clone()).await
+    }
+
+    #[tokio::test]
+    async fn fails_to_add_model_in_the_s3_model_store_when_the_model_path_is_wrong() {
+        // setup
+        let client = setup_client().await;
+        let bucket_name = generate_bucket_name();
+        setup_test_dependencies(client.clone(), bucket_name.clone()).await;
+
+        // load models
+        let model_store = S3ModelStore::new(bucket_name.clone()).await.unwrap();
+
+        // add model
+        let add = model_store
+            .add_model("my_awesome_penguin_model_wrong_s3_key".to_string(), "")
+            .await;
+
+        // assert
+        assert!(add.is_err());
+
+        // cleanup
+        delete_models_for_test(client.clone(), bucket_name.clone()).await
+    }
+}
