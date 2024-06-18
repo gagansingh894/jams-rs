@@ -21,11 +21,19 @@ impl AzureBlobStorageModelStore {
        let access_key = std::env::var("STORAGE_ACCESS_KEY").unwrap();
        let storage_credentials = StorageCredentials::access_key(account.clone(), access_key);
 
-       let container_client = BlobServiceClient::new(account, storage_credentials).container_client(storage_container_name);
+       let container_client = BlobServiceClient::new(account, storage_credentials)
+           .container_client(storage_container_name);
        let models: Arc<DashMap<ModelName, Arc<Model>>> = Arc::new(DashMap::new());
 
        Ok(AzureBlobStorageModelStore{models, container_client})
    }
+}
+
+fn fetch_models(client: ContainerClient) {
+    // list the blobs in the container
+    let blobs = client.list_blobs().max_results(10).into_stream().
+    // for each blob, create a blob client and download the blob
+    // once the dir is readu, repeat the same process as in S3
 }
 
 #[async_trait]
