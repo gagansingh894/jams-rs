@@ -1,9 +1,13 @@
+use std::num::NonZeroU32;
 use std::sync::Arc;
 use async_trait::async_trait;
+use azure_core::Error;
 use azure_storage::StorageCredentials;
+use azure_storage_blobs::container::operations::ListBlobsResponse;
 use azure_storage_blobs::prelude::{BlobClient, BlobServiceClient, ContainerClient};
 use dashmap::DashMap;
 use dashmap::mapref::one::Ref;
+use futures::StreamExt;
 use crate::model_store::storage::{Metadata, Model, ModelName, Storage};
 
 /// A struct representing a model store that interfaces with azure blob storage.
@@ -29,10 +33,23 @@ impl AzureBlobStorageModelStore {
    }
 }
 
-fn fetch_models(client: ContainerClient) {
+async fn fetch_models(client: ContainerClient) {
+    let max_results = NonZeroU32::new(10).unwrap();
     // list the blobs in the container
-    let blobs = client.list_blobs().max_results(10).into_stream().
+    let mut stream = client
+        .list_blobs()
+        .max_results(max_results)
+        .into_stream();
     // for each blob, create a blob client and download the blob
+    while let Some(result) = stream.next().await {
+        match result {
+            Ok(result) => {
+                println!("{:?}", result.max_results);
+            }
+            Err(_) => {}
+        }
+
+    }
     // once the dir is readu, repeat the same process as in S3
 }
 
@@ -100,6 +117,7 @@ mod tests {
                 let blob_client = container_client.blob_client(blob.clone().name);
             }
         }
+        println!("List blob returned {count} blobs.");
     }
 
 }
