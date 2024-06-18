@@ -24,6 +24,20 @@ jobs:
         LIBTORCH_LIB: /usr/local/lib/libtorch
         LD_LIBRARY_PATH: /usr/local/lib/libtorch/lib:/usr/local/lib
         PROTOC: /usr/bin/protoc
+        USE_LOCALSTACK: true
+        AWS_ACCESS_KEY_ID: test
+        AWS_SECRET_ACCESS_KEY: test
+        AWS_DEFAULT_REGION: eu-west-2
+        LOCALSTACK_HOSTNAME: localstack
+
+    services:
+      localstack:
+        image: localstack/localstack:latest
+        ports:
+          - 4566:4566  # Edge port for all services
+        env:
+          SERVICES: s3
+          DEBUG: 1
 
     steps:
       - name: Checkout

@@ -7,7 +7,7 @@ set -e
 install_dependencies() {
     echo "Updating package lists and installing dependencies..."
     apt-get update
-    apt-get install -y clang wget
+    apt-get install -y clang wget python3-pip python3-venv
     rm -rf /var/lib/apt/lists/*
 }
 
