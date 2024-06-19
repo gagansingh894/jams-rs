@@ -28,6 +28,7 @@ jobs:
         AWS_ACCESS_KEY_ID: test
         AWS_SECRET_ACCESS_KEY: test
         AWS_DEFAULT_REGION: eu-west-2
+        LOCALSTACK_HOSTNAME: localstack
 
     services:
       localstack:
