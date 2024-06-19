@@ -119,7 +119,7 @@ async fn build_s3_client(use_localstack: bool) -> anyhow::Result<s3::Client> {
     if use_localstack {
         s3_config = s3_config
             .force_path_style(true)
-            .endpoint_url("http://localhost:4566/");
+            .endpoint_url("http://0.0.0.0:4566/");
     }
     let s3_config = s3_config.build();
     // Create an S3 client with the loaded configuration
