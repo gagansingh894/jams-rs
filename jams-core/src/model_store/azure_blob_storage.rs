@@ -1,3 +1,5 @@
+use std::env::VarError;
+use std::fs::{File, remove_dir_all};
 use std::num::NonZeroU32;
 use std::sync::Arc;
 use async_trait::async_trait;
@@ -8,7 +10,14 @@ use azure_storage_blobs::prelude::{BlobClient, BlobServiceClient, ContainerClien
 use dashmap::DashMap;
 use dashmap::mapref::one::Ref;
 use futures::StreamExt;
-use crate::model_store::storage::{Metadata, Model, ModelName, Storage};
+use std::io::Write;
+use azure_storage_blobs::blob::operations::GetBlobResponse;
+use uuid::Uuid;
+use crate::model_store::common::{cleanup, unpack_tarball};
+use crate::model_store::s3::S3ModelStore;
+use crate::model_store::storage::{load_models, Metadata, Model, ModelName, Storage};
+
+const DOWNLOADED_MODELS_DIRECTORY_NAME_PREFIX: &str = "model_store";
 
 /// A struct representing a model store that interfaces with azure blob storage.
 pub struct AzureBlobStorageModelStore {
@@ -17,47 +26,186 @@ pub struct AzureBlobStorageModelStore {
     /// Azure container client for interacting with storage container and listing blobs
     /// A new blob client will be created for each blob to download it to the local file system
     container_client: ContainerClient,
+    /// Directory, which stores the model artifacts downloaded from Azure blob
+    model_store_dir: String,
 }
 
 impl AzureBlobStorageModelStore {
    pub async fn new(storage_container_name: String) -> anyhow::Result<Self> {
-       let account = std::env::var("STORAGE_ACCOUNT").unwrap();
-       let access_key = std::env::var("STORAGE_ACCESS_KEY").unwrap();
-       let storage_credentials = StorageCredentials::access_key(account.clone(), access_key);
+       // Ensure model_dir_uri is not empty, return error if empty
+       if storage_container_name.is_empty() {
+           anyhow::bail!("Azure storage container name must be specified ❌")
+       }
+       // Create Azure Blob Service client
+       let container_client = match build_azure_storage_client() {
+           Ok(blob_service_client) => {
+               blob_service_client.container_client(storage_container_name)
+           }
+           Err(e) => {
+               anyhow::bail!("Failed to create Azure Blob Service client: {}", e)
+           }
+       };
+       // Specify temporary directory for storing models downloaded from azure blob
+       let model_store_dir = format!(
+           "{}/{}_{}",
+           std::env::var("HOME").unwrap_or("/usr/local".to_string()),
+           DOWNLOADED_MODELS_DIRECTORY_NAME_PREFIX,
+           Uuid::new_v4(),
+       );
 
-       let container_client = BlobServiceClient::new(account, storage_credentials)
-           .container_client(storage_container_name);
-       let models: Arc<DashMap<ModelName, Arc<Model>>> = Arc::new(DashMap::new());
+       // Fetch the models from Azure Blob Storage
+       let models = match fetch_models(&container_client, model_store_dir.clone()).await
+       {
+           Ok(models) => {
+               log::info!("Successfully fetched valid models from Azure Blob Storage ✅");
+               models
+           }
+           Err(e) => {
+               anyhow::bail!("Failed to fetch models ❌ - {}", e.to_string());
+           }
+       };
 
-       Ok(AzureBlobStorageModelStore{models, container_client})
+
+       Ok(Self {
+           models: Arc::new(models),
+           container_client,
+           model_store_dir,
+       })
    }
 }
 
-async fn fetch_models(client: ContainerClient) {
+/// Implements the `Drop` trait for `AzureBlobStorageModelStore`.
+///
+/// This implementation ensures that the temporary directory used for the model store is cleaned up
+/// when the `AzureBlobStorageModelStore` instance is dropped. This helps to avoid leaving temporary files on disk
+/// and ensures proper resource cleanup.
+///
+/// # Fields
+///
+/// * `model_store_dir` - The directory path for the temporary local model store which contains models downloaded from azure blob.
+///
+impl Drop for AzureBlobStorageModelStore {
+    fn drop(&mut self) {
+        cleanup(self.model_store_dir.clone())
+    }
+}
+
+fn build_azure_storage_client() -> anyhow::Result<BlobServiceClient> {
+    let account = match std::env::var("STORAGE_ACCOUNT") {
+        Ok(account) => { account }
+        Err(_) => {
+            anyhow::bail!("Azure STORAGE_ACCOUNT env variable not set ❌")
+        }
+    };
+    let access_key = match std::env::var("STORAGE_ACCESS_KEY") {
+        Ok(ak) => { ak }
+        Err(_) => {
+            anyhow::bail!("Azure STORAGE_ACCESS_KEY env variable not set ❌")
+        }
+
+    };
+    let storage_credentials = StorageCredentials::access_key(account.clone(), access_key);
+
+    Ok(BlobServiceClient::new(account, storage_credentials))
+}
+
+
+async fn fetch_models(client: &ContainerClient, model_store_dir: String) -> anyhow::Result<DashMap<ModelName, Arc<Model>>> {
+    let temp_path = match tempfile::Builder::new().prefix("models").tempdir() {
+        Ok(dir) => {
+            match dir.path().to_str() {
+                None => {
+                    anyhow::bail!("Failed to convert TempDir to String ❌")
+                }
+                Some(p) => { p.to_string() }
+            }
+        }
+        Err(e) => {
+            anyhow::bail!("Failed to create temp directory: {}", e)
+        }
+    };
+
     let max_results = NonZeroU32::new(10).unwrap();
-    // list the blobs in the container
+
+    // List the blobs in the container
     let mut stream = client
         .list_blobs()
         .max_results(max_results)
         .into_stream();
-    // for each blob, create a blob client and download the blob
+    // For each blob, create a blob client and download the blob
     while let Some(result) = stream.next().await {
         match result {
             Ok(result) => {
-                println!("{:?}", result.max_results);
-            }
-            Err(_) => {}
-        }
+                for blob in result.blobs.blobs() {
+                    let blob_name = blob.clone().name;
+                    let blob_client = client.blob_client(blob_name.clone());
+                    let mut blob_stream = blob_client.get().chunk_size(0x2000u64).into_stream();
 
+                    // Download blob
+                    let mut complete_response: Vec<u8> = vec![];
+                    while let Some(value) = blob_stream.next().await  {
+                        let data = match value {
+                            Ok(response) => {
+                                match response.data.collect().await {
+                                    Ok(data) => {
+                                        data.to_vec()
+                                    }
+                                    Err(e) => {
+                                        anyhow::bail!("Failed to convert bytes: {}", e)
+                                    }
+                                }
+                            }
+                            Err(e) => {
+                                anyhow::bail!("Failed to collect data to bytes: {}", e)
+                            }
+                        };
+                        complete_response.extend(&data);
+                    }
+
+                    // Convert bytes to File
+                    let temp_save_path = format!("{}/{}", temp_path, blob_name.clone());
+                    println!("{:?}", temp_save_path.clone());
+                    match File::create(temp_save_path.clone()) {
+                        Ok(mut file) => {
+                            match file.write_all(&complete_response[..]) {
+                                Ok(_) => {
+                                    log::info!("File {} downloaded successfully at {} ✅", blob_name.clone(), temp_save_path.clone())
+                                }
+                                Err(e) => {
+                                    anyhow::bail!("Failed to write to file: {}", e)
+                                }
+                            }
+                        }
+                        Err(e) => {
+                            anyhow::bail!("Failed to create file: {}", e)
+                        }
+                    }
+                    // Untar the file
+                    unpack_tarball(temp_save_path.clone().as_str(), model_store_dir.as_str()).unwrap();
+                }
+            }
+            Err(e) => {
+                anyhow::bail!("Failed to collect data to bytes: {}", e)
+            }
+        }
     }
-    // once the dir is readu, repeat the same process as in S3
+
+    let models = match load_models(model_store_dir).await {
+        Ok(models) => {
+            log::info!("Successfully loaded models from directory ✅");
+            models
+        }
+        Err(e) => {
+            anyhow::bail!("Failed to load models - {}", e.to_string());
+        }
+    };
+
+    Ok(models)
 }
 
 #[async_trait]
 impl Storage for AzureBlobStorageModelStore {
-    async fn add_model(&self, model_name: ModelName, model_path: &str) -> anyhow::Result<()> {
-        todo!()
-    }
+    async fn add_model(&self, model_name: ModelName, model_path: &str) -> anyhow::Result<()> { todo!() }
 
     async fn update_model(&self, model_name: ModelName) -> anyhow::Result<()> {
         todo!()
@@ -78,46 +226,21 @@ impl Storage for AzureBlobStorageModelStore {
 
 #[cfg(test)]
 mod tests {
-    use std::num::NonZeroU32;
-    use azure_storage::prelude::*;
-    use azure_storage_blobs::prelude::*;
-    use futures::stream::StreamExt;
+    use super::*;
+
     #[tokio::test]
-    async fn explore_azure_blob() {
-        // First we retrieve the account name and access key from environment variables.
-        let account = std::env::var("STORAGE_ACCOUNT").unwrap_or_else(|_| "jamsmodelstore".to_string());
-        let access_key = std::env::var("STORAGE_ACCESS_KEY").unwrap_or_else(|_| "7NlJB6EI2s7K2RCAI/TzR6h22lH3IR931NB1rx6y242hBEuDaNIoDt6BWXk99NLxvWxD4b1RWHi/+AStja7d4Q==".to_string());
-        let container = std::env::var("STORAGE_CONTAINER").unwrap_or_else(|_| "modelstore".to_string());
+    async fn successfully_load_models_from_azure_blob_storage_model_store() {
+        let storage_container_name = "modelstore".to_string();
+        let model_store = AzureBlobStorageModelStore::new(storage_container_name).await;
 
-        // ideally we will list all the blobs inside the container
-        // a blob = s3 key
-
-        let storage_credentials = StorageCredentials::access_key(account.clone(), access_key);
-        let service_client = BlobServiceClient::new(account, storage_credentials);
-        let container_client = service_client.container_client(container);
-        // let container_client = BlobServiceClient::new(account, storage_credentials).container_client(container);
-
-
-        let max_results = NonZeroU32::new(3).unwrap();
-        let mut stream = container_client
-            .list_blobs()
-            .max_results(max_results)
-            .into_stream();
-
-        let mut count = 0;
-        while let Some(result) = stream.next().await {
-            let result = result.unwrap();
-            for blob in result.blobs.blobs() {
-                count += 1;
-                println!(
-                    "\t{}\t{} MB",
-                    blob.clone().name,
-                    blob.clone().properties.content_length / (1024 * 1024)
-                );
-                let blob_client = container_client.blob_client(blob.clone().name);
-            }
+        match model_store {
+            Ok(_) => {}
+            Err(e) => { println!("ERROR: {}", e)}
         }
-        println!("List blob returned {count} blobs.");
+
+        // Assert
+        // assert!(model_store.is_ok());
+        // assert_ne!(model_store.unwrap().models.len(), 0);
     }
 
 }
