@@ -1,7 +1,9 @@
+use std::env;
 use crate::model_store::storage::{
     append_model_format, extract_framework_from_path, load_models, load_predictor, Metadata, Model,
     ModelName, Storage,
 };
+use crate::model_store::common::{cleanup, unpack_tarball};
 use async_trait::async_trait;
 use aws_config::meta::region::ProvideRegion;
 use aws_config::BehaviorVersion;
@@ -138,14 +140,7 @@ async fn build_s3_client(use_localstack: bool) -> anyhow::Result<s3::Client> {
 ///
 impl Drop for S3ModelStore {
     fn drop(&mut self) {
-        match remove_dir_all(self.model_store_dir.clone()) {
-            Ok(_) => {
-                log::info!("Cleaning up temporary location for model store on disk 🧹")
-            }
-            Err(_) => {
-                log::error!("Failed to clean up temporary location for model store on disk");
-            }
-        }
+        cleanup(self.model_store_dir.clone())
     }
 }
 
@@ -643,56 +638,6 @@ fn save_and_upack_tarball(
         Ok(_) => Ok(()),
         Err(e) => {
             anyhow::bail!("Failed to unpack ⚠️: {}", e.to_string())
-        }
-    }
-}
-
-/// Unpacks a `.tar.gz` file into a specified output directory.
-///
-/// This function opens a `.tar.gz` file located at `tarball_path`, extracts its contents,
-/// and unpacks them into the directory specified by `out_dir`.
-///
-/// # Arguments
-///
-/// * `tarball_path` - The path to the `.tar.gz` file to unpack.
-/// * `out_dir` - The directory where the contents of the `.tar.gz` file will be unpacked.
-///
-/// # Returns
-///
-/// * `Result<()>` - An empty result indicating success or an error.
-///
-/// # Errors
-///
-/// This function will return an error if:
-/// * The `.tar.gz` file cannot be opened or read.
-/// * The contents of the `.tar.gz` file cannot be unpacked into the output directory.
-///
-fn unpack_tarball(tarball_path: &str, out_dir: &str) -> anyhow::Result<()> {
-    match File::open(tarball_path) {
-        Ok(tar_gz) => {
-            let tar = GzDecoder::new(tar_gz);
-            let mut archive = Archive::new(tar);
-
-            match archive.unpack(out_dir) {
-                Ok(_) => {
-                    log::info!(
-                        "Unpacked tarball: {:?} at location: {}",
-                        tarball_path,
-                        out_dir
-                    );
-                    Ok(())
-                }
-                Err(_) => {
-                    anyhow::bail!(
-                        "Failed to unpack tarball ⚠️: {:?} at location: {}",
-                        tarball_path,
-                        out_dir
-                    )
-                }
-            }
-        }
-        Err(e) => {
-            anyhow::bail!("Failed to open tarball ⚠️: {}", e.to_string())
         }
     }
 }
