@@ -46,7 +46,7 @@ tar = "0.4.41"
 flate2 = "1.0.30"
 async-trait = "0.1.80"
 uuid = { version = "1.8.0", features = ["v4"] }
-azure_core = "0.20.0"
+azure_core = { version = "0.20.0", features = ["tokio-fs"] }
 azure_storage = "0.20.0"
 azure_storage_blobs = "0.20.0"
 futures = "0.3.30"
