@@ -3,7 +3,7 @@ use crate::model_store::storage::{
     append_model_format, extract_framework_from_path, load_models, load_predictor, Metadata, Model,
     ModelName, Storage,
 };
-use crate::model_store::common::{cleanup, save_and_upack_tarball};
+use crate::model_store::common::{cleanup, DOWNLOADED_MODELS_DIRECTORY_NAME_PREFIX, save_and_upack_tarball};
 use async_trait::async_trait;
 use aws_config::meta::region::ProvideRegion;
 use aws_config::BehaviorVersion;
@@ -26,8 +26,6 @@ pub struct S3ModelStore {
     /// Directory, which stores the model artifacts downloaded from S3
     model_store_dir: String,
 }
-
-const DOWNLOADED_MODELS_DIRECTORY_NAME_PREFIX: &str = "model_store";
 
 impl S3ModelStore {
     /// Creates a new instance of `S3ModelStore`.

@@ -8,10 +8,8 @@ use dashmap::mapref::one::Ref;
 use futures::StreamExt;
 use bytes::Bytes;
 use uuid::Uuid;
-use crate::model_store::common::{cleanup, save_and_upack_tarball};
+use crate::model_store::common::{cleanup, DOWNLOADED_MODELS_DIRECTORY_NAME_PREFIX, save_and_upack_tarball};
 use crate::model_store::storage::{load_models, Metadata, Model, ModelName, Storage};
-
-const DOWNLOADED_MODELS_DIRECTORY_NAME_PREFIX: &str = "model_store";
 
 /// A struct representing a model store that interfaces with azure blob storage.
 pub struct AzureBlobStorageModelStore {
