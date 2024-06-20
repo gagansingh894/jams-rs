@@ -1,20 +1,14 @@
-use std::env::VarError;
-use std::fs::{File, remove_dir_all};
 use std::num::NonZeroU32;
 use std::sync::Arc;
 use async_trait::async_trait;
-use azure_core::Error;
 use azure_storage::StorageCredentials;
-use azure_storage_blobs::container::operations::ListBlobsResponse;
-use azure_storage_blobs::prelude::{BlobClient, BlobServiceClient, ContainerClient};
+use azure_storage_blobs::prelude::{BlobServiceClient, ContainerClient};
 use dashmap::DashMap;
 use dashmap::mapref::one::Ref;
 use futures::StreamExt;
-use std::io::Write;
-use azure_storage_blobs::blob::operations::GetBlobResponse;
+use bytes::Bytes;
 use uuid::Uuid;
-use crate::model_store::common::{cleanup, unpack_tarball};
-use crate::model_store::s3::S3ModelStore;
+use crate::model_store::common::{cleanup, save_and_upack_tarball};
 use crate::model_store::storage::{load_models, Metadata, Model, ModelName, Storage};
 
 const DOWNLOADED_MODELS_DIRECTORY_NAME_PREFIX: &str = "model_store";
@@ -164,24 +158,26 @@ async fn fetch_models(client: &ContainerClient, model_store_dir: String) -> anyh
 
                     // Convert bytes to File
                     let temp_save_path = format!("{}/{}", temp_path, blob_name.clone());
-                    println!("{:?}", temp_save_path.clone());
-                    match File::create(temp_save_path.clone()) {
-                        Ok(mut file) => {
-                            match file.write_all(&complete_response[..]) {
-                                Ok(_) => {
-                                    log::info!("File {} downloaded successfully at {} ✅", blob_name.clone(), temp_save_path.clone())
-                                }
-                                Err(e) => {
-                                    anyhow::bail!("Failed to write to file: {}", e)
-                                }
-                            }
+                    // println!("{:?}", temp_save_path.clone());
+
+                    match save_and_upack_tarball(
+                        temp_save_path.as_str(),
+                        blob_name.clone(),
+                        Bytes::copy_from_slice(&complete_response[..]),
+                        // complete_response.into_bytes(),
+                        model_store_dir.as_str(),
+                    ) {
+                        Ok(_) => {
+                            // Do nothing
                         }
                         Err(e) => {
-                            anyhow::bail!("Failed to create file: {}", e)
+                            log::warn!(
+                                    "Failed to save artefact {} ⚠️: {}",
+                                    blob_name.clone(),
+                                    e.to_string()
+                                )
                         }
                     }
-                    // Untar the file
-                    unpack_tarball(temp_save_path.clone().as_str(), model_store_dir.as_str()).unwrap();
                 }
             }
             Err(e) => {
@@ -211,16 +207,62 @@ impl Storage for AzureBlobStorageModelStore {
         todo!()
     }
 
+    /// Retrieves a model from the model store.
+    ///
+    /// This function returns a reference to the model with the specified name if it exists.
+    ///
+    /// # Arguments
+    ///
+    /// * `model_name` - The name of the model to be retrieved.
+    ///
+    /// # Returns
+    ///
+    /// This function returns an `Option`:
+    /// * `Some(Ref<ModelName, Arc<Model>>)` if the model exists.
+    /// * `None` if the model does not exist.
+    ///
     fn get_model(&self, model_name: ModelName) -> Option<Ref<ModelName, Arc<Model>>> {
-        todo!()
+        self.models.get(model_name.as_str())
     }
 
+    /// Retrieves metadata for all models in the model store.
+    ///
+    /// This function returns a vector of `Metadata` containing information about all the models in the store.
+    ///
+    /// # Returns
+    ///
+    /// This function returns an `anyhow::Result` containing a vector of `Metadata`.
+    ///
     fn get_models(&self) -> anyhow::Result<Vec<Metadata>> {
-        todo!()
+        let model: Vec<Metadata> = self
+            .models
+            .iter()
+            .map(|f| f.value().info.to_owned())
+            .collect();
+        Ok(model)
     }
 
+    /// Deletes a model from the model store.
+    ///
+    /// This function removes the model with the specified name from the store.
+    ///
+    /// # Arguments
+    ///
+    /// * `model_name` - The name of the model to be deleted.
+    ///
+    /// # Errors
+    ///
+    /// This function returns an error if the specified model does not exist in the store.
     fn delete_model(&self, model_name: ModelName) -> anyhow::Result<()> {
-        todo!()
+        match self.models.remove(&model_name) {
+            None => {
+                anyhow::bail!(
+                    "Failed to delete model as the specified model {} does not exist",
+                    model_name
+                )
+            }
+            Some(_) => Ok(()),
+        }
     }
 }
 
@@ -231,16 +273,11 @@ mod tests {
     #[tokio::test]
     async fn successfully_load_models_from_azure_blob_storage_model_store() {
         let storage_container_name = "modelstore".to_string();
+
         let model_store = AzureBlobStorageModelStore::new(storage_container_name).await;
 
-        match model_store {
-            Ok(_) => {}
-            Err(e) => { println!("ERROR: {}", e)}
-        }
-
         // Assert
-        // assert!(model_store.is_ok());
-        // assert_ne!(model_store.unwrap().models.len(), 0);
+        assert!(model_store.is_ok());
+        assert_ne!(model_store.unwrap().models.len(), 0);
     }
-
 }
