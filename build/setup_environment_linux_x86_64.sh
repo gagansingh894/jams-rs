@@ -95,7 +95,7 @@ install_protoc() {
 
 # Main script execution
 install_dependencies
-install_nodejs
+#install_nodejs
 install_bazel
 confirm_bazel_installation
 print_clang_version
