@@ -12,7 +12,7 @@ async fn setup_shared_state() -> Arc<AppState> {
         .build()
         .expect("Failed to build rayon threadpool ❌");
 
-    let model_store = LocalModelStore::new("".to_string())
+    let model_store = LocalModelStore::new("tests/model_store".to_string())
         .await
         .expect("Failed to create model store ❌");
 
