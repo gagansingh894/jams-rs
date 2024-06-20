@@ -517,11 +517,11 @@ fn use_azurite() -> bool {
 
 #[cfg(test)]
 mod tests {
-    use std::time::Duration;
     use super::*;
     use azure_core::tokio::fs::FileStreamBuilder;
     use azure_storage_blobs::prelude::PublicAccess;
     use rand::Rng;
+    use std::time::Duration;
     use tokio::fs::File;
 
     fn setup_client() -> BlobServiceClient {
@@ -607,7 +607,9 @@ mod tests {
         setup_test_dependencies(client.clone(), container_name.clone()).await;
 
         // load models
-        let model_store = AzureBlobStorageModelStore::new(container_name.clone()).await.unwrap();
+        let model_store = AzureBlobStorageModelStore::new(container_name.clone())
+            .await
+            .unwrap();
         let model = model_store.get_model("my_awesome_reg_model".to_string());
 
         // assert
@@ -625,7 +627,9 @@ mod tests {
         setup_test_dependencies(client.clone(), container_name.clone()).await;
 
         // load models
-        let model_store = AzureBlobStorageModelStore::new(container_name.clone()).await.unwrap();
+        let model_store = AzureBlobStorageModelStore::new(container_name.clone())
+            .await
+            .unwrap();
         let model = model_store.get_model("model_which_does_not_exist".to_string());
 
         // assert
@@ -643,7 +647,9 @@ mod tests {
         setup_test_dependencies(client.clone(), container_name.clone()).await;
 
         // load models
-        let model_store = AzureBlobStorageModelStore::new(container_name.clone()).await.unwrap();
+        let model_store = AzureBlobStorageModelStore::new(container_name.clone())
+            .await
+            .unwrap();
         let models = model_store.get_models();
 
         // assert
@@ -662,7 +668,9 @@ mod tests {
         setup_test_dependencies(client.clone(), container_name.clone()).await;
 
         // load models
-        let model_store = AzureBlobStorageModelStore::new(container_name.clone()).await.unwrap();
+        let model_store = AzureBlobStorageModelStore::new(container_name.clone())
+            .await
+            .unwrap();
         let deletion = model_store.delete_model("my_awesome_penguin_model".to_string());
 
         // assert
@@ -680,7 +688,9 @@ mod tests {
         setup_test_dependencies(client.clone(), container_name.clone()).await;
 
         // load models
-        let model_store = AzureBlobStorageModelStore::new(container_name.clone()).await.unwrap();
+        let model_store = AzureBlobStorageModelStore::new(container_name.clone())
+            .await
+            .unwrap();
         let deletion = model_store.delete_model("model_which_does_not_exist".to_string());
 
         // assert
@@ -699,7 +709,9 @@ mod tests {
         let model_name = "my_awesome_reg_model".to_string();
 
         // load models
-        let model_store = AzureBlobStorageModelStore::new(container_name.clone()).await.unwrap();
+        let model_store = AzureBlobStorageModelStore::new(container_name.clone())
+            .await
+            .unwrap();
         tokio::time::sleep(Duration::from_secs_f32(1.25)).await;
 
         // retrieve timestamp from existing to model for assertion
@@ -726,7 +738,8 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn fails_to_update_model_in_the_azure_blob_storage_model_store_when_model_name_is_incorrect() {
+    async fn fails_to_update_model_in_the_azure_blob_storage_model_store_when_model_name_is_incorrect(
+    ) {
         // setup
         let client = setup_client();
         let container_name = generate_container_name();
@@ -734,7 +747,9 @@ mod tests {
         let incorrect_model_name = "my_awesome_reg_model_incorrect".to_string();
 
         // load models
-        let model_store = AzureBlobStorageModelStore::new(container_name.clone()).await.unwrap();
+        let model_store = AzureBlobStorageModelStore::new(container_name.clone())
+            .await
+            .unwrap();
 
         // update model with incorrect model name
         let update = model_store.update_model(incorrect_model_name).await;
@@ -745,7 +760,7 @@ mod tests {
         // cleanup
         delete_models_for_test(client.container_client(container_name)).await
     }
-    
+
     #[tokio::test]
     async fn successfully_add_model_in_the_azure_blob_storage_model_store() {
         // setup
@@ -754,7 +769,9 @@ mod tests {
         setup_test_dependencies(client.clone(), container_name.clone()).await;
 
         // load models
-        let model_store = AzureBlobStorageModelStore::new(container_name.clone()).await.unwrap();
+        let model_store = AzureBlobStorageModelStore::new(container_name.clone())
+            .await
+            .unwrap();
 
         // delete model to set up test
         model_store
@@ -784,18 +801,24 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn fails_to_add_model_in_the_azure_blob_storage_model_store_when_the_model_path_is_wrong() {
+    async fn fails_to_add_model_in_the_azure_blob_storage_model_store_when_the_model_path_is_wrong()
+    {
         // setup
         let client = setup_client();
         let container_name = generate_container_name();
         setup_test_dependencies(client.clone(), container_name.clone()).await;
 
         // load models
-        let model_store = AzureBlobStorageModelStore::new(container_name.clone()).await.unwrap();
+        let model_store = AzureBlobStorageModelStore::new(container_name.clone())
+            .await
+            .unwrap();
 
         // add model
         let add = model_store
-            .add_model("my_awesome_penguin_model_wrong_azure_blob_storage_key".to_string(), "")
+            .add_model(
+                "my_awesome_penguin_model_wrong_azure_blob_storage_key".to_string(),
+                "",
+            )
             .await;
 
         // assert

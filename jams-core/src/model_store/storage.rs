@@ -425,8 +425,7 @@ mod tests {
     fn successfully_create_model_artefact() {
         // Setup
         let model_name = "pytorch-my_awesome_californiahousing_model".to_string(); // notice that model name is exactly the same in path
-        let path =
-            "tests/model_storage/models/pytorch-my_awesome_californiahousing_model.pt";
+        let path = "tests/model_storage/models/pytorch-my_awesome_californiahousing_model.pt";
         let framework = PYTORCH;
         let timestamp = Utc::now();
         let predictor = model::torch::Torch::load(path).unwrap();
@@ -473,8 +472,7 @@ mod tests {
 
     #[tokio::test]
     async fn successfully_load_pytorch_framework_model() {
-        let path =
-            "tests/model_storage/models/pytorch-my_awesome_californiahousing_model.pt";
+        let path = "tests/model_storage/models/pytorch-my_awesome_californiahousing_model.pt";
         let framework = PYTORCH;
 
         // Load Model
