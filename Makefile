@@ -21,9 +21,13 @@ lint:
 	@rustup component add clippy 2> /dev/null
 	cargo clippy --all-targets --all-features -- -D warnings
 
-test:
+nextest:
 	@echo "Testing all projects with cargo nextest"
 	cargo nextest run
+
+test:
+	@echo "Testing all projects with cargo test"
+	cargo test
 
 check-gpu-linux:
 	sudo lshw -C display
