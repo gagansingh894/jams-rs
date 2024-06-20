@@ -44,8 +44,8 @@ async fn successfully_calls_the_add_model_endpoint_and_return_200() {
         .post(url)
         .json(&serde_json::json!(
             {
-                "model_name": "my_awesome_penguin_model",
-                "model_path": "tests/local_model_store/pytorch-my_awesome_californiahousing_model.pt"
+                "model_name": "tensorflow-my_awesome_penguin_model",
+                "model_path": ""
             }
         ))
         .send()
@@ -99,21 +99,7 @@ async fn successfully_calls_the_update_model_endpoint_and_return_200() {
         axum::serve(listener, router).await.unwrap();
     });
 
-    // Act - 1: Add model first
-    let response = client
-        .post(url.clone())
-        .json(&serde_json::json!(
-            {
-                "model_name": "my_awesome_penguin_model",
-                "model_path": "tests/local_model_store/pytorch-my_awesome_californiahousing_model.pt"
-            }
-        ))
-        .send()
-        .await
-        .expect("Failed to make request");
-    assert!(response.status().is_success());
-
-    // Act - 2: Make update call
+    // Act: Make update call
     let response = client
         .put(url)
         .json(&serde_json::json!(
@@ -165,30 +151,12 @@ async fn successfully_calls_the_delete_model_endpoint_and_return_200() {
     let listener = TcpListener::bind("0.0.0.0:0").await.unwrap();
     let addr = listener.local_addr().unwrap();
     let router = test_router().await;
-    let update_url = format!("http://{}/api/models", addr).to_string();
-    let delete_url = format!(
-        "http://{}/api/models?model_name=my_awesome_californiahousing_model",
-        addr
-    )
-    .to_string();
+    let delete_url =
+        format!("http://{}/api/models?model_name=my_awesome_reg_model", addr).to_string();
 
     tokio::spawn(async move {
         axum::serve(listener, router).await.unwrap();
     });
-
-    // Act - 1: Add model first
-    let response = client
-        .post(update_url)
-        .json(&serde_json::json!(
-            {
-                "model_name": "my_awesome_californiahousing_model",
-                "model_path": "tests/local_model_store/pytorch-my_awesome_californiahousing_model.pt"
-            }
-        ))
-        .send()
-        .await
-        .expect("Failed to make request");
-    assert!(response.status().is_success());
 
     // Act: Make delete call
     let response = client
@@ -208,27 +176,12 @@ async fn fails_to_call_the_delete_model_endpoint_and_return_500_when_model_does_
     let listener = TcpListener::bind("0.0.0.0:0").await.unwrap();
     let addr = listener.local_addr().unwrap();
     let router = test_router().await;
-    let update_url = format!("http://{}/api/models", addr).to_string();
     let delete_url =
         format!("http://{}/api/models?model_name=model_does_not_exist", addr).to_string();
 
     tokio::spawn(async move {
         axum::serve(listener, router).await.unwrap();
     });
-
-    // Act - 1: Add model first
-    let response = client
-        .post(update_url)
-        .json(&serde_json::json!(
-            {
-                "model_name": "my_awesome_californiahousing_model",
-                "model_path": "tests/local_model_store/pytorch-my_awesome_californiahousing_model.pt"
-            }
-        ))
-        .send()
-        .await
-        .expect("Failed to make request");
-    assert!(response.status().is_success());
 
     // Act: Make delete call
     let response = client

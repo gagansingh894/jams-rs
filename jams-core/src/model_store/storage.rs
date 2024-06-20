@@ -425,8 +425,7 @@ mod tests {
     fn successfully_create_model_artefact() {
         // Setup
         let model_name = "pytorch-my_awesome_californiahousing_model".to_string(); // notice that model name is exactly the same in path
-        let path =
-            "tests/model_storage/local_model_store/pytorch-my_awesome_californiahousing_model.pt";
+        let path = "tests/model_storage/models/pytorch-my_awesome_californiahousing_model.pt";
         let framework = PYTORCH;
         let timestamp = Utc::now();
         let predictor = model::torch::Torch::load(path).unwrap();
@@ -449,7 +448,7 @@ mod tests {
 
     #[tokio::test]
     async fn successfully_load_tensorflow_framework_model() {
-        let path = "tests/model_storage/local_model_store/tensorflow-my_awesome_penguin_model";
+        let path = "tests/model_storage/models/tensorflow-my_awesome_penguin_model";
         let framework = TENSORFLOW;
 
         // Load Model
@@ -461,7 +460,7 @@ mod tests {
 
     #[tokio::test]
     async fn successfully_load_torch_framework_model() {
-        let path = "tests/model_storage/local_model_store/torch-my_awesome_penguin_model.pt";
+        let path = "tests/model_storage/models/torch-my_awesome_penguin_model.pt";
         let framework = TORCH;
 
         // Load Model
@@ -473,8 +472,7 @@ mod tests {
 
     #[tokio::test]
     async fn successfully_load_pytorch_framework_model() {
-        let path =
-            "tests/model_storage/local_model_store/pytorch-my_awesome_californiahousing_model.pt";
+        let path = "tests/model_storage/models/pytorch-my_awesome_californiahousing_model.pt";
         let framework = PYTORCH;
 
         // Load Model
@@ -486,7 +484,7 @@ mod tests {
 
     #[tokio::test]
     async fn successfully_load_lightgbm_model() {
-        let path = "tests/model_storage/local_model_store/lightgbm-my_awesome_binary_model_2.txt";
+        let path = "tests/model_storage/models/lightgbm-my_awesome_binary_model_2.txt";
         let framework = LIGHTGBM;
 
         // Load Model
@@ -498,7 +496,7 @@ mod tests {
 
     #[tokio::test]
     async fn successfully_load_catboost_model() {
-        let path = "tests/model_storage/local_model_store/catboost-titanic_model";
+        let path = "tests/model_storage/models/catboost-titanic_model";
         let framework = CATBOOST;
 
         // Load Model

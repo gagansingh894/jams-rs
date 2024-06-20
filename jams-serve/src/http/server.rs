@@ -85,7 +85,7 @@ mod tests {
     async fn successfully_starts_the_server() {
         // Arrange
         let config = common::server::Config {
-            model_dir: Some("".to_string()),
+            model_dir: Some("tests/model_store".to_string()),
             port: Some(5000),
             use_debug_level: Some(false),
             num_workers: Some(1),

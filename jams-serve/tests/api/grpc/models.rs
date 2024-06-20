@@ -43,9 +43,8 @@ async fn successfully_calls_the_add_model_rpc() {
     // Act
     let response = client
         .add_model(AddModelRequest {
-            model_name: "my_awesome_penguin_model".to_string(),
-            model_path: "tests/local_model_store/pytorch-my_awesome_californiahousing_model.pt"
-                .to_string(),
+            model_name: "tensorflow-my_awesome_penguin_model".to_string(),
+            model_path: "".to_string(),
         })
         .await;
 
@@ -95,17 +94,7 @@ async fn successfully_calls_the_update_model_rpc() {
     });
     let mut client = grpc_client_stub(addr.to_string()).await;
 
-    // Act - 1: Add model first
-    let response = client
-        .add_model(AddModelRequest {
-            model_name: "my_awesome_penguin_model".to_string(),
-            model_path: "tests/local_model_store/pytorch-my_awesome_californiahousing_model.pt"
-                .to_string(),
-        })
-        .await;
-    assert!(response.is_ok());
-
-    // Act - 2: Make update call
+    // Act: Make update call
     let response = client
         .update_model(UpdateModelRequest {
             model_name: "my_awesome_penguin_model".to_string(),
@@ -131,17 +120,7 @@ async fn fails_to_call_the_update_model_rpc_when_model_name_is_wrong() {
     });
     let mut client = grpc_client_stub(addr.to_string()).await;
 
-    // Act - 1: Add model first
-    let response = client
-        .add_model(AddModelRequest {
-            model_name: "my_awesome_penguin_model".to_string(),
-            model_path: "tests/local_model_store/pytorch-my_awesome_californiahousing_model.pt"
-                .to_string(),
-        })
-        .await;
-    assert!(response.is_ok());
-
-    // Act - 2: Make update call
+    // Act: Make update call
     let response = client
         .update_model(UpdateModelRequest {
             model_name: "incorrect_model_name".to_string(),
@@ -167,20 +146,10 @@ async fn successfully_calls_the_delete_model_rpc() {
     });
     let mut client = grpc_client_stub(addr.to_string()).await;
 
-    // Act: Add model first
-    let response = client
-        .add_model(AddModelRequest {
-            model_name: "my_awesome_californiahousing_model".to_string(),
-            model_path: "tests/local_model_store/pytorch-my_awesome_californiahousing_model.pt"
-                .to_string(),
-        })
-        .await;
-    assert!(response.is_ok());
-
     // Act: Make delete call
     let response = client
         .delete_model(DeleteModelRequest {
-            model_name: "my_awesome_californiahousing_model".to_string(),
+            model_name: "my_awesome_reg_model".to_string(),
         })
         .await;
 
@@ -202,16 +171,6 @@ async fn fails_to_call_the_delete_model_rpc_when_model_name_is_wrong() {
             .unwrap();
     });
     let mut client = grpc_client_stub(addr.to_string()).await;
-
-    // Act: Add model first
-    let response = client
-        .add_model(AddModelRequest {
-            model_name: "my_awesome_californiahousing_model".to_string(),
-            model_path: "tests/local_model_store/pytorch-my_awesome_californiahousing_model.pt"
-                .to_string(),
-        })
-        .await;
-    assert!(response.is_ok());
 
     // Act: Make delete call
     let response = client

@@ -139,7 +139,7 @@ mod tests {
 
     #[tokio::test]
     async fn successfully_create_manager_with_local_model_store() {
-        let model_dir = "./tests/model_storage/local_model_store";
+        let model_dir = "./tests/model_storage/model_store";
         let local_model_store = LocalModelStore::new(model_dir.to_string()).await.unwrap();
         let manager = Manager::new(Arc::new(local_model_store));
 
@@ -149,7 +149,7 @@ mod tests {
 
     #[tokio::test]
     async fn successfully_make_predictions_via_manager_with_local_model_store() {
-        let model_dir = "tests/model_storage/local_model_store";
+        let model_dir = "tests/model_storage/model_store";
         let local_model_store = LocalModelStore::new(model_dir.to_string()).await.unwrap();
         let manager = Manager::new(Arc::new(local_model_store)).unwrap();
 
@@ -167,7 +167,7 @@ mod tests {
     // todo: check if we can exit gracefully
     async fn fail_to_make_predictions_via_manager_with_local_model_store_when_input_shape_is_wrong()
     {
-        let model_dir = "tests/model_storage/local_model_store";
+        let model_dir = "tests/model_storage/model_store";
         let local_model_store = LocalModelStore::new(model_dir.to_string()).await.unwrap();
         let manager = Manager::new(Arc::new(local_model_store)).unwrap();
 
@@ -182,7 +182,7 @@ mod tests {
 
     #[tokio::test]
     async fn successfully_get_models_via_manager_with_local_model_store() {
-        let model_dir = "tests/model_storage/local_model_store";
+        let model_dir = "tests/model_storage/model_store";
         let local_model_store = LocalModelStore::new(model_dir.to_string()).await.unwrap();
         let manager = Manager::new(Arc::new(local_model_store)).unwrap();
 
@@ -196,19 +196,17 @@ mod tests {
 
     #[tokio::test]
     async fn successfully_add_model_via_manager_with_local_model_store() {
-        let model_dir = "tests/model_storage/local_model_store";
+        let model_dir = "tests/model_storage/model_store";
         let local_model_store = LocalModelStore::new(model_dir.to_string()).await.unwrap();
         let manager = Manager::new(Arc::new(local_model_store)).unwrap();
-        let model_name: ModelName = "my_awesome_penguin_model".to_string();
-        let model_path =
-            "tests/model_storage/local_model_store/tensorflow-my_awesome_penguin_model";
+        let model_name: ModelName = "catboost-titanic_model".to_string();
 
         // delete a model to add it back
         let num_model_before_deletion = manager.get_models().unwrap().len();
-        manager.delete_model(model_name.clone()).unwrap();
+        manager.delete_model("titanic_model".to_string()).unwrap();
 
         // add model
-        let add = manager.add_model(model_name, model_path).await;
+        let add = manager.add_model(model_name, "").await;
 
         // assert
         assert!(add.is_ok());
@@ -220,7 +218,7 @@ mod tests {
 
     #[tokio::test]
     async fn successfully_update_model_via_manager_with_local_model_store() {
-        let model_dir = "tests/model_storage/local_model_store";
+        let model_dir = "tests/model_storage/model_store";
         let local_model_store = LocalModelStore::new(model_dir.to_string()).await.unwrap();
         let manager = Manager::new(Arc::new(local_model_store)).unwrap();
         let model_name: ModelName = "my_awesome_penguin_model".to_string();
@@ -234,7 +232,7 @@ mod tests {
 
     #[tokio::test]
     async fn successfully_delete_model_via_manager_with_local_model_store() {
-        let model_dir = "tests/model_storage/local_model_store";
+        let model_dir = "tests/model_storage/model_store";
         let local_model_store = LocalModelStore::new(model_dir.to_string()).await.unwrap();
         let manager = Manager::new(Arc::new(local_model_store)).unwrap();
         let model_name: ModelName = "my_awesome_penguin_model".to_string();

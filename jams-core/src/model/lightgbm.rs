@@ -145,7 +145,7 @@ mod tests {
 
     #[test]
     fn successfully_load_lightgbm_regressor_model() {
-        let path = "tests/model_storage/local_model_store/lightgbm-my_awesome_reg_model.txt";
+        let path = "tests/model_storage/models/lightgbm-my_awesome_reg_model.txt";
         let model = LightGBM::load(path);
 
         // assert the result is ok
@@ -154,7 +154,7 @@ mod tests {
 
     #[test]
     fn successfully_make_single_prediction_using_lightgbm_regressor_model() {
-        let path = "tests/model_storage/local_model_store/lightgbm-my_awesome_reg_model.txt";
+        let path = "tests/model_storage/models/lightgbm-my_awesome_reg_model.txt";
         let model = LightGBM::load(path).unwrap();
 
         // lightgbm models do not support string input features. They have to preprocessed if the
@@ -179,7 +179,7 @@ mod tests {
 
     #[test]
     fn successfully_make_batch_predictions_using_lightgbm_regressor_model() {
-        let path = "tests/model_storage/local_model_store/lightgbm-my_awesome_reg_model.txt";
+        let path = "tests/model_storage/models/lightgbm-my_awesome_reg_model.txt";
         let model = LightGBM::load(path).unwrap();
 
         // lightgbm models do not support string input features. They have to preprocessed if the
@@ -204,7 +204,7 @@ mod tests {
 
     #[test]
     fn successfully_load_lightgbm_binary_classifier_model() {
-        let path = "tests/model_storage/local_model_store/lightgbm-my_awesome_binary_model_2.txt";
+        let path = "tests/model_storage/models/lightgbm-my_awesome_binary_model_2.txt";
         let model = LightGBM::load(path);
 
         // assert the result is ok
@@ -213,7 +213,7 @@ mod tests {
 
     #[test]
     fn successfully_make_single_prediction_using_lightgbm_binary_classifier_model() {
-        let path = "tests/model_storage/local_model_store/lightgbm-my_awesome_binary_model_2.txt";
+        let path = "tests/model_storage/models/lightgbm-my_awesome_binary_model_2.txt";
         let model = LightGBM::load(path).unwrap();
 
         // lightgbm models do not support string input features. They have to preprocessed if the
@@ -239,7 +239,7 @@ mod tests {
 
     #[test]
     fn successfully_make_batch_predictions_using_lightgbm_binary_classifier_model() {
-        let path = "tests/model_storage/local_model_store/lightgbm-my_awesome_binary_model_2.txt";
+        let path = "tests/model_storage/models/lightgbm-my_awesome_binary_model_2.txt";
         let model = LightGBM::load(path).unwrap();
 
         // lightgbm models do not support string input features. They have to preprocessed if the
@@ -265,7 +265,7 @@ mod tests {
 
     #[test]
     fn successfully_load_lightgbm_xentropy_binary_classifier_model() {
-        let path = "tests/model_storage/local_model_store/lightgbm-my_awesome_xen_binary_model.txt";
+        let path = "tests/model_storage/models/lightgbm-my_awesome_xen_binary_model.txt";
         let model = LightGBM::load(path);
 
         // assert the result is ok
@@ -274,7 +274,7 @@ mod tests {
 
     #[test]
     fn successfully_make_single_prediction_using_lightgbm_xentropy_binary_classifier_model() {
-        let path = "tests/model_storage/local_model_store/lightgbm-my_awesome_xen_binary_model.txt";
+        let path = "tests/model_storage/models/lightgbm-my_awesome_xen_binary_model.txt";
         let model = LightGBM::load(path).unwrap();
 
         // lightgbm models do not support string input features. They have to preprocessed if the
@@ -300,7 +300,7 @@ mod tests {
 
     #[test]
     fn successfully_make_batch_predictions_using_lightgbm_xentropy_binary_classifier_model() {
-        let path = "tests/model_storage/local_model_store/lightgbm-my_awesome_xen_binary_model.txt";
+        let path = "tests/model_storage/models/lightgbm-my_awesome_xen_binary_model.txt";
         let model = LightGBM::load(path).unwrap();
 
         // lightgbm models do not support string input features. They have to preprocessed if the
@@ -326,7 +326,7 @@ mod tests {
 
     #[test]
     fn successfully_load_lightgbm_xentropy_probability_classifier_model() {
-        let path = "tests/model_storage/local_model_store/lightgbm-my_awesome_binary_model_2.txt";
+        let path = "tests/model_storage/models/lightgbm-my_awesome_binary_model_2.txt";
         let model = LightGBM::load(path);
 
         // assert the result is ok
@@ -335,7 +335,7 @@ mod tests {
 
     #[test]
     fn successfully_make_single_prediction_using_lightgbm_xentropy_prob_classifier_model() {
-        let path = "tests/model_storage/local_model_store/lightgbm-my_awesome_xen_prob_model.txt";
+        let path = "tests/model_storage/models/lightgbm-my_awesome_xen_prob_model.txt";
         let model = LightGBM::load(path).unwrap();
 
         // lightgbm models do not support string input features. They have to preprocessed if the
@@ -361,7 +361,7 @@ mod tests {
 
     #[test]
     fn successfully_make_batch_predictions_using_lightgbm_xentropy_prob_classifier_model() {
-        let path = "tests/model_storage/local_model_store/lightgbm-my_awesome_xen_prob_model.txt";
+        let path = "tests/model_storage/models/lightgbm-my_awesome_xen_prob_model.txt";
         let model = LightGBM::load(path).unwrap();
 
         // lightgbm models do not support string input features. They have to preprocessed if the

@@ -617,7 +617,7 @@ mod tests {
     }
 
     async fn upload_models_for_test(client: s3::Client, bucket_name: String) {
-        let mut dir = tokio::fs::read_dir("tests/model_storage/cloud_model_store")
+        let mut dir = tokio::fs::read_dir("tests/model_storage/model_store")
             .await
             .unwrap();
 

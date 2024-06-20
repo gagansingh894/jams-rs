@@ -92,7 +92,7 @@ pub fn save_and_upack_tarball(
 /// * The `.tar.gz` file cannot be opened or read.
 /// * The contents of the `.tar.gz` file cannot be unpacked into the output directory.
 ///
-fn unpack_tarball(tarball_path: &str, out_dir: &str) -> anyhow::Result<()> {
+pub fn unpack_tarball(tarball_path: &str, out_dir: &str) -> anyhow::Result<()> {
     match File::open(tarball_path) {
         Ok(tar_gz) => {
             let tar = GzDecoder::new(tar_gz);
@@ -107,11 +107,12 @@ fn unpack_tarball(tarball_path: &str, out_dir: &str) -> anyhow::Result<()> {
                     );
                     Ok(())
                 }
-                Err(_) => {
+                Err(e) => {
                     anyhow::bail!(
-                        "Failed to unpack tarball ⚠️: {:?} at location: {}",
+                        "Failed to unpack tarball ⚠️: {:?} at location: {} - {}",
                         tarball_path,
-                        out_dir
+                        out_dir,
+                        e.to_string()
                     )
                 }
             }
