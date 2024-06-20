@@ -51,7 +51,6 @@ impl LocalModelStore {
             Uuid::new_v4(),
         );
 
-
         // unpack
         match fs::read_dir(local_model_store_dir.as_str()) {
             Ok(dir) => {
