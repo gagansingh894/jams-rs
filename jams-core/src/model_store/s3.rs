@@ -839,7 +839,6 @@ mod tests {
         delete_models_for_test(client.clone(), bucket_name.clone()).await
     }
 
-    // todo: add model seems to be unstable
     #[tokio::test]
     async fn successfully_add_model_in_the_s3_model_store() {
         // setup
