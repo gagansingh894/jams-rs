@@ -127,7 +127,7 @@ mod tests {
     #[test]
     fn successfully_load_pytorch_regression_model() {
         let path =
-            "tests/model_storage/local_model_store/pytorch-my_awesome_californiahousing_model.pt";
+            "tests/model_storage/models/pytorch-my_awesome_californiahousing_model.pt";
         let model = Torch::load(path);
 
         // assert the result is Ok
@@ -137,7 +137,7 @@ mod tests {
     #[test]
     fn successfully_make_prediction_using_pytorch_regression_model_when_input_is_tabular_data() {
         let path =
-            "tests/model_storage/local_model_store/pytorch-my_awesome_californiahousing_model.pt";
+            "tests/model_storage/models/pytorch-my_awesome_californiahousing_model.pt";
         let model = Torch::load(path).unwrap();
 
         // torch models do not support string input features. They have to preprocessed if the
@@ -161,7 +161,7 @@ mod tests {
 
     #[test]
     fn successfully_load_pytorch_multiclass_classification_model() {
-        let model_path = "tests/model_storage/local_model_store/torch-my_awesome_penguin_model.pt";
+        let model_path = "tests/model_storage/models/torch-my_awesome_penguin_model.pt";
         let model = Torch::load(model_path);
 
         // assert the result is Ok
@@ -171,7 +171,7 @@ mod tests {
     #[test]
     fn successfully_make_prediction_using_pytorch_multiclass_classification_model_when_input_is_tabular_data(
     ) {
-        let path = "tests/model_storage/local_model_store/torch-my_awesome_penguin_model.pt";
+        let path = "tests/model_storage/models/torch-my_awesome_penguin_model.pt";
         let model = Torch::load(path).unwrap();
 
         // torch models do not support string input features. They have to preprocessed if the

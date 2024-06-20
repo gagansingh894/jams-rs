@@ -200,7 +200,7 @@ mod tests {
 
     #[test]
     fn successfully_load_catboost_regressor_model() {
-        let path = "tests/model_storage/local_model_store/catboost-my_awesome_regressor_model";
+        let path = "tests/model_storage/models/catboost-my_awesome_regressor_model";
         let model = Catboost::load(path);
 
         // assert the result is ok
@@ -209,7 +209,7 @@ mod tests {
 
     #[test]
     fn successfully_make_single_prediction_using_catboost_regressor_model() {
-        let path = "tests/model_storage/local_model_store/catboost-my_awesome_regressor_model";
+        let path = "tests/model_storage/models/catboost-my_awesome_regressor_model";
         let model = Catboost::load(path).unwrap();
 
         let size = 1;
@@ -236,7 +236,7 @@ mod tests {
 
     #[test]
     fn successfully_make_batch_prediction_using_catboost_regressor_model() {
-        let path = "tests/model_storage/local_model_store/catboost-my_awesome_regressor_model";
+        let path = "tests/model_storage/models/catboost-my_awesome_regressor_model";
         let model = Catboost::load(path).unwrap();
 
         let size = 10;
@@ -263,7 +263,7 @@ mod tests {
 
     #[test]
     fn successfully_load_catboost_binary_classification_model() {
-        let path = "tests/model_storage/local_model_store/catboost-my_awesome_binary_model";
+        let path = "tests/model_storage/models/catboost-my_awesome_binary_model";
         let model = Catboost::load(path);
 
         // assert the result is ok
@@ -272,7 +272,7 @@ mod tests {
 
     #[test]
     fn successfully_make_single_prediction_using_catboost_binary_model() {
-        let path = "tests/model_storage/local_model_store/catboost-my_awesome_binary_model";
+        let path = "tests/model_storage/models/catboost-my_awesome_binary_model";
         let model = Catboost::load(path).unwrap();
 
         let size = 1;
@@ -300,7 +300,7 @@ mod tests {
 
     #[test]
     fn successfully_make_batch_prediction_using_catboost_binary_model() {
-        let path = "tests/model_storage/local_model_store/catboost-my_awesome_binary_model";
+        let path = "tests/model_storage/models/catboost-my_awesome_binary_model";
         let model = Catboost::load(path).unwrap();
 
         let size = 10;
@@ -328,7 +328,7 @@ mod tests {
 
     #[test]
     fn successfully_load_catboost_multiclass_classification_model() {
-        let path = "tests/model_storage/local_model_store/catboost-my_awesome_multiclass_model";
+        let path = "tests/model_storage/models/catboost-my_awesome_multiclass_model";
         let model = Catboost::load(path);
 
         // assert the result is ok
