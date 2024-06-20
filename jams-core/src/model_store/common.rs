@@ -1,9 +1,76 @@
-use std::fs::{File, remove_dir_all};
-use std::sync::Arc;
-use dashmap::DashMap;
 use flate2::read::GzDecoder;
+use std::fs::{remove_dir_all, File};
+use std::io::Write;
+use std::path::Path;
 use tar::Archive;
-use crate::model_store::storage::{Model, ModelName};
+
+pub const DOWNLOADED_MODELS_DIRECTORY_NAME_PREFIX: &str = "model_store";
+
+/// Saves and unpacks a tarball file into a specified output directory.
+///
+/// This function saves a tarball file received as bytes to a temporary location,
+/// then unpacks it into the specified output directory.
+///
+/// # Arguments
+///
+/// * `path` - The temporary directory path where the tarball will be saved.
+/// * `key` - The key or name of the tarball file.
+/// * `data` - The tarball file data as bytes.
+/// * `out_dir` - The output directory where the tarball will be unpacked.
+///
+/// # Returns
+///
+/// * `Result<()>` - An empty result indicating success or an error.
+///
+/// # Errors
+///
+/// This function will return an error if:
+/// * The tarball file cannot be saved or created.
+/// * The tarball file cannot be unpacked into the output directory.
+///
+pub fn save_and_upack_tarball(
+    path: &str,
+    key: String,
+    data: bytes::Bytes,
+    out_dir: &str,
+) -> anyhow::Result<()> {
+    let file_path = Path::new(path).join(key);
+
+    // Create parent directories if they do not exist
+    if let Some(parent) = file_path.parent() {
+        match std::fs::create_dir_all(parent) {
+            Ok(_) => {}
+            Err(e) => {
+                anyhow::bail!("Failed to create directory ⚠️: {}", e.to_string())
+            }
+        }
+    }
+
+    match File::create(&file_path) {
+        Ok(mut file) => match file.write_all(&data) {
+            Ok(_) => {
+                log::info!("Saved file to {:?}", file_path);
+            }
+            Err(e) => {
+                anyhow::bail!(
+                    "Failed to save file to {:?} ⚠️: {}",
+                    file_path,
+                    e.to_string()
+                )
+            }
+        },
+        Err(e) => {
+            anyhow::bail!("Failed to create file {:?} ⚠️: {}", file_path, e.to_string())
+        }
+    }
+
+    match unpack_tarball(file_path.to_str().unwrap(), out_dir) {
+        Ok(_) => Ok(()),
+        Err(e) => {
+            anyhow::bail!("Failed to unpack ⚠️: {}", e.to_string())
+        }
+    }
+}
 
 /// Unpacks a `.tar.gz` file into a specified output directory.
 ///
@@ -25,7 +92,7 @@ use crate::model_store::storage::{Model, ModelName};
 /// * The `.tar.gz` file cannot be opened or read.
 /// * The contents of the `.tar.gz` file cannot be unpacked into the output directory.
 ///
-pub fn unpack_tarball(tarball_path: &str, out_dir: &str) -> anyhow::Result<()> {
+fn unpack_tarball(tarball_path: &str, out_dir: &str) -> anyhow::Result<()> {
     match File::open(tarball_path) {
         Ok(tar_gz) => {
             let tar = GzDecoder::new(tar_gz);

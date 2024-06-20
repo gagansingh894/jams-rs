@@ -3,7 +3,7 @@ use crate::model_store::storage::{
     append_model_format, extract_framework_from_path, load_models, load_predictor, Metadata, Model,
     ModelName, Storage,
 };
-use crate::model_store::common::{cleanup, unpack_tarball};
+use crate::model_store::common::{cleanup, save_and_upack_tarball};
 use async_trait::async_trait;
 use aws_config::meta::region::ProvideRegion;
 use aws_config::BehaviorVersion;
@@ -11,13 +11,7 @@ use aws_sdk_s3 as s3;
 use chrono::Utc;
 use dashmap::mapref::one::Ref;
 use dashmap::DashMap;
-use flate2::read::GzDecoder;
-use std::fs::remove_dir_all;
-use std::fs::File;
-use std::io::Write;
-use std::path::Path;
 use std::sync::Arc;
-use tar::Archive;
 use uuid::Uuid;
 
 /// A struct representing a model store that interfaces with S3.
@@ -577,71 +571,6 @@ async fn download_objects(
     Ok(())
 }
 
-/// Saves and unpacks a tarball file into a specified output directory.
-///
-/// This function saves a tarball file received as bytes to a temporary location,
-/// then unpacks it into the specified output directory.
-///
-/// # Arguments
-///
-/// * `path` - The temporary directory path where the tarball will be saved.
-/// * `key` - The key or name of the tarball file.
-/// * `data` - The tarball file data as bytes.
-/// * `out_dir` - The output directory where the tarball will be unpacked.
-///
-/// # Returns
-///
-/// * `Result<()>` - An empty result indicating success or an error.
-///
-/// # Errors
-///
-/// This function will return an error if:
-/// * The tarball file cannot be saved or created.
-/// * The tarball file cannot be unpacked into the output directory.
-///
-fn save_and_upack_tarball(
-    path: &str,
-    key: String,
-    data: bytes::Bytes,
-    out_dir: &str,
-) -> anyhow::Result<()> {
-    let file_path = Path::new(path).join(key);
-
-    // Create parent directories if they do not exist
-    if let Some(parent) = file_path.parent() {
-        match std::fs::create_dir_all(parent) {
-            Ok(_) => {}
-            Err(e) => {
-                anyhow::bail!("Failed to create directory ⚠️: {}", e.to_string())
-            }
-        }
-    }
-
-    match std::fs::File::create(&file_path) {
-        Ok(mut file) => match file.write_all(&data) {
-            Ok(_) => {
-                log::info!("Saved file to {:?}", file_path);
-            }
-            Err(e) => {
-                anyhow::bail!(
-                    "Failed to save file to {:?} ⚠️: {}",
-                    file_path,
-                    e.to_string()
-                )
-            }
-        },
-        Err(e) => {
-            anyhow::bail!("Failed to create file {:?} ⚠️: {}", file_path, e.to_string())
-        }
-    }
-
-    match unpack_tarball(file_path.to_str().unwrap(), out_dir) {
-        Ok(_) => Ok(()),
-        Err(e) => {
-            anyhow::bail!("Failed to unpack ⚠️: {}", e.to_string())
-        }
-    }
-}
 
 fn use_localstack() -> bool {
     std::env::var("USE_LOCALSTACK").unwrap_or_default() == "true"
