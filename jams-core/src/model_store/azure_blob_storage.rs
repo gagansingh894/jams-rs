@@ -6,13 +6,14 @@ use crate::model_store::storage::{
     ModelName, Storage,
 };
 use async_trait::async_trait;
-use azure_storage::StorageCredentials;
+use azure_storage::{CloudLocation, StorageCredentials};
 use azure_storage_blobs::prelude::{BlobServiceClient, ContainerClient};
 use bytes::Bytes;
 use chrono::Utc;
 use dashmap::mapref::one::Ref;
 use dashmap::DashMap;
 use futures::StreamExt;
+use std::env;
 use std::num::NonZeroU32;
 use std::sync::Arc;
 use uuid::Uuid;
@@ -57,7 +58,7 @@ impl AzureBlobStorageModelStore {
             anyhow::bail!("Azure storage container name must be specified ❌")
         }
         // Create Azure Blob Service client
-        let container_client = match build_azure_storage_client() {
+        let container_client = match build_azure_storage_client(use_azurite()) {
             Ok(blob_service_client) => blob_service_client.container_client(storage_container_name),
             Err(e) => {
                 anyhow::bail!("Failed to create Azure Blob Service client: {}", e)
@@ -122,7 +123,7 @@ impl Drop for AzureBlobStorageModelStore {
 /// This function will return an error if:
 /// * The `STORAGE_ACCOUNT` environment variable is not set.
 /// * The `STORAGE_ACCESS_KEY` environment variable is not set.
-fn build_azure_storage_client() -> anyhow::Result<BlobServiceClient> {
+fn build_azure_storage_client(use_azurite: bool) -> anyhow::Result<BlobServiceClient> {
     let account = match std::env::var("STORAGE_ACCOUNT") {
         Ok(account) => account,
         Err(_) => {
@@ -136,15 +137,43 @@ fn build_azure_storage_client() -> anyhow::Result<BlobServiceClient> {
         }
     };
     let storage_credentials = StorageCredentials::access_key(account.clone(), access_key);
+    let mut service_client_builder = BlobServiceClient::builder(account, storage_credentials);
+    if use_azurite {
+        let hostname = env::var("AZURITE_HOSTNAME").unwrap_or("0.0.0.0".to_string());
+        service_client_builder = service_client_builder.cloud_location(CloudLocation::Emulator {
+            address: hostname,
+            port: 10000,
+        })
+    }
 
-    Ok(BlobServiceClient::new(account, storage_credentials))
+    Ok(service_client_builder.blob_service_client())
 }
 
 #[async_trait]
 impl Storage for AzureBlobStorageModelStore {
+    /// Adds a new model to the Azure Blob Storage model store.
+    ///
+    /// This method downloads the model from Azure Blob Storage, extracts the framework, loads the model into memory,
+    /// and stores it in the `models` hashmap.
+    ///
+    /// # Arguments
+    ///
+    /// * `model_name` - The name of the model.
+    /// * `_model_path` - The path to the model file (unused in this implementation as models are fetched from Azure Blob Storage).
+    ///
+    /// # Returns
+    ///
+    /// * `Result<()>` - An empty result indicating success or an error.
+    ///
+    /// # Errors
+    ///
+    /// This method will return an error if:
+    /// * The model cannot be downloaded from Azure Blob Storage.
+    /// * The framework cannot be extracted from the model path.
+    /// * The model cannot be loaded into memory.
     async fn add_model(&self, model_name: ModelName, _model_path: &str) -> anyhow::Result<()> {
         // Prepare the blob key from model_name
-        // It is assumed that model will always be present as a .tar.gz file in S3
+        // It is assumed that model will always be present as a .tar.gz file in Azure Blob Storage
         // Panic otherwise
         let blob_name = format!("{}.tar.gz", model_name);
 
@@ -167,7 +196,7 @@ impl Storage for AzureBlobStorageModelStore {
         }
 
         // todo: Figure out a better approach or provide utils function in python which pack the artefacts in the required format
-        // At this point we have extracted the tar ball from S3
+        // At this point we have extracted the tar ball from Azure Blob Storage
         // It is assumed that the name of tar ball and the actual mode name is the same
         // Based on the framework, the path is modified by appending the format
         // If pytorch -> append '.pt'
@@ -448,7 +477,7 @@ async fn download_blob(
     let temp_save_path = format!("{}/{}", temp_path, blob_name.clone());
 
     let blob_client = client.blob_client(blob_name.clone());
-    let mut blob_stream = blob_client.get().chunk_size(0x2000u64).into_stream();
+    let mut blob_stream = blob_client.get().into_stream();
     let mut complete_response: Vec<u8> = vec![];
     while let Some(value) = blob_stream.next().await {
         let data = match value {
@@ -482,18 +511,297 @@ async fn download_blob(
     Ok(())
 }
 
+fn use_azurite() -> bool {
+    env::var("USE_AZURITE").unwrap_or_default() == "true"
+}
+
 #[cfg(test)]
 mod tests {
+    use std::time::Duration;
     use super::*;
+    use azure_core::tokio::fs::FileStreamBuilder;
+    use azure_storage_blobs::prelude::PublicAccess;
+    use rand::Rng;
+    use tokio::fs::File;
+
+    fn setup_client() -> BlobServiceClient {
+        if !use_azurite() {
+            panic!("USE_AZURITE env not set")
+        }
+        build_azure_storage_client(true).unwrap()
+    }
+
+    async fn setup_test_dependencies(
+        client: BlobServiceClient,
+        azure_storage_container_name: String,
+    ) {
+        create_test_azure_storage_container(client.clone(), azure_storage_container_name.clone())
+            .await;
+        upload_blobs_to_azure_storage_containers(
+            client
+                .clone()
+                .container_client(azure_storage_container_name.clone()),
+        )
+        .await
+    }
+    fn generate_container_name() -> String {
+        let mut rng = rand::thread_rng();
+        let random_number = rng.gen_range(0..999999);
+        format!("jams-model-store-test-{}", random_number)
+    }
+
+    async fn create_test_azure_storage_container(
+        client: BlobServiceClient,
+        azure_storage_container_name: String,
+    ) {
+        let container_client = client.container_client(azure_storage_container_name);
+        container_client
+            .create()
+            .public_access(PublicAccess::Container)
+            .await
+            .unwrap()
+    }
+
+    async fn upload_blobs_to_azure_storage_containers(client: ContainerClient) {
+        let mut dir = tokio::fs::read_dir("tests/model_storage/cloud_model_store")
+            .await
+            .unwrap();
+
+        while let Some(entry) = dir.next_entry().await.unwrap() {
+            let file = File::open(entry.path()).await.unwrap();
+            let file_stream = FileStreamBuilder::new(file).build().await.unwrap();
+            client
+                .blob_client(entry.file_name().into_string().unwrap())
+                .put_block_blob(file_stream)
+                .await
+                .unwrap();
+        }
+    }
+
+    async fn delete_models_for_test(container_client: ContainerClient) {
+        container_client.delete().await.unwrap()
+    }
 
     #[tokio::test]
     async fn successfully_load_models_from_azure_blob_storage_model_store() {
-        let storage_container_name = "modelstore".to_string();
+        // setup
+        let client = setup_client();
+        let container_name = generate_container_name();
+        setup_test_dependencies(client.clone(), container_name.clone()).await;
 
-        let model_store = AzureBlobStorageModelStore::new(storage_container_name).await;
+        let model_store = AzureBlobStorageModelStore::new(container_name.clone()).await;
 
         // Assert
         assert!(model_store.is_ok());
         assert_ne!(model_store.unwrap().models.len(), 0);
+
+        // Cleanup
+        delete_models_for_test(client.container_client(container_name)).await
+    }
+
+    #[tokio::test]
+    async fn successfully_get_model_from_azure_blob_storage_model_store() {
+        // setup
+        let client = setup_client();
+        let container_name = generate_container_name();
+        setup_test_dependencies(client.clone(), container_name.clone()).await;
+
+        // load models
+        let model_store = AzureBlobStorageModelStore::new(container_name.clone()).await.unwrap();
+        let model = model_store.get_model("my_awesome_reg_model".to_string());
+
+        // assert
+        assert!(model.is_some());
+
+        // cleanup
+        delete_models_for_test(client.container_client(container_name)).await
+    }
+
+    #[tokio::test]
+    async fn fails_to_get_model_from_azure_blob_storage_model_store_when_model_name_is_wrong() {
+        // setup
+        let client = setup_client();
+        let container_name = generate_container_name();
+        setup_test_dependencies(client.clone(), container_name.clone()).await;
+
+        // load models
+        let model_store = AzureBlobStorageModelStore::new(container_name.clone()).await.unwrap();
+        let model = model_store.get_model("model_which_does_not_exist".to_string());
+
+        // assert
+        assert!(model.is_none());
+
+        // cleanup
+        delete_models_for_test(client.container_client(container_name)).await
+    }
+
+    #[tokio::test]
+    async fn successfully_get_models_from_azure_blob_storage_model_store() {
+        // setup
+        let client = setup_client();
+        let container_name = generate_container_name();
+        setup_test_dependencies(client.clone(), container_name.clone()).await;
+
+        // load models
+        let model_store = AzureBlobStorageModelStore::new(container_name.clone()).await.unwrap();
+        let models = model_store.get_models();
+
+        // assert
+        assert!(models.is_ok());
+        assert_ne!(models.unwrap().len(), 0);
+
+        // cleanup
+        delete_models_for_test(client.container_client(container_name)).await
+    }
+
+    #[tokio::test]
+    async fn successfully_deletes_model_in_the_azure_blob_storage_model_store() {
+        // setup
+        let client = setup_client();
+        let container_name = generate_container_name();
+        setup_test_dependencies(client.clone(), container_name.clone()).await;
+
+        // load models
+        let model_store = AzureBlobStorageModelStore::new(container_name.clone()).await.unwrap();
+        let deletion = model_store.delete_model("my_awesome_penguin_model".to_string());
+
+        // assert
+        assert!(deletion.is_ok());
+
+        // cleanup
+        delete_models_for_test(client.container_client(container_name)).await
+    }
+
+    #[tokio::test]
+    async fn fails_to_deletes_model_in_the_azure_blob_storage_model_store() {
+        // setup
+        let client = setup_client();
+        let container_name = generate_container_name();
+        setup_test_dependencies(client.clone(), container_name.clone()).await;
+
+        // load models
+        let model_store = AzureBlobStorageModelStore::new(container_name.clone()).await.unwrap();
+        let deletion = model_store.delete_model("model_which_does_not_exist".to_string());
+
+        // assert
+        assert!(deletion.is_err());
+
+        // cleanup
+        delete_models_for_test(client.container_client(container_name)).await
+    }
+
+    #[tokio::test]
+    async fn successfully_update_model_in_the_azure_blob_storage_model_store() {
+        // setup
+        let client = setup_client();
+        let container_name = generate_container_name();
+        setup_test_dependencies(client.clone(), container_name.clone()).await;
+        let model_name = "my_awesome_reg_model".to_string();
+
+        // load models
+        let model_store = AzureBlobStorageModelStore::new(container_name.clone()).await.unwrap();
+        tokio::time::sleep(Duration::from_secs_f32(1.25)).await;
+
+        // retrieve timestamp from existing to model for assertion
+        let model = model_store
+            .get_model(model_name.clone())
+            .unwrap()
+            .to_owned();
+
+        // update model
+        let update = model_store.update_model(model_name.clone()).await;
+        assert!(update.is_ok());
+        let updated_model = model_store
+            .get_model(model_name.clone())
+            .unwrap()
+            .to_owned();
+
+        // assert
+        assert_eq!(model.info.name, updated_model.info.name);
+        assert_eq!(model.info.path, updated_model.info.path);
+        assert_ne!(model.info.last_updated, updated_model.info.last_updated); // as model will be updated
+
+        // cleanup
+        delete_models_for_test(client.container_client(container_name)).await
+    }
+
+    #[tokio::test]
+    async fn fails_to_update_model_in_the_azure_blob_storage_model_store_when_model_name_is_incorrect() {
+        // setup
+        let client = setup_client();
+        let container_name = generate_container_name();
+        setup_test_dependencies(client.clone(), container_name.clone()).await;
+        let incorrect_model_name = "my_awesome_reg_model_incorrect".to_string();
+
+        // load models
+        let model_store = AzureBlobStorageModelStore::new(container_name.clone()).await.unwrap();
+
+        // update model with incorrect model name
+        let update = model_store.update_model(incorrect_model_name).await;
+
+        // assert
+        assert!(update.is_err());
+
+        // cleanup
+        delete_models_for_test(client.container_client(container_name)).await
+    }
+    
+    #[tokio::test]
+    async fn successfully_add_model_in_the_azure_blob_storage_model_store() {
+        // setup
+        let client = setup_client();
+        let container_name = generate_container_name();
+        setup_test_dependencies(client.clone(), container_name.clone()).await;
+
+        // load models
+        let model_store = AzureBlobStorageModelStore::new(container_name.clone()).await.unwrap();
+
+        // delete model to set up test
+        model_store
+            .delete_model("titanic_model".to_string())
+            .unwrap();
+        // assert that model is not present
+        let model = model_store.get_model("titanic_model".to_string());
+        assert!(model.is_none());
+        let num_models = model_store.get_models().unwrap().len();
+
+        // add model - unlike local model store we will pass the blob name without .tar.gz in the model name
+        // model_path is not required when adding models via Azure Blob Storage model store
+        let add = model_store
+            .add_model("catboost-titanic_model".to_string(), "")
+            .await;
+        let num_models_after_add = model_store.get_models().unwrap().len();
+
+        // assert
+        assert!(add.is_ok());
+        // todo: this is a bug which needs to fixed. When adding model the framework prefix should be removed
+        let model = model_store.get_model("catboost-titanic_model".to_string());
+        assert!(model.is_some());
+        assert_eq!(num_models_after_add - num_models, 1);
+
+        // cleanup
+        delete_models_for_test(client.container_client(container_name)).await
+    }
+
+    #[tokio::test]
+    async fn fails_to_add_model_in_the_azure_blob_storage_model_store_when_the_model_path_is_wrong() {
+        // setup
+        let client = setup_client();
+        let container_name = generate_container_name();
+        setup_test_dependencies(client.clone(), container_name.clone()).await;
+
+        // load models
+        let model_store = AzureBlobStorageModelStore::new(container_name.clone()).await.unwrap();
+
+        // add model
+        let add = model_store
+            .add_model("my_awesome_penguin_model_wrong_azure_blob_storage_key".to_string(), "")
+            .await;
+
+        // assert
+        assert!(add.is_err());
+
+        // cleanup
+        delete_models_for_test(client.container_client(container_name)).await
     }
 }
