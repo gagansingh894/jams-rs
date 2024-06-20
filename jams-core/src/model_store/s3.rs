@@ -1,9 +1,10 @@
-use std::env;
+use crate::model_store::common::{
+    cleanup, save_and_upack_tarball, DOWNLOADED_MODELS_DIRECTORY_NAME_PREFIX,
+};
 use crate::model_store::storage::{
     append_model_format, extract_framework_from_path, load_models, load_predictor, Metadata, Model,
     ModelName, Storage,
 };
-use crate::model_store::common::{cleanup, DOWNLOADED_MODELS_DIRECTORY_NAME_PREFIX, save_and_upack_tarball};
 use async_trait::async_trait;
 use aws_config::meta::region::ProvideRegion;
 use aws_config::BehaviorVersion;
@@ -11,11 +12,11 @@ use aws_sdk_s3 as s3;
 use chrono::Utc;
 use dashmap::mapref::one::Ref;
 use dashmap::DashMap;
+use std::env;
 use std::sync::Arc;
 use uuid::Uuid;
 
 /// A struct representing a model store that interfaces with S3.
-#[allow(dead_code)]
 pub struct S3ModelStore {
     /// A thread-safe map of model names to their corresponding models.
     pub models: Arc<DashMap<ModelName, Arc<Model>>>,
@@ -183,7 +184,7 @@ impl Storage for S3ModelStore {
                 log::info!("Downloaded object from s3 ✅");
             }
             Err(e) => {
-                log::warn!("Failed to download object from s3 ⚠️: {}", e.to_string());
+                anyhow::bail!("Failed to download object from s3 ❌: {}", e.to_string());
             }
         };
 
@@ -249,7 +250,6 @@ impl Storage for S3ModelStore {
     /// * The framework cannot be extracted from the model path.
     /// * The model cannot be loaded into memory.
     async fn update_model(&self, model_name: ModelName) -> anyhow::Result<()> {
-        // Here model name will be the actual name and not the s3 key as used in add_model.
         // By calling remove on the hashmap, the object is returned on success/
         // We use the returned object, in this case the model to extract the framework and model path
         match self.models.remove(model_name.as_str()) {
@@ -569,7 +569,6 @@ async fn download_objects(
     Ok(())
 }
 
-
 fn use_localstack() -> bool {
     std::env::var("USE_LOCALSTACK").unwrap_or_default() == "true"
 }
@@ -618,7 +617,7 @@ mod tests {
     }
 
     async fn upload_models_for_test(client: s3::Client, bucket_name: String) {
-        let mut dir = tokio::fs::read_dir("tests/model_storage/s3_model_store")
+        let mut dir = tokio::fs::read_dir("tests/model_storage/cloud_model_store")
             .await
             .unwrap();
 
@@ -794,7 +793,7 @@ mod tests {
 
         // load models
         let model_store = S3ModelStore::new(bucket_name.clone()).await.unwrap();
-        tokio::time::sleep(Duration::from_secs_f32(1.5)).await;
+        tokio::time::sleep(Duration::from_secs_f32(1.25)).await;
 
         // retrieve timestamp from existing to model for assertion
         let model = model_store
