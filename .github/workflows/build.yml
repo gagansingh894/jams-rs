@@ -29,6 +29,11 @@ jobs:
         AWS_SECRET_ACCESS_KEY: test
         AWS_DEFAULT_REGION: eu-west-2
         LOCALSTACK_HOSTNAME: localstack
+        USE_AZURITE: true
+        STORAGE_ACCOUNT: devstoreaccount1
+        # https://learn.microsoft.com/en-us/azure/storage/common/storage-use-azurite?tabs=visual-studio%2Cblob-storage#well-known-storage-account-and-key
+        STORAGE_ACCESS_KEY: ${{ secrets.STORAGE_ACCESS_KEY }} # This is a dummy key but has a value which matches the form of actual key as per Azurite docs. Hence I have set it as GITHUB secrets.
+        AZURITE_HOSTNAME: azurite
 
     services:
       localstack:
@@ -38,6 +43,10 @@ jobs:
         env:
           SERVICES: s3
           DEBUG: 1
+      azurite:
+        image: mcr.microsoft.com/azure-storage/azurite
+        ports:
+          - 10000:10000
 
     steps:
       - name: Checkout

@@ -1,4 +1,6 @@
-use std::env;
+use crate::model_store::common::{
+    cleanup, save_and_upack_tarball, DOWNLOADED_MODELS_DIRECTORY_NAME_PREFIX,
+};
 use crate::model_store::storage::{
     append_model_format, extract_framework_from_path, load_models, load_predictor, Metadata, Model,
     ModelName, Storage,
@@ -10,17 +12,11 @@ use aws_sdk_s3 as s3;
 use chrono::Utc;
 use dashmap::mapref::one::Ref;
 use dashmap::DashMap;
-use flate2::read::GzDecoder;
-use std::fs::remove_dir_all;
-use std::fs::File;
-use std::io::Write;
-use std::path::Path;
+use std::env;
 use std::sync::Arc;
-use tar::Archive;
 use uuid::Uuid;
 
 /// A struct representing a model store that interfaces with S3.
-#[allow(dead_code)]
 pub struct S3ModelStore {
     /// A thread-safe map of model names to their corresponding models.
     pub models: Arc<DashMap<ModelName, Arc<Model>>>,
@@ -31,8 +27,6 @@ pub struct S3ModelStore {
     /// Directory, which stores the model artifacts downloaded from S3
     model_store_dir: String,
 }
-
-const DOWNLOADED_MODELS_DIRECTORY_NAME_PREFIX: &str = "model_store";
 
 impl S3ModelStore {
     /// Creates a new instance of `S3ModelStore`.
@@ -140,14 +134,7 @@ async fn build_s3_client(use_localstack: bool) -> anyhow::Result<s3::Client> {
 ///
 impl Drop for S3ModelStore {
     fn drop(&mut self) {
-        match remove_dir_all(self.model_store_dir.clone()) {
-            Ok(_) => {
-                log::info!("Cleaning up temporary location for model store on disk 🧹")
-            }
-            Err(_) => {
-                log::error!("Failed to clean up temporary location for model store on disk");
-            }
-        }
+        cleanup(self.model_store_dir.clone())
     }
 }
 
@@ -197,7 +184,7 @@ impl Storage for S3ModelStore {
                 log::info!("Downloaded object from s3 ✅");
             }
             Err(e) => {
-                log::warn!("Failed to download object from s3 ⚠️: {}", e.to_string());
+                anyhow::bail!("Failed to download object from s3 ❌: {}", e.to_string());
             }
         };
 
@@ -263,7 +250,6 @@ impl Storage for S3ModelStore {
     /// * The framework cannot be extracted from the model path.
     /// * The model cannot be loaded into memory.
     async fn update_model(&self, model_name: ModelName) -> anyhow::Result<()> {
-        // Here model name will be the actual name and not the s3 key as used in add_model.
         // By calling remove on the hashmap, the object is returned on success/
         // We use the returned object, in this case the model to extract the framework and model path
         match self.models.remove(model_name.as_str()) {
@@ -583,122 +569,6 @@ async fn download_objects(
     Ok(())
 }
 
-/// Saves and unpacks a tarball file into a specified output directory.
-///
-/// This function saves a tarball file received as bytes to a temporary location,
-/// then unpacks it into the specified output directory.
-///
-/// # Arguments
-///
-/// * `path` - The temporary directory path where the tarball will be saved.
-/// * `key` - The key or name of the tarball file.
-/// * `data` - The tarball file data as bytes.
-/// * `out_dir` - The output directory where the tarball will be unpacked.
-///
-/// # Returns
-///
-/// * `Result<()>` - An empty result indicating success or an error.
-///
-/// # Errors
-///
-/// This function will return an error if:
-/// * The tarball file cannot be saved or created.
-/// * The tarball file cannot be unpacked into the output directory.
-///
-fn save_and_upack_tarball(
-    path: &str,
-    key: String,
-    data: bytes::Bytes,
-    out_dir: &str,
-) -> anyhow::Result<()> {
-    let file_path = Path::new(path).join(key);
-
-    // Create parent directories if they do not exist
-    if let Some(parent) = file_path.parent() {
-        match std::fs::create_dir_all(parent) {
-            Ok(_) => {}
-            Err(e) => {
-                anyhow::bail!("Failed to create directory ⚠️: {}", e.to_string())
-            }
-        }
-    }
-
-    match std::fs::File::create(&file_path) {
-        Ok(mut file) => match file.write_all(&data) {
-            Ok(_) => {
-                log::info!("Saved file to {:?}", file_path);
-            }
-            Err(e) => {
-                anyhow::bail!(
-                    "Failed to save file to {:?} ⚠️: {}",
-                    file_path,
-                    e.to_string()
-                )
-            }
-        },
-        Err(e) => {
-            anyhow::bail!("Failed to create file {:?} ⚠️: {}", file_path, e.to_string())
-        }
-    }
-
-    match unpack_tarball(file_path.to_str().unwrap(), out_dir) {
-        Ok(_) => Ok(()),
-        Err(e) => {
-            anyhow::bail!("Failed to unpack ⚠️: {}", e.to_string())
-        }
-    }
-}
-
-/// Unpacks a `.tar.gz` file into a specified output directory.
-///
-/// This function opens a `.tar.gz` file located at `tarball_path`, extracts its contents,
-/// and unpacks them into the directory specified by `out_dir`.
-///
-/// # Arguments
-///
-/// * `tarball_path` - The path to the `.tar.gz` file to unpack.
-/// * `out_dir` - The directory where the contents of the `.tar.gz` file will be unpacked.
-///
-/// # Returns
-///
-/// * `Result<()>` - An empty result indicating success or an error.
-///
-/// # Errors
-///
-/// This function will return an error if:
-/// * The `.tar.gz` file cannot be opened or read.
-/// * The contents of the `.tar.gz` file cannot be unpacked into the output directory.
-///
-fn unpack_tarball(tarball_path: &str, out_dir: &str) -> anyhow::Result<()> {
-    match File::open(tarball_path) {
-        Ok(tar_gz) => {
-            let tar = GzDecoder::new(tar_gz);
-            let mut archive = Archive::new(tar);
-
-            match archive.unpack(out_dir) {
-                Ok(_) => {
-                    log::info!(
-                        "Unpacked tarball: {:?} at location: {}",
-                        tarball_path,
-                        out_dir
-                    );
-                    Ok(())
-                }
-                Err(_) => {
-                    anyhow::bail!(
-                        "Failed to unpack tarball ⚠️: {:?} at location: {}",
-                        tarball_path,
-                        out_dir
-                    )
-                }
-            }
-        }
-        Err(e) => {
-            anyhow::bail!("Failed to open tarball ⚠️: {}", e.to_string())
-        }
-    }
-}
-
 fn use_localstack() -> bool {
     std::env::var("USE_LOCALSTACK").unwrap_or_default() == "true"
 }
@@ -747,7 +617,7 @@ mod tests {
     }
 
     async fn upload_models_for_test(client: s3::Client, bucket_name: String) {
-        let mut dir = tokio::fs::read_dir("tests/model_storage/s3_model_store")
+        let mut dir = tokio::fs::read_dir("tests/model_storage/cloud_model_store")
             .await
             .unwrap();
 
@@ -923,7 +793,7 @@ mod tests {
 
         // load models
         let model_store = S3ModelStore::new(bucket_name.clone()).await.unwrap();
-        tokio::time::sleep(Duration::from_secs_f32(1.5)).await;
+        tokio::time::sleep(Duration::from_secs_f32(1.25)).await;
 
         // retrieve timestamp from existing to model for assertion
         let model = model_store
@@ -969,7 +839,6 @@ mod tests {
         delete_models_for_test(client.clone(), bucket_name.clone()).await
     }
 
-    // todo: add model seems to be unstable
     #[tokio::test]
     async fn successfully_add_model_in_the_s3_model_store() {
         // setup

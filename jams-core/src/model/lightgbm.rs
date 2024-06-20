@@ -116,7 +116,7 @@ impl Predictor for LightGBM {
         let p = Parameters::new();
         let preds = self
             .booster
-            .predict_for_mat(&input.matbuf, Normal, 0, None, &p);
+            .predict_for_mat(input.matbuf, Normal, 0, None, &p);
         match preds {
             Ok(predictions) => {
                 // Convert predictions into Vec<Vec<f64>> format
