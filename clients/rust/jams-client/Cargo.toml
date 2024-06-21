@@ -8,4 +8,4 @@ repository = "https://github.com/gagansingh894/jams-rs/tree/main/clients/rust/ja
 license = "Apache-2.0"
 
 [dependencies]
-jams-proto = {path = "../../../internal/jams-proto", version = "*"}
+jams-proto = {path = "../../../internal/jams-proto", version = "0.1"}

@@ -17,7 +17,7 @@ crate-type = ["lib"]
 
 [dependencies]
 jams-core = {path = "../jams-core", version = "0.2" }
-jams-proto = {path = "../internal/jams-proto", version = "*"}
+jams-proto = {path = "../internal/jams-proto", version = "0.1"}
 axum = "0.7"
 anyhow = "1"
 tracing-subscriber = "0.3"
