@@ -9,7 +9,7 @@ use lgbm::{MatBuf, Parameters};
 ///
 /// This struct encapsulates numerical features parsed from a `ModelInput`.
 /// It prepares these features into a format suitable for feeding into a LightGBM model.
-pub struct LightGBMModelInput {
+struct LightGBMModelInput {
     /// Matrix buffer containing numerical features in column-major order.
     pub matbuf: MatBuf<f32, MatLayouts>,
 }

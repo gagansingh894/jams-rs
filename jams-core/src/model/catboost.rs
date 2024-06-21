@@ -4,7 +4,7 @@ use catboost_rs;
 use ndarray::Axis;
 
 /// Struct representing input data for a Catboost model.
-pub struct CatboostModelInput {
+struct CatboostModelInput {
     /// Numeric features as a 2D vector.
     pub numeric_features: Vec<Vec<f32>>,
     /// Categorical features as a 2D vector of strings.
