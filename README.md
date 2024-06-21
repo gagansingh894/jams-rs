@@ -110,7 +110,7 @@ docker run --rm -p 4000:4000 gagansingh894/jams start grpc --with-azure-model-st
 
 - If you want to pass container name, use
 ```
-docker run --rm -p 3000:3000 gagansingh894/jams start http --with-azure-model-store=true --azure-storage-container-name=<bucket_name>
+docker run --rm -p 3000:3000 gagansingh894/jams start http --with-azure-model-store=true --azure-storage-container-name=<container_name>
 ```
 
 

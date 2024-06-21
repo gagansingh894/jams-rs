@@ -29,7 +29,7 @@ tested the above on Apple Silicon and Linux x86_64 machines. Future releases wil
 - Support XGBoost framework
 - Redis & DynamoDB as feature stores 
 - User defined Configurations via YAML file
-- ModelSpec artefacts - Single source of information about models. This will assist in input validations
+- ModelSpec - Single source of information about models. This will assist in input validations
 - Client Implementations in Python, Go, TypeScript, JAVA
 ---
 
@@ -86,7 +86,7 @@ docker run --rm -p 4000:4000 gagansingh894/jams start grpc --with-azure-model-st
 
 - If you want to pass container name, use
 ```
-docker run --rm -p 3000:3000 gagansingh894/jams start http --with-azure-model-store=true --azure-storage-container-name=<bucket_name>
+docker run --rm -p 3000:3000 gagansingh894/jams start http --with-azure-model-store=true --azure-storage-container-name=<container_name>
 ```
 
 
