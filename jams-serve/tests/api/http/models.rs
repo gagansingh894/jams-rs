@@ -44,8 +44,7 @@ async fn successfully_calls_the_add_model_endpoint_and_return_200() {
         .post(url)
         .json(&serde_json::json!(
             {
-                "model_name": "tensorflow-my_awesome_penguin_model",
-                "model_path": ""
+                "model_name": "tensorflow-my_awesome_penguin_model"
             }
         ))
         .send()
@@ -57,7 +56,7 @@ async fn successfully_calls_the_add_model_endpoint_and_return_200() {
 }
 
 #[tokio::test]
-async fn fails_to_call_the_add_model_endpoint_and_return_500_when_model_path_is_wrong() {
+async fn fails_to_call_the_add_model_endpoint_and_return_500_when_model_name_is_wrong() {
     // Arrange
     let client = Client::new();
     let listener = TcpListener::bind("0.0.0.0:0").await.unwrap();
@@ -74,8 +73,7 @@ async fn fails_to_call_the_add_model_endpoint_and_return_500_when_model_path_is_
         .post(url)
         .json(&serde_json::json!(
             {
-                "model_name": "my_awesome_penguin_model",
-                "model_path": "incorrect/path"
+                "model_name": "wrong_model_name"
             }
         ))
         .send()
