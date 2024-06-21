@@ -69,7 +69,7 @@ pub async fn build_app_state_from_config(config: server::Config) -> anyhow::Resu
         anyhow::bail!("Use of more than 1 model store backend is not permitted. Please use one of the following - Local File System/AWS S3/ Azure Blob Storage")
     }
 
-    let manager = if with_azure_model_store {
+    let manager = if with_s3_model_store {
         let s3_bucket_name = config.s3_bucket_name.unwrap_or_else(|| {
             // search for environment variable
             env::var("S3_BUCKET_NAME").expect("S3 bucket name not specified ❌. Either set the S3_BUCKET_NAME env variable or provide the value using --s3-bucket-name flag ")
@@ -78,14 +78,14 @@ pub async fn build_app_state_from_config(config: server::Config) -> anyhow::Resu
             .await
             .expect("Failed to create S3 model store ❌");
         Arc::new(Manager::new(Arc::new(model_store)).expect("Failed to initialize manager ❌"))
-    } else if with_s3_model_store {
+    } else if with_azure_model_store {
         let azure_storage_container_name = config.azure_storage_container_name.unwrap_or_else(|| {
             // search for environment variable
             env::var("AZURE_STORAGE_CONTAINER_NAME").expect("Azure Storage container name not specified ❌. Either set the AZURE_STORAGE_CONTAINER_NAME env variable or provide the value using --azure-container-name flag ")
         });
         let model_store = AzureBlobStorageModelStore::new(azure_storage_container_name)
             .await
-            .expect("Failed to create S3 model store ❌");
+            .expect("Failed to create Azure model store ❌");
         Arc::new(Manager::new(Arc::new(model_store)).expect("Failed to initialize manager ❌"))
     } else {
         let model_store = LocalModelStore::new(model_dir)
