@@ -1,23 +1,15 @@
 use crate::common::state::AppState;
 use crate::common::worker;
-use crate::grpc::service::jams_v1::get_models_response::Model;
-use crate::grpc::service::jams_v1::{
+use jams_proto::jams_v1::get_models_response::Model;
+use jams_proto::jams_v1::{
     AddModelRequest, DeleteModelRequest, GetModelsResponse, PredictRequest, PredictResponse,
     UpdateModelRequest,
 };
 use jams_core::model_store::storage::Metadata;
-use jams_v1::model_server_server::ModelServer;
+use jams_proto::jams_v1::model_server_server::ModelServer;
 use std::sync::Arc;
 use tokio::sync::oneshot;
 use tonic::{Request, Response, Status};
-
-// load proto gen code as module
-pub mod jams_v1 {
-    tonic::include_proto!("jams_v1");
-
-    pub(crate) const FILE_DESCRIPTOR_SET: &[u8] =
-        tonic::include_file_descriptor_set!("jams_v1_descriptor");
-}
 
 pub struct JamsService {
     app_state: Arc<AppState>,
