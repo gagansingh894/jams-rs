@@ -33,3 +33,13 @@ check-gpu-linux:
 	sudo lshw -C display
 
 all: format lint test
+
+generate-proto:
+	@echo "Generating proto files for Go"
+	protoc -I=jams-serve/proto/api/v1/ --go_out=clients/go --go-grpc_out=clients/go jams.proto
+	@echo "Generating proto files for Python"
+	python -m grpc_tools.protoc -I=jams-serve/proto/api/v1/ --python_out=clients/python/proto --pyi_out=clients/python/proto --grpc_python_out=clients/python/proto jams.proto
+#	@echo "Generating proto files for TypeScript"
+#	protoc -I=jams-serve/proto/api/v1/ --plugin="$(which protoc-gen-ts)" --ts_proto_opt=esModuleInterop=true --ts_proto_out="clients/typescript/generated" jams.proto
+	@echo "Generating proto files for Java"
+	protoc -I=jams-serve/proto/api/v1 --java_out=clients/java jams.proto
