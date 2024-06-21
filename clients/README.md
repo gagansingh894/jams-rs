@@ -6,6 +6,7 @@ in the following languages
 
 - Go 🚧
 - Python 🚧
+- Rust 🚧
 - TypeScript 🚧
 - Java 🚧
 

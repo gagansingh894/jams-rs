@@ -92,7 +92,7 @@ docker run --rm -p 3000:3000 gagansingh894/jams start http --with-azure-model-st
 
 Please refer to [OpenAPI Spec](https://github.com/gagansingh894/jams-rs/blob/main/openapi.yml) for API endpoints.
 
-Alternatively, you can also refer to the [proto definition](https://github.com/gagansingh894/jams-rs/blob/main/jams-serve/proto/api/v1/jams.proto).
+Alternatively, you can also refer to the [proto definition](https://github.com/gagansingh894/jams-rs/blob/main/internal/jams-proto/proto/api/v1/jams.proto).
 
 ---
 

@@ -2149,6 +2149,13 @@ dependencies = [
 ]
 
 [[package]]
+name = "jams-client"
+version = "0.1.0"
+dependencies = [
+ "jams-proto",
+]
+
+[[package]]
 name = "jams-core"
 version = "0.2.3"
 dependencies = [
@@ -2180,24 +2187,32 @@ dependencies = [
 ]
 
 [[package]]
+name = "jams-proto"
+version = "0.1.0"
+dependencies = [
+ "prost",
+ "prost-types",
+ "tonic",
+ "tonic-build",
+ "tonic-reflection",
+]
+
+[[package]]
 name = "jams-serve"
-version = "0.1.19"
+version = "0.1.20"
 dependencies = [
  "anyhow",
  "axum 0.7.5",
  "chrono",
- "clap",
  "jams-core",
+ "jams-proto",
  "log",
- "prost",
- "prost-types",
  "rayon",
  "reqwest",
  "serde",
  "serde_json",
  "tokio",
  "tonic",
- "tonic-build",
  "tonic-reflection",
  "tower-http",
  "tracing",

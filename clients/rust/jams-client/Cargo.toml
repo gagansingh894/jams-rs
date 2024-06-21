@@ -1,0 +1,11 @@
+[package]
+name = "jams-client"
+version = "0.1.0"
+edition = "2021"
+description = "A HTTP and gRPC client library for interacting with  J.A.M.S - Just Another Model Server"
+homepage = "https://github.com/gagansingh894/jams-rs"
+repository = "https://github.com/gagansingh894/jams-rs/tree/main/clients/rust/jams-proto"
+license = "Apache-2.0"
+
+[dependencies]
+jams-proto = {path = "../../../internal/jams-proto", version = "0.1"}
