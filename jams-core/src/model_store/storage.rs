@@ -15,7 +15,7 @@ pub type ModelName = String;
 #[async_trait]
 pub trait Storage: Send + Sync + 'static {
     /// Adds a specific machine learning/deep learning model
-    async fn add_model(&self, model_name: ModelName, model_path: &str) -> anyhow::Result<()>;
+    async fn add_model(&self, model_name: ModelName) -> anyhow::Result<()>;
 
     /// Updates a specific machine learning/deep learning model based on model name
     async fn update_model(&self, model_name: ModelName) -> anyhow::Result<()>;

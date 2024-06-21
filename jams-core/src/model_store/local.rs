@@ -125,7 +125,7 @@ impl Storage for LocalModelStore {
     /// * The framework cannot be extracted from the model path.
     /// * The model fails to load.
     ///
-    async fn add_model(&self, model_name: ModelName, _model_path: &str) -> anyhow::Result<()> {
+    async fn add_model(&self, model_name: ModelName) -> anyhow::Result<()> {
         let lms_model_name = format!("{}.tar.gz", model_name.clone());
 
         let local_model_store_path = format!("{}/{}", self.local_model_store_dir, lms_model_name);
@@ -425,7 +425,7 @@ mod tests {
 
         // add model
         let add = local_model_store
-            .add_model("tensorflow-my_awesome_penguin_model".to_string(), "")
+            .add_model("tensorflow-my_awesome_penguin_model".to_string())
             .await;
         let num_models_after_add = local_model_store.get_models().unwrap().len();
 
@@ -437,7 +437,7 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn fails_to_add_model_in_the_local_model_store_when_the_model_path_is_wrong() {
+    async fn fails_to_add_model_in_the_local_model_store_when_the_model_does_not_exist() {
         let model_dir = "tests/model_storage/model_store";
 
         // load models
@@ -445,10 +445,7 @@ mod tests {
 
         // add model
         let add = local_model_store
-            .add_model(
-                "my_awesome_penguin_model".to_string(),
-                "tests/model_storage/model_store/model_which_does_not_exist",
-            )
+            .add_model("wrong_model_name".to_string())
             .await;
 
         // assert

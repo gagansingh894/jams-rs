@@ -87,7 +87,6 @@ impl ModelServer for JamsService {
             .manager
             .add_model(
                 add_model_request.model_name,
-                add_model_request.model_path.as_str(),
             )
             .await
         {

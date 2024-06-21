@@ -171,7 +171,7 @@ impl Storage for AzureBlobStorageModelStore {
     /// * The model cannot be downloaded from Azure Blob Storage.
     /// * The framework cannot be extracted from the model path.
     /// * The model cannot be loaded into memory.
-    async fn add_model(&self, model_name: ModelName, _model_path: &str) -> anyhow::Result<()> {
+    async fn add_model(&self, model_name: ModelName) -> anyhow::Result<()> {
         // Prepare the blob key from model_name
         // It is assumed that model will always be present as a .tar.gz file in Azure Blob Storage
         // Panic otherwise
@@ -785,7 +785,7 @@ mod tests {
         // add model - unlike local model store we will pass the blob name without .tar.gz in the model name
         // model_path is not required when adding models via Azure Blob Storage model store
         let add = model_store
-            .add_model("catboost-titanic_model".to_string(), "")
+            .add_model("catboost-titanic_model".to_string())
             .await;
         let num_models_after_add = model_store.get_models().unwrap().len();
 
@@ -801,7 +801,7 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn fails_to_add_model_in_the_azure_blob_storage_model_store_when_the_model_path_is_wrong()
+    async fn fails_to_add_model_in_the_azure_blob_storage_model_store_when_the_model_name_is_wrong()
     {
         // setup
         let client = setup_client();
@@ -815,10 +815,7 @@ mod tests {
 
         // add model
         let add = model_store
-            .add_model(
-                "my_awesome_penguin_model_wrong_azure_blob_storage_key".to_string(),
-                "",
-            )
+            .add_model("my_awesome_penguin_model_wrong_azure_blob_storage_key".to_string())
             .await;
 
         // assert
