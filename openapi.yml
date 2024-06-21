@@ -2,7 +2,7 @@ openapi: 3.0.3
 info:
   title: J.A.M.S - Just Another Model Server
   description: API for interacting with J.A.M.S
-  version: 0.1.0
+  version: 0.2.0
 
 tags:
   - name: Healthcheck
@@ -129,12 +129,8 @@ paths:
                 model_name:
                   type: string
                   example: "model_framework-new_model_name"
-                model_path:
-                  type: string
-                  example: "model-dir/model_framework-new_model_name"
               required:
                 - model_name
-                - model_path
       responses:
         '200':
           description: Model added successfully

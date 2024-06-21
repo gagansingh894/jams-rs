@@ -53,13 +53,13 @@ message GetModelsResponse {
   repeated Model models = 2;
 }
 
-// AddModelRequest represents a request to add a new model.
+// AddModelRequest represents a request to add a new model in-memory by fetching from the model store.
 message AddModelRequest {
-  // model_name is the name of the model to add.
+  // model_name is the name of the model artefact to add.
+  // The models are stored in .tar.gz format but we do not pass the format in request as it handled by the server
+  // Example - framework-my_model
+  // The model should be present in the model store of your choice
   string model_name = 1;
-  // model_path is the path of the model where it is located.
-  // It can either be local file system path, S3 path or Azure blob path.
-  string model_path = 2;
 }
 
 // UpdateModelRequest represents a request to update a model.
