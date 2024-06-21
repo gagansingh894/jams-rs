@@ -106,11 +106,7 @@ pub async fn add_model(
     State(app_state): State<Arc<AppState>>,
     Json(payload): Json<AddModelRequest>,
 ) -> StatusCode {
-    match app_state
-        .manager
-        .add_model(payload.model_name)
-        .await
-    {
+    match app_state.manager.add_model(payload.model_name).await {
         Ok(_) => StatusCode::OK,
         Err(_) => StatusCode::INTERNAL_SERVER_ERROR,
     }

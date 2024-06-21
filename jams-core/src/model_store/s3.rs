@@ -887,9 +887,7 @@ mod tests {
         let model_store = S3ModelStore::new(bucket_name.clone()).await.unwrap();
 
         // add model
-        let add = model_store
-            .add_model("wrong_model_name".to_string())
-            .await;
+        let add = model_store.add_model("wrong_model_name".to_string()).await;
 
         // assert
         assert!(add.is_err());

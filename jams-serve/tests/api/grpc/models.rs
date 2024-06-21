@@ -69,7 +69,7 @@ async fn fails_to_call_the_add_model_rpc_when_model_name_is_wrong() {
     // Act
     let response = client
         .add_model(AddModelRequest {
-            model_name: "wrong_model_name".to_string()
+            model_name: "wrong_model_name".to_string(),
         })
         .await;
 
