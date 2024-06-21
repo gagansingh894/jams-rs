@@ -39,4 +39,17 @@ pub struct Config {
     /// - `Some(String)`: The name of the S3 bucket.
     /// - `None`: No S3 bucket name is specified.
     pub s3_bucket_name: Option<String>,
+
+    /// An optional boolean flag indicating whether to use Azure as the model store.
+    ///
+    /// - `Some(true)`: Use Azure for model storage.
+    /// - `Some(false)`: Do not use Azure for model storage.
+    /// - `None`: The configuration for using Azure is not specified.
+    pub with_azure_model_store: Option<bool>,
+
+    /// An optional string specifying the name of the azure storage container to be used for model storage.
+    ///
+    /// - `Some(String)`: The name of the S3 bucket.
+    /// - `None`: No S3 bucket name is specified.
+    pub azure_storage_container_name: Option<String>,
 }

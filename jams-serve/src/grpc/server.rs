@@ -96,6 +96,8 @@ mod tests {
             num_workers: Some(1),
             with_s3_model_store: Some(false),
             s3_bucket_name: Some("".to_string()),
+            with_azure_model_store: Some(false),
+            azure_storage_container_name: Some("".to_string()),
         };
 
         // Act
@@ -113,6 +115,8 @@ mod tests {
             num_workers: Some(0),
             with_s3_model_store: Some(false),
             s3_bucket_name: Some("".to_string()),
+            with_azure_model_store: Some(false),
+            azure_storage_container_name: Some("".to_string()),
         };
 
         // Act
