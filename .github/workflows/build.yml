@@ -58,11 +58,11 @@ jobs:
       - name: Lint
         run: make lint
 
-#      - name: Install cargo-nextest
-#        run: cargo install cargo-nextest
+      - name: Install cargo-nextest
+        run: cargo install cargo-nextest
 
       - name: Run tests
-        run: make test
+        run: make nextest
 
       - name: Install cargo-llvm-cov
         uses: taiki-e/install-action@cargo-llvm-cov
