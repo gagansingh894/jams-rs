@@ -2,6 +2,10 @@
 name = "jams-proto"
 version = "0.1.0"
 edition = "2021"
+description = "jams-proto is a crate for proto definations used by J.A.M.S"
+homepage = "https://github.com/gagansingh894/jams-rs"
+repository = "https://github.com/gagansingh894/jams-rs/tree/main/internal/jams-proto"
+license = "Apache-2.0"
 
 [lib]
 name = "jams_proto"
