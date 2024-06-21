@@ -29,7 +29,7 @@ tested the above on Apple Silicon and Linux x86_64 machines. Future releases wil
 - Support XGBoost framework
 - Redis & DynamoDB as feature stores 
 - User defined Configurations via YAML file
-- ModelSpec artefacts - Single source of information about models. This will assist in input validations
+- ModelSpec - Single source of information about models. This will assist in input validations
 - Client Implementations in Python, Go, TypeScript, JAVA
 ---
 
@@ -72,7 +72,7 @@ docker run --rm -p 3000:3000 gagansingh894/jams start http --with-s3-model-store
 
 ### To run with a Azure Blob Storage backend
 - Create a Azure Storage container with some models in it. Please refer to the structure of model store [here](https://github.com/gagansingh894/jams-rs?tab=readme-ov-file#model-store).
-- Set the environment variables - `STORAGE_ACCOUNT`, `STORAGE_ACCESS_KEY`. You also need to set the azure container name. This can either be set via `AZURE_STORAGE_CONTAINER_NAME` env variable or passed via `--azure-container-name` flag
+- Set the environment variables - `STORAGE_ACCOUNT`, `STORAGE_ACCESS_KEY`. You also need to set the azure container name. This can either be set via `AZURE_STORAGE_CONTAINER_NAME` env variable or passed via `--azure-storage-container-name` flag
 - Run the command to start HTTP server with Azure model store. It assumes that container name is already set via `AZURE_STORAGE_CONTAINER_NAME`
 
 ```
@@ -86,7 +86,7 @@ docker run --rm -p 4000:4000 gagansingh894/jams start grpc --with-azure-model-st
 
 - If you want to pass container name, use
 ```
-docker run --rm -p 3000:3000 gagansingh894/jams start http --with-azure-model-store=true --azure-storage-container-name=<bucket_name>
+docker run --rm -p 3000:3000 gagansingh894/jams start http --with-azure-model-store=true --azure-storage-container-name=<container_name>
 ```
 
 
