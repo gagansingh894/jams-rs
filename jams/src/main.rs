@@ -38,6 +38,8 @@ J.A.M.S - Just Another Model Server
                         num_workers: args.num_workers,
                         with_s3_model_store: args.with_s3_model_store,
                         s3_bucket_name: args.s3_bucket_name,
+                        with_azure_model_store: args.with_azure_model_store,
+                        azure_storage_container_name: args.azure_storage_container_name,
                     };
 
                     jams_serve::http::server::start(config)
@@ -56,6 +58,8 @@ J.A.M.S - Just Another Model Server
                         num_workers: args.num_workers,
                         with_s3_model_store: args.with_s3_model_store,
                         s3_bucket_name: args.s3_bucket_name,
+                        with_azure_model_store: args.with_azure_model_store,
+                        azure_storage_container_name: args.azure_storage_container_name,
                     };
 
                     jams_serve::grpc::server::start(config)

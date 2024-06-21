@@ -1,15 +1,24 @@
 # JAMS-CORE
 This library crate is part of a wider project called **J.A.M.S - Just Another Model Server**. Please refer [here](https://github.com/gagansingh894/jams-rs).
 
-This crate is the core building block of **J.A.M.S**. It provides a thin wrapper around the following models
-via FFI
+## Features
 
-- Tensorflow
-- Torch
-- Catboost
-- LightGBM
+- Async
+- Multiple Model Frameworks Supported
+    - Tensorflow
+    - Torch
+    - Catboost
+    - LightGBM
+- Multiple Model Store Backends Supported
+    - Local File System
+    - AWS S3
+    - Azure Blob Storage
 
-This is still a work in process and is in very early stages.
+### The following features are in progress 🚧
+- Support XGBoost framework
+- Redis & DynamoDB as feature stores
+- ModelSpec artefacts - Single source of information about models. This will assist in input validations
+---
 
 
 ## Overview

@@ -8,7 +8,7 @@ use tensorflow::{
 ///
 /// This struct encapsulates tensors grouped by their data type (`i32`, `f32`, `String`),
 /// along with corresponding TensorFlow operations.
-pub struct TensorflowModelInput {
+struct TensorflowModelInput {
     /// Integer tensors along with their corresponding TensorFlow operations.
     pub int_tensors: Vec<(Operation, Tensor<i32>)>,
     /// Float tensors along with their corresponding TensorFlow operations.

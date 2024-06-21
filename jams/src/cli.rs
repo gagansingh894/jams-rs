@@ -78,13 +78,20 @@ pub struct StartCommandArgs {
     pub num_workers: Option<usize>,
 
     /// Start with S3 model store rather than local model store.
-    /// It is necessary to pass the bucket name using --s3-bucket-name flag
     #[clap(long)]
     pub with_s3_model_store: Option<bool>,
 
     /// Name of S3 bucket hosting models
     #[clap(long)]
     pub s3_bucket_name: Option<String>,
+
+    /// Start with Azure model store rather than local model store.
+    #[clap(long)]
+    pub with_azure_model_store: Option<bool>,
+
+    /// Name of Azure Storage container hosting models
+    #[clap(long)]
+    pub azure_storage_container_name: Option<String>,
 }
 
 #[derive(Args, Debug, Clone)]
