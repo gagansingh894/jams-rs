@@ -165,7 +165,7 @@ impl Storage for S3ModelStore {
     /// * The model cannot be downloaded from S3.
     /// * The framework cannot be extracted from the model path.
     /// * The model cannot be loaded into memory.
-    async fn add_model(&self, model_name: ModelName, _model_path: &str) -> anyhow::Result<()> {
+    async fn add_model(&self, model_name: ModelName) -> anyhow::Result<()> {
         // Prepare the S3 key from model_name
         // It is assumed that model will always be present as a .tar.gz file in S3
         // Panic otherwise
@@ -861,7 +861,7 @@ mod tests {
         // add model - unlike local model store we will pass the s3 key without .tar.gz in the model name
         // model_path is not required when adding models via S3 model store
         let add = model_store
-            .add_model("catboost-titanic_model".to_string(), "")
+            .add_model("catboost-titanic_model".to_string())
             .await;
         let num_models_after_add = model_store.get_models().unwrap().len();
 
@@ -877,7 +877,7 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn fails_to_add_model_in_the_s3_model_store_when_the_model_path_is_wrong() {
+    async fn fails_to_add_model_in_the_s3_model_store_when_the_model_name_is_wrong() {
         // setup
         let client = setup_client().await;
         let bucket_name = generate_bucket_name();
@@ -887,9 +887,7 @@ mod tests {
         let model_store = S3ModelStore::new(bucket_name.clone()).await.unwrap();
 
         // add model
-        let add = model_store
-            .add_model("my_awesome_penguin_model_wrong_s3_key".to_string(), "")
-            .await;
+        let add = model_store.add_model("wrong_model_name".to_string()).await;
 
         // assert
         assert!(add.is_err());

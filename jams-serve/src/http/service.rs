@@ -11,7 +11,6 @@ use tokio::sync::oneshot;
 #[derive(Deserialize)]
 pub struct AddModelRequest {
     model_name: String,
-    model_path: String,
 }
 
 #[derive(Deserialize)]
@@ -107,11 +106,7 @@ pub async fn add_model(
     State(app_state): State<Arc<AppState>>,
     Json(payload): Json<AddModelRequest>,
 ) -> StatusCode {
-    match app_state
-        .manager
-        .add_model(payload.model_name, payload.model_path.as_str())
-        .await
-    {
+    match app_state.manager.add_model(payload.model_name).await {
         Ok(_) => StatusCode::OK,
         Err(_) => StatusCode::INTERNAL_SERVER_ERROR,
     }

@@ -8,6 +8,31 @@ This crate provides a CLI for interacting [**J.A.M.S - Just Another Model Server
 tested the above on Apple Silicon and Linux x86_64 machines. Future releases will fix this**
 ---
 
+## Features
+
+- Async 
+- Separate Rayon Threadpool for computing predictions
+- Multiple Model Frameworks Supported
+  - Tensorflow
+  - Torch
+  - Catboost
+  - LightGBM  
+- Multiple Model Store Backends Supported
+  - Local File System
+  - AWS S3
+  - Azure Blob Storage
+- Thin & Fast API Layer
+  - HTTP via Axum
+  - gRPC via Tonic
+
+### The following features are in progress 🚧
+- Support XGBoost framework
+- Redis & DynamoDB as feature stores 
+- User defined Configurations via YAML file
+- ModelSpec artefacts - Single source of information about models. This will assist in input validations
+- Client Implementations in Python, Go, TypeScript, JAVA
+---
+
 ## Docker Setup
 J.A.M.S is also hosted on [DockerHub](https://hub.docker.com/r/gagansingh894/jams).
 
@@ -25,8 +50,8 @@ To run gRPC server, use
 docker run --rm -v /your/path/to/model_store:/model_store -p 4000:4000 gagansingh894/jams start grpc
 ```
 
-To run with a S3 backend
-- Create a S3 bucket with some models in it. Please refer to the structure of S3 model store [here](https://github.com/gagansingh894/jams-rs?tab=readme-ov-file#s3-model-store).
+### To run with a S3 backend
+- Create a S3 bucket with some models in it. Please refer to the structure of model store [here](https://github.com/gagansingh894/jams-rs?tab=readme-ov-file#model-store).
 - Set the environment variables - `AWS_REGION`, `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`. Alternatively if you have multiple AWS profiles then just set the `AWS_PROFILE-<profile_name>`
   You also need to set the bucket name. This can either be set via `S3_BUCKET_NAME` env variable or passed via `--s3-bucket-name` flag
 - Run the command to start HTTP server with S3 model store. It assumes that bucket name is already set via `S3_BUCKET_NAME`
@@ -44,6 +69,26 @@ docker run --rm -p 4000:4000 gagansingh894/jams start grpc --with-s3-model-store
 ```
 docker run --rm -p 3000:3000 gagansingh894/jams start http --with-s3-model-store=true --s3-bucket-name=<bucket_name>
 ```
+
+### To run with a Azure Blob Storage backend
+- Create a Azure Storage container with some models in it. Please refer to the structure of model store [here](https://github.com/gagansingh894/jams-rs?tab=readme-ov-file#model-store).
+- Set the environment variables - `STORAGE_ACCOUNT`, `STORAGE_ACCESS_KEY`. You also need to set the azure container name. This can either be set via `AZURE_STORAGE_CONTAINER_NAME` env variable or passed via `--azure-container-name` flag
+- Run the command to start HTTP server with Azure model store. It assumes that container name is already set via `AZURE_STORAGE_CONTAINER_NAME`
+
+```
+docker run --rm -p 3000:3000 gagansingh894/jams start http --with-azure-model-store=true
+```
+
+- For gRPC server, use
+```
+docker run --rm -p 4000:4000 gagansingh894/jams start grpc --with-azure-model-store=true
+```
+
+- If you want to pass container name, use
+```
+docker run --rm -p 3000:3000 gagansingh894/jams start http --with-azure-model-store=true --azure-storage-container-name=<bucket_name>
+```
+
 
 Please refer to [OpenAPI Spec](https://github.com/gagansingh894/jams-rs/blob/main/openapi.yml) for API endpoints.
 
@@ -161,76 +206,20 @@ and run `jams start http` or `jams start grpc`
 export MODEL_STORE_DIR=path/to/model_dir
 ```
 
-
-**_If no path is provided for a model directory, the server will start but with a warning. 
-The models can still be added via API endpoints._**
-
 By default, the server runs on port `3000` and `2` workers in the rayon threadpool.You can override using
 the `--port` and `--num-workers` flags respectively. The log level can also be changed to
 `DEBUG` level using `--use-debug-level=true`.
 
-Below are examples of different model stores.
+#### Model Store
+Below is the expected structure of model stores.
 
-#### Local Model Store
-Notice the model naming convention
-**<model_framework>-model_name** followed by **format** if applicable
-
-
-```
-.
-├── local_model_store
-│   ├── catboost-my_awesome_binary_model
-│   ├── catboost-my_awesome_multiclass_model
-│   ├── catboost-my_awesome_regressor_model
-│   ├── catboost-titanic_model
-│   ├── lightgbm-my_awesome_binary_model_2.txt
-│   ├── lightgbm-my_awesome_reg_model.txt
-│   ├── lightgbm-my_awesome_xen_binary_model.txt
-│   ├── lightgbm-my_awesome_xen_prob_model.txt
-│   ├── pytorch-my_awesome_californiahousing_model.pt
-│   ├── tensorflow-large_features_model
-│   │   ├── assets
-│   │   ├── saved_model.pb
-│   │   └── variables
-│   │       ├── variables.data-00000-of-00001
-│   │       └── variables.index
-│   ├── tensorflow-my_awesome_autompg_model
-│   │   ├── assets
-│   │   ├── fingerprint.pb
-│   │   ├── keras_metadata.pb
-│   │   ├── saved_model.pb
-│   │   └── variables
-│   │       ├── variables.data-00000-of-00001
-│   │       └── variables.index
-│   ├── tensorflow-my_awesome_penguin_model
-│   │   ├── assets
-│   │   ├── fingerprint.pb
-│   │   ├── keras_metadata.pb
-│   │   ├── saved_model.pb
-│   │   └── variables
-│   │       ├── variables.data-00000-of-00001
-│   │       └── variables.index
-│   ├── tensorflow-my_awesome_sequential_model
-│   │   ├── assets
-│   │   ├── fingerprint.pb
-│   │   ├── keras_metadata.pb
-│   │   ├── saved_model.pb
-│   │   └── variables
-│   │       ├── variables.data-00000-of-00001
-│   │       └── variables.index
-│   └── torch-my_awesome_penguin_model.pt
-
-```
-
-#### S3 Model Store
 - Notice the model naming convention
   **<model_framework>-model_name.tar.gz**.
-
 - The server unpacks and loads the model files.
 - The server will warn about the unsupported formats and continue to load other models
 
 ```
-└── s3_model_store
+└── model_store
     ├── catboost-my_awesome_binary_model.tar.gz
     ├── catboost-my_awesome_multiclass_model.tar.gz
     ├── catboost-my_awesome_regressor_model.tar.gz

@@ -44,7 +44,6 @@ async fn successfully_calls_the_add_model_rpc() {
     let response = client
         .add_model(AddModelRequest {
             model_name: "tensorflow-my_awesome_penguin_model".to_string(),
-            model_path: "".to_string(),
         })
         .await;
 
@@ -53,7 +52,7 @@ async fn successfully_calls_the_add_model_rpc() {
 }
 
 #[tokio::test]
-async fn fails_to_call_the_add_model_rpc_when_model_path_is_wrong() {
+async fn fails_to_call_the_add_model_rpc_when_model_name_is_wrong() {
     // Arrange
     let listener = TcpListener::bind("0.0.0.0:0").await.unwrap();
     let addr = listener.local_addr().unwrap();
@@ -70,8 +69,7 @@ async fn fails_to_call_the_add_model_rpc_when_model_path_is_wrong() {
     // Act
     let response = client
         .add_model(AddModelRequest {
-            model_name: "my_awesome_penguin_model".to_string(),
-            model_path: "incorrect/model/path".to_string(),
+            model_name: "wrong_model_name".to_string(),
         })
         .await;
 

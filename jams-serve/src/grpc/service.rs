@@ -85,10 +85,7 @@ impl ModelServer for JamsService {
         match self
             .app_state
             .manager
-            .add_model(
-                add_model_request.model_name,
-                add_model_request.model_path.as_str(),
-            )
+            .add_model(add_model_request.model_name)
             .await
         {
             Ok(_) => Ok(Response::new(())),

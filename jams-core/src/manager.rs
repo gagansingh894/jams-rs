@@ -52,8 +52,8 @@ impl Manager {
     ///
     /// * `Ok(())` if the model is successfully added.
     /// * `Err(anyhow::Error)` if there is an error during the addition process.
-    pub async fn add_model(&self, model_name: ModelName, model_path: &str) -> anyhow::Result<()> {
-        self.model_store.add_model(model_name, model_path).await
+    pub async fn add_model(&self, model_name: ModelName) -> anyhow::Result<()> {
+        self.model_store.add_model(model_name).await
     }
 
     /// Updates an existing model in the model store.
@@ -206,7 +206,7 @@ mod tests {
         manager.delete_model("titanic_model".to_string()).unwrap();
 
         // add model
-        let add = manager.add_model(model_name, "").await;
+        let add = manager.add_model(model_name).await;
 
         // assert
         assert!(add.is_ok());
