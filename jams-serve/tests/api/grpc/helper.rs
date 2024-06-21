@@ -1,8 +1,8 @@
 use jams_core::manager::Manager;
 use jams_core::model_store::local::LocalModelStore;
+use jams_proto::jams_v1::model_server_client::ModelServerClient;
+use jams_proto::jams_v1::model_server_server::ModelServerServer;
 use jams_serve::common::state::AppState;
-use jams_serve::grpc::service::jams_v1::model_server_client::ModelServerClient;
-use jams_serve::grpc::service::jams_v1::model_server_server::ModelServerServer;
 use jams_serve::grpc::service::JamsService;
 use rayon::ThreadPoolBuilder;
 use std::sync::Arc;

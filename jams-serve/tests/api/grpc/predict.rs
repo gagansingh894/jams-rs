@@ -1,5 +1,5 @@
 use crate::grpc::helper::{grpc_client_stub, jams_grpc_test_router};
-use jams_serve::grpc::service::jams_v1::PredictRequest;
+use jams_proto::jams_v1::PredictRequest;
 use tokio::net::TcpListener;
 use tonic::codegen::tokio_stream::wrappers::TcpListenerStream;
 

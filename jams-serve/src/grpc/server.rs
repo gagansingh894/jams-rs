@@ -1,9 +1,9 @@
 use crate::common::server;
 use crate::common::shutdown::shutdown_signal;
 use crate::common::state::build_app_state_from_config;
+use crate::grpc::service::JamsService;
 use jams_proto::jams_v1::model_server_server::ModelServerServer;
 use jams_proto::jams_v1::FILE_DESCRIPTOR_SET;
-use crate::grpc::service::JamsService;
 use tonic::codegen::tokio_stream::wrappers::TcpListenerStream;
 use tonic::transport::Server;
 
