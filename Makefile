@@ -36,9 +36,9 @@ all: format lint test
 
 generate-proto:
 	@echo "Generating proto files for Go"
-	protoc -I=internal/jams-proto/proto/api/v1/ --go_out=clients/go/jams-client --go-grpc_out=clients/go/jams-client jams.proto
+	protoc -I=internal/jams-proto/proto/api/v1/ --go_out=clients/go/jams --go-grpc_out=clients/go/jams jams.proto
 	@echo "Generating proto files for Python"
-	python -m grpc_tools.protoc -I=internal/jams-proto/proto/api/v1/ --python_out=clients/python/jams_client/proto --pyi_out=clients/python/jams_client/proto --grpc_python_out=clients/python/jams_client/proto jams.proto
+	python -m grpc_tools.protoc -I=internal/jams-proto/proto/api/v1/ --python_out=clients/python/jams/proto --pyi_out=clients/python/jams/proto --grpc_python_out=clients/python/jams/proto jams.proto
 #	@echo "Generating proto files for TypeScript"
 #	protoc -I=jams-serve/proto/api/v1/ --plugin="$(which protoc-gen-ts)" --ts_proto_opt=esModuleInterop=true --ts_proto_out="clients/typescript/generated" jams.proto
 	@echo "Generating proto files for Java"
