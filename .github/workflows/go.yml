@@ -12,6 +12,7 @@ on:
 
 jobs:
   build:
+    name: Lint and Test
     runs-on: ubuntu-latest
 
     steps:
@@ -27,12 +28,17 @@ jobs:
         run: |
           cd clients/go/jams
           go mod download
-          go install github.com/vektra/mockery/v2/.../
+          go install github.com/vektra/mockery/v2/...@latest
           go install github.com/golangci/golangci-lint/cmd/golangci-lint@v1.51.2
           go install google.golang.org/protobuf/cmd/protoc-gen-go@latest
           go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@latest
 
-      - name: Run Makefile
+      - name: Lint
         run: |
           cd clients/go/jams
-          make all
+          make lint
+
+      - name: Test
+        run: |
+          cd clients/go/jams
+          make test    
