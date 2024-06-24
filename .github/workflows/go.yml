@@ -1,4 +1,4 @@
-name: Go CI Pipeline
+name: J.A.M.S Go ClientCI Pipeline
 
 on:
   push:

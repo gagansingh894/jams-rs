@@ -1,4 +1,4 @@
-name: Build
+name: J.A.M.S CI/CD Pipeline
 
 # todo: run language specific cicd pipelines
 on:
