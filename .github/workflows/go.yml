@@ -1,0 +1,38 @@
+name: Go CI Pipeline
+
+on:
+  push:
+    branches: [ "main" ]
+    paths:
+      - 'go/**'
+  pull_request:
+    branches: [ "main" ]
+    paths:
+      - 'go/**'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Set up Go
+        uses: actions/setup-go@v4
+        with:
+          go-version: 1.20
+
+      - name: Install dependencies
+        run: |
+          cd go/jams
+          go mod download
+          go install github.com/vektra/mockery/v2/.../
+          go install github.com/golangci/golangci-lint/cmd/golangci-lint@v1.51.2
+          go install google.golang.org/protobuf/cmd/protoc-gen-go@latest
+          go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@latest
+
+      - name: Run Makefile
+        run: |
+          cd go/jams
+          make all
