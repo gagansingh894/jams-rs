@@ -1,10 +1,15 @@
 name: Build
 
+# todo: run language specific cicd pipelines
 on:
   push:
     branches: [ "main" ]
+    paths-ignore:
+      - 'clients/**'
   pull_request:
     branches: [ "main" ]
+    paths-ignore:
+      - 'clients/**'
 
 env:
   CARGO_TERM_COLOR: always
