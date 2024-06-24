@@ -9,6 +9,7 @@ import (
 	"net/http"
 )
 
+//go:generate mockery --name Client --output=../mocks/http
 type Client interface {
 	HealthCheck(ctx context.Context) error
 	Predict(ctx context.Context, request *PredictRequest) (types.Prediction, error)

@@ -12,6 +12,7 @@ import (
 	"github.com/gagansingh894/jams-rs/clients/go/jams/types"
 )
 
+//go:generate mockery --name Client --output=../mocks/grpc
 type Client interface {
 	HealthCheck(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) error
 	Predict(ctx context.Context, in *v1.PredictRequest, opts ...grpc.CallOption) (types.Prediction, error)
