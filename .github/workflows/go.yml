@@ -4,11 +4,11 @@ on:
   push:
     branches: [ "main" ]
     paths:
-      - 'go/**'
+      - 'clients/go/**'
   pull_request:
     branches: [ "main" ]
     paths:
-      - 'go/**'
+      - 'clients/go/**'
 
 jobs:
   build:
@@ -16,16 +16,16 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Set up Go
         uses: actions/setup-go@v4
         with:
-          go-version: 1.20
+          go-version: 1.22
 
       - name: Install dependencies
         run: |
-          cd go/jams
+          cd clients/go/jams
           go mod download
           go install github.com/vektra/mockery/v2/.../
           go install github.com/golangci/golangci-lint/cmd/golangci-lint@v1.51.2
@@ -34,5 +34,5 @@ jobs:
 
       - name: Run Makefile
         run: |
-          cd go/jams
+          cd clients/go/jams
           make all
