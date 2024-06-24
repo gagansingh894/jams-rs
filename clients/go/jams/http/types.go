@@ -5,6 +5,10 @@ type PredictRequest struct {
 	Input     string `json:"input"`
 }
 
+type PredictResponse struct {
+	Output string `json:"output"`
+}
+
 type AddModelRequest struct {
 	ModelName string `json:"model_name"`
 }
