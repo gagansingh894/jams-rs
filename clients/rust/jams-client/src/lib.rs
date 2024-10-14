@@ -1,14 +1,12 @@
-pub fn add(left: usize, right: usize) -> usize {
-    left + right
-}
+#![allow(dead_code)]
+pub mod common;
+mod grpc;
+pub mod http;
+pub mod types;
 
 #[cfg(test)]
 mod tests {
-    use super::*;
 
     #[test]
-    fn it_works() {
-        let result = add(2, 2);
-        assert_eq!(result, 4);
-    }
+    fn it_works() {}
 }
