@@ -1,0 +1,39 @@
+name: J.A.M.S Rust Client CI Pipeline
+
+on:
+  push:
+    branches: [ "main" ]
+    paths:
+      - 'clients/rust/**'
+  pull_request:
+    branches: [ "main" ]
+    paths:
+      - 'clients/rust/**'
+
+jobs:
+  build:
+    name: Lint and Test
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Rust
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+          override: true
+
+      - name: Install cargo-nextest
+        run: cargo install cargo-nextest
+
+      - name: Lint
+        run: |
+          cd clients/rust/jams-client
+          make lint
+
+
+
+      - name: Run tests
+        run: make nextest
