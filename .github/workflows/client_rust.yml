@@ -15,15 +15,21 @@ jobs:
     name: Lint and Test
     runs-on: ubuntu-latest
 
+    container:
+      image: rust:1.78
+      options: --user root
+      env:
+        PROTOC: /usr/bin/protoc
+
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Set up Rust
-        uses: actions-rs/toolchain@v1
-        with:
-          toolchain: stable
-          override: true
+      - name: Install Protoc
+        run: |
+          echo "Installing protoc..."
+          apt-get update
+          apt-get install -y protobuf-compiler
 
       - name: Install cargo-nextest
         run: cargo install cargo-nextest
@@ -33,7 +39,7 @@ jobs:
           cd clients/rust/jams-client
           make lint
 
-
-
       - name: Run tests
-        run: make nextest
+        run: |
+          cd clients/rust/jams-client
+          make nextest
