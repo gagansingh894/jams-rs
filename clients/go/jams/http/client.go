@@ -27,7 +27,7 @@ type client struct {
 
 func New(baseURL string) Client {
 	return &client{
-		baseURL: baseURL,
+		baseURL: fmt.Sprintf("http://%s", baseURL),
 	}
 }
 
