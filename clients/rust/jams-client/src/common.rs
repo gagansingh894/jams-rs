@@ -41,3 +41,21 @@ impl Predictions {
         self.0.iter_mut()
     }
 }
+
+#[cfg(test)]
+mod tests {
+    #[test]
+    fn successfully_parses_bytes_into_predictions() {}
+
+    #[test]
+    fn successfully_converts_predictions_into_2d_vector() {}
+
+    #[test]
+    fn successfully_returns_a_mutable_iterator_for_predictions() {}
+
+    #[test]
+    fn successfully_returns_an_iterator_for_predictions() {}
+
+    #[test]
+    fn fails_to_parse_bytes_into_predictions() {}
+}
