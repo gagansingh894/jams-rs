@@ -1,16 +1,31 @@
 use crate::common::{GetModelsResponse, Predictions};
-use crate::types::{AddModelRequest, PredictRequest, UpdateModelRequest};
 use async_trait::async_trait;
+use serde::Serialize;
+
+#[derive(Serialize)]
+struct PredictRequest {
+    model_name: String,
+    input: String,
+}
+
+#[derive(Serialize)]
+struct AddModelRequest {
+    model_name: String,
+}
+
+#[derive(Serialize)]
+struct UpdateModelRequest {
+    model_name: String,
+}
 
 #[async_trait]
 pub trait Client {
     async fn health_check(&self) -> anyhow::Result<()>;
-    async fn predict(&self, req: PredictRequest) -> anyhow::Result<Predictions>;
-
-    async fn add_model(&self, req: AddModelRequest) -> anyhow::Result<()>;
-    async fn update_model(&self, req: UpdateModelRequest) -> anyhow::Result<()>;
-
-    async fn delete_model(&self, model_name: &str) -> anyhow::Result<()>;
+    async fn predict(&self, model_name: String, model_input: String)
+        -> anyhow::Result<Predictions>;
+    async fn add_model(&self, model_name: String) -> anyhow::Result<()>;
+    async fn update_model(&self, model_name: String) -> anyhow::Result<()>;
+    async fn delete_model(&self, model_name: String) -> anyhow::Result<()>;
     async fn get_models(&self) -> anyhow::Result<GetModelsResponse>;
 }
 
@@ -27,6 +42,7 @@ impl ApiClient {
                 anyhow::bail!("failed to create reqwest client: {}", err)
             }
         };
+        let base_url = format!("http://{}", base_url);
 
         Ok(ApiClient { client, base_url })
     }
@@ -52,9 +68,22 @@ impl Client for ApiClient {
         }
     }
 
-    async fn predict(&self, req: PredictRequest) -> anyhow::Result<Predictions> {
+    async fn predict(
+        &self,
+        model_name: String,
+        model_input: String,
+    ) -> anyhow::Result<Predictions> {
         let url = format!("{}/{}", self.base_url, "api/predict");
-        match self.client.post(url).json(&req).send().await {
+        match self
+            .client
+            .post(url)
+            .json(&PredictRequest {
+                model_name,
+                input: model_input,
+            })
+            .send()
+            .await
+        {
             Ok(resp) => match resp.status().is_success() {
                 true => {
                     let bytes = resp.bytes().await?;
@@ -81,9 +110,15 @@ impl Client for ApiClient {
         }
     }
 
-    async fn add_model(&self, req: AddModelRequest) -> anyhow::Result<()> {
+    async fn add_model(&self, model_name: String) -> anyhow::Result<()> {
         let url = format!("{}/{}", self.base_url, "api/models");
-        match self.client.post(url).json(&req).send().await {
+        match self
+            .client
+            .post(url)
+            .json(&AddModelRequest { model_name })
+            .send()
+            .await
+        {
             Ok(resp) => match resp.status().is_success() {
                 true => Ok(()),
                 false => {
@@ -96,9 +131,15 @@ impl Client for ApiClient {
         }
     }
 
-    async fn update_model(&self, req: UpdateModelRequest) -> anyhow::Result<()> {
+    async fn update_model(&self, model_name: String) -> anyhow::Result<()> {
         let url = format!("{}/{}", self.base_url, "api/models");
-        match self.client.put(url).json(&req).send().await {
+        match self
+            .client
+            .put(url)
+            .json(&UpdateModelRequest { model_name })
+            .send()
+            .await
+        {
             Ok(resp) => match resp.status().is_success() {
                 true => Ok(()),
                 false => {
@@ -114,7 +155,7 @@ impl Client for ApiClient {
         }
     }
 
-    async fn delete_model(&self, model_name: &str) -> anyhow::Result<()> {
+    async fn delete_model(&self, model_name: String) -> anyhow::Result<()> {
         let url = format!(
             "{}/{}?model_name={}",
             self.base_url, "api/models", model_name

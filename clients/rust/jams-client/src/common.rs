@@ -1,14 +1,14 @@
 use serde::Deserialize;
 use std::slice::{Iter, IterMut};
 
-#[derive(Deserialize)]
+#[derive(Deserialize, Debug)]
 pub struct GetModelsResponse {
     /// Total number of models.
     pub total: i32,
     /// List of model names.
     pub models: Vec<Metadata>,
 }
-#[derive(Deserialize)]
+#[derive(Deserialize, Debug)]
 pub struct Metadata {
     pub name: String,
     pub framework: String,
