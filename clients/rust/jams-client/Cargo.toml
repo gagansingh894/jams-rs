@@ -7,5 +7,15 @@ homepage = "https://github.com/gagansingh894/jams-rs"
 repository = "https://github.com/gagansingh894/jams-rs/tree/main/clients/rust/jams-proto"
 license = "Apache-2.0"
 
+[lib]
+name = "jams_client"
+crate-type = ["lib"]
+
 [dependencies]
 jams-proto = {path = "../../../internal/jams-proto", version = "0.1"}
+anyhow = "1.0.86"
+serde = { version = "1.0.203", features = ["derive"] }
+reqwest = { version = "0.12", default-features = false, features = ["json", "rustls-tls"] }
+serde_json = "1.0.117"
+async-trait = "0.1.80"
+tonic = "0.11"
