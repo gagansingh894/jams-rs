@@ -1,10 +1,15 @@
-name: Build
+name: J.A.M.S CI/CD Pipeline
 
+# todo: run language specific cicd pipelines
 on:
   push:
     branches: [ "main" ]
+    paths-ignore:
+      - 'clients/**'
   pull_request:
     branches: [ "main" ]
+    paths-ignore:
+      - 'clients/**'
 
 env:
   CARGO_TERM_COLOR: always
@@ -147,3 +152,15 @@ jobs:
 
       - name: Push Docker image
         run: docker push ${{ secrets.DOCKER_USERNAME }}/jams:latest
+
+      - name: Build Docker image for HTTP testing
+        run: docker build -t ${{ secrets.DOCKER_USERNAME }}/jams_http:latest -f build/Dockerfile_http .
+
+      - name: Push Docker image - HTTP testing
+        run: docker push ${{ secrets.DOCKER_USERNAME }}/jams_http:latest
+
+      - name: Build Docker image for gRPC testing
+        run: docker build -t ${{ secrets.DOCKER_USERNAME }}/jams_grpc:latest -f build/Dockerfile_grpc .
+
+      - name: Push Docker image - gRPC testing
+        run: docker push ${{ secrets.DOCKER_USERNAME }}/jams_grpc:latest
