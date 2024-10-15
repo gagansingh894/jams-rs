@@ -23,7 +23,11 @@ lint:
 
 nextest:
 	@echo "Testing all projects with cargo nextest"
-	cargo nextest run
+	cargo nextest run -p jams-core -p jams-serve --retries 2
+
+watch:
+	@echo "Starting cargo watch with cargo nextest"
+	cargo watch -x check -x 'nextest run -p jams-core -p jams-serve --retries 2'
 
 test:
 	@echo "Testing all projects with cargo test"
