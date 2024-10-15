@@ -1,5 +1,5 @@
 FROM --platform=linux/amd64 gagansingh894/jams
 LABEL authors="gagandeepsingh"
 RUN mkdir -p /model_store
-COPY assets/model_store /model_store
+COPY build/assets/model_store /model_store
 CMD ["start", "grpc", "--model-dir", "/model_store"]
