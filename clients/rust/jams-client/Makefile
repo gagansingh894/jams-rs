@@ -19,11 +19,11 @@ format:
 lint:
 	@echo "Linting all projects with cargo"
 	@rustup component add clippy 2> /dev/null
-	cargo clippy --all-targets --all-features -- -D warnings
+	cargo clippy --package jams-client --all-targets --all-features -- -D warnings
 
 nextest:
 	@echo "Testing all projects with cargo nextest"
-	cargo nextest run -p jams-serve --retries 2
+	cargo nextest run -p jams-client --retries 2
 
 test:
 	@echo "Testing all projects with cargo test"
