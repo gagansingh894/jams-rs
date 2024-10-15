@@ -20,6 +20,19 @@ jobs:
       options: --user root
       env:
         PROTOC: /usr/bin/protoc
+        JAMS_HTTP_HOSTNAME: jams_http
+        JAMS_GRPC_HOSTNAME: jams_grpc
+
+    services:
+      jams_http:
+        image: gagansingh894/jams_http:latest
+        ports:
+          - 3000:3000
+
+      jams_grpc:
+        image: gagansingh894/jams_grpc:latest
+        ports:
+          - 4000:4000
 
     steps:
       - name: Checkout
@@ -30,6 +43,7 @@ jobs:
           echo "Installing protoc..."
           apt-get update
           apt-get install -y protobuf-compiler
+          rm -rf /var/lib/apt/lists/*
 
       - name: Install cargo-nextest
         run: cargo install cargo-nextest

@@ -1,5 +1,5 @@
 use serde::Deserialize;
-use std::slice::{Iter, IterMut};
+use std::collections::HashMap;
 
 #[derive(Deserialize, Debug)]
 pub struct GetModelsResponse {
@@ -17,7 +17,7 @@ pub struct Metadata {
 }
 
 #[derive(Deserialize, Clone, Debug)]
-pub struct Predictions(Vec<Vec<f64>>);
+pub struct Predictions(HashMap<String, Vec<Vec<f64>>>);
 
 impl Predictions {
     #[allow(clippy::should_implement_trait)]
@@ -29,33 +29,51 @@ impl Predictions {
     #[allow(clippy::wrong_self_convention)]
     pub fn to_vec(self) -> Vec<Vec<f64>> {
         self.0
-    }
-
-    /// Returns an iterator over the feature values.
-    pub fn iter(&self) -> Iter<'_, Vec<f64>> {
-        self.0.iter()
-    }
-
-    /// Returns a mutable iterator over the feature values.
-    pub fn iter_mut(&mut self) -> IterMut<'_, Vec<f64>> {
-        self.0.iter_mut()
+            .values()
+            .flat_map(|vecs| vecs.iter().cloned())
+            .collect()
     }
 }
 
 #[cfg(test)]
 mod tests {
-    #[test]
-    fn successfully_parses_bytes_into_predictions() {}
+    use super::*;
 
     #[test]
-    fn successfully_converts_predictions_into_2d_vector() {}
+    fn successfully_parses_bytes_into_predictions() {
+        // Act
+        let data= "{\"predictions\":[[0.7560540820707359],[1.152310804888906],[0.45694264204906754],[0.912618828350997],[0.08037521123549339],[0.8689713450910137],[0.4549892870109407],[0.5386298352854039],[0.471754086353748],[0.18414340024741896]]}".to_string();
+
+        // Arrange
+        let result = Predictions::from_bytes(data.as_bytes());
+
+        // Assert
+        assert!(result.is_ok())
+    }
 
     #[test]
-    fn successfully_returns_a_mutable_iterator_for_predictions() {}
+    fn successfully_converts_predictions_into_2d_vector() {
+        // Act
+        let data= "{\"predictions\":[[0.7560540820707359],[1.152310804888906],[0.45694264204906754],[0.912618828350997],[0.08037521123549339],[0.8689713450910137],[0.4549892870109407],[0.5386298352854039],[0.471754086353748],[0.18414340024741896]]}".to_string();
+
+        // Arrange
+        let result = Predictions::from_bytes(data.as_bytes());
+
+        // Assert
+        assert!(result.is_ok());
+        let vec = result.unwrap().to_vec();
+        assert_eq!(vec.len(), 10);
+    }
 
     #[test]
-    fn successfully_returns_an_iterator_for_predictions() {}
+    fn fails_to_parse_bytes_into_predictions() {
+        // Act
+        let data = "unsupported string value".to_string();
 
-    #[test]
-    fn fails_to_parse_bytes_into_predictions() {}
+        // Arrange
+        let result = Predictions::from_bytes(data.as_bytes());
+
+        // Assert
+        assert!(result.is_err())
+    }
 }
