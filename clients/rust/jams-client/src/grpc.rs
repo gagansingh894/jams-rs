@@ -27,6 +27,7 @@ pub struct ApiClient {
 
 impl ApiClient {
     async fn new(base_url: String) -> anyhow::Result<Self> {
+        let base_url = format!("http://{}", base_url);
         let client = match ModelServerClient::connect(base_url.clone()).await {
             Ok(client) => client,
             Err(err) => {
@@ -142,5 +143,115 @@ impl Client for ApiClient {
                 anyhow::bail!("failed to get models ❌: {}", status.to_string())
             }
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    const URL: &str = "0.0.0.0:4000";
+
+    #[tokio::test]
+    async fn successfully_sends_health_check_request() {
+        // Arrange
+        let mut client = ApiClient::new(URL.to_string()).await.unwrap();
+
+        // Act
+        let resp = client.health_check().await;
+
+        // Assert
+        assert!(resp.is_ok())
+    }
+
+    #[tokio::test]
+    async fn successfully_sends_get_model_request() {
+        // Arrange
+        let mut client = ApiClient::new(URL.to_string()).await.unwrap();
+
+        // Act
+        let result = client.get_models().await;
+
+        // Assert
+        assert!(result.is_ok());
+        let res = result.unwrap();
+        // We will have some models as we are loading from assets/model_store
+        assert!(!res.models.is_empty());
+    }
+
+    #[tokio::test]
+    async fn successfully_sends_delete_model_request() {
+        // Arrange
+        let mut client = ApiClient::new(URL.to_string()).await.unwrap();
+
+        // Act
+        let resp = client
+            .delete_model("my_awesome_californiahousing_model".to_string())
+            .await;
+
+        // Assert
+        assert!(resp.is_ok())
+    }
+
+    #[tokio::test]
+    async fn successfully_sends_add_model_request() {
+        // Arrange
+        let mut client = ApiClient::new(URL.to_string()).await.unwrap();
+
+        // Act
+        client
+            .delete_model("my_awesome_penguin_model".to_string())
+            .await
+            .unwrap();
+
+        let resp = client
+            .add_model("tensorflow-my_awesome_penguin_model".to_string())
+            .await;
+
+        // Assert
+        assert!(resp.is_ok())
+    }
+
+    #[tokio::test]
+    async fn successfully_sends_update_model_request() {
+        // Arrange
+        let mut client = ApiClient::new(URL.to_string()).await.unwrap();
+
+        // Act
+        let resp = client.update_model("titanic_model".to_string()).await;
+
+        // Assert
+        assert!(resp.is_ok())
+    }
+
+    #[tokio::test]
+    async fn successfully_sends_predict_model_request() {
+        // Arrange
+        let mut client = ApiClient::new(URL.to_string()).await.unwrap();
+
+        // Act
+        let model_name = "titanic_model".to_string();
+        let model_input = serde_json::json!(
+                {
+                    "pclass": ["1", "3"],
+                    "sex": ["male", "female"],
+                    "age": [22.0, 23.79929292929293],
+                    "sibsp": ["0", "1", ],
+                    "parch": ["0", "0"],
+                    "fare": [151.55, 14.4542],
+                    "embarked": ["S", "C"],
+                    "class": ["First", "Third"],
+                    "who": ["man", "woman"],
+                    "adult_male": ["True", "False"],
+                    "deck": ["Unknown", "Unknown"],
+                    "embark_town": ["Southampton", "Cherbourg"],
+                    "alone": ["True", "False"]
+                }
+        )
+        .to_string();
+        tokio::time::sleep(tokio::time::Duration::from_millis(200)).await;
+        let resp = client.predict(model_name, model_input).await;
+
+        // Assert
+        assert!(resp.is_ok())
     }
 }
