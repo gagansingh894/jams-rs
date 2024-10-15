@@ -25,6 +25,7 @@ type Client interface {
 // todo: Add batching
 type client struct {
 	client v1.ModelServerClient
+	conn   *grpc.ClientConn
 }
 
 func New(url string) (Client, error) {
@@ -32,10 +33,10 @@ func New(url string) (Client, error) {
 	if err != nil {
 		return nil, fmt.Errorf("failed to create client: %w", err)
 	}
-	defer conn.Close()
 
 	return &client{
 		client: v1.NewModelServerClient(conn),
+		conn:   conn,
 	}, nil
 }
 
@@ -44,6 +45,7 @@ func (c *client) HealthCheck(ctx context.Context, _ *emptypb.Empty, opts ...grpc
 	if err != nil {
 		return fmt.Errorf("failed to check health: %w", err)
 	}
+	defer c.conn.Close()
 
 	return nil
 }
