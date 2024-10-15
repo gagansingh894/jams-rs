@@ -2,218 +2,88 @@ package http
 
 import (
 	"context"
-	"github.com/gagansingh894/jams-rs/clients/go/jams/types"
-	"net/http"
-	"reflect"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
-func TestNew(t *testing.T) {
-	type args struct {
-		baseURL string
-	}
-	tests := []struct {
-		name string
-		args args
-		want Client
-	}{
-		// TODO: Add test cases.
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			if got := New(tt.args.baseURL); !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("New() = %v, want %v", got, tt.want)
-			}
-		})
-	}
+const URL = "0.0.0.0:3000"
+
+func TestHealthCheck(t *testing.T) {
+	// Arrange
+	ctx := context.Background()
+	client := New(URL)
+
+	// Act
+	err := client.HealthCheck(ctx)
+
+	// Assert
+	assert.NoError(t, err)
 }
 
-func Test_client_AddModel(t *testing.T) {
-	type fields struct {
-		baseURL string
-		Client  http.Client
-	}
-	type args struct {
-		ctx     context.Context
-		request *AddModelRequest
-	}
-	tests := []struct {
-		name    string
-		fields  fields
-		args    args
-		wantErr bool
-	}{
-		// TODO: Add test cases.
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			c := &client{
-				baseURL: tt.fields.baseURL,
-				Client:  tt.fields.Client,
-			}
-			if err := c.AddModel(tt.args.ctx, tt.args.request); (err != nil) != tt.wantErr {
-				t.Errorf("AddModel() error = %v, wantErr %v", err, tt.wantErr)
-			}
-		})
-	}
+func TestGetModels(t *testing.T) {
+	// Arrange
+	ctx := context.Background()
+	client := New(URL)
+
+	// Act
+	resp, err := client.GetModels(ctx)
+
+	// Assert
+	assert.NoError(t, err)
+	assert.NotNil(t, resp)
 }
 
-func Test_client_DeleteModel(t *testing.T) {
-	type fields struct {
-		baseURL string
-		Client  http.Client
-	}
-	type args struct {
-		ctx       context.Context
-		modelName string
-	}
-	tests := []struct {
-		name    string
-		fields  fields
-		args    args
-		wantErr bool
-	}{
-		// TODO: Add test cases.
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			c := &client{
-				baseURL: tt.fields.baseURL,
-				Client:  tt.fields.Client,
-			}
-			if err := c.DeleteModel(tt.args.ctx, tt.args.modelName); (err != nil) != tt.wantErr {
-				t.Errorf("DeleteModel() error = %v, wantErr %v", err, tt.wantErr)
-			}
-		})
-	}
+func TestDeleteModel(t *testing.T) {
+	// Arrange
+	ctx := context.Background()
+	client := New(URL)
+
+	// Act
+	err := client.DeleteModel(ctx, "my_awesome_californiahousing_model")
+
+	// Assert
+	assert.NoError(t, err)
 }
 
-func Test_client_GetModels(t *testing.T) {
-	type fields struct {
-		baseURL string
-		Client  http.Client
-	}
-	type args struct {
-		ctx context.Context
-	}
-	tests := []struct {
-		name    string
-		fields  fields
-		args    args
-		want    *GetModelsResponse
-		wantErr bool
-	}{
-		// TODO: Add test cases.
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			c := &client{
-				baseURL: tt.fields.baseURL,
-				Client:  tt.fields.Client,
-			}
-			got, err := c.GetModels(tt.args.ctx)
-			if (err != nil) != tt.wantErr {
-				t.Errorf("GetModels() error = %v, wantErr %v", err, tt.wantErr)
-				return
-			}
-			if !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("GetModels() got = %v, want %v", got, tt.want)
-			}
-		})
-	}
+func TestAddModel(t *testing.T) {
+	// Arrange
+	ctx := context.Background()
+	client := New(URL)
+
+	// Act
+	err := client.DeleteModel(ctx, "my_awesome_penguin_model")
+	assert.NoError(t, err)
+	err = client.AddModel(ctx, &AddModelRequest{ModelName: "tensorflow-my_awesome_penguin_model"})
+
+	// Assert
+	assert.NoError(t, err)
 }
 
-func Test_client_HealthCheck(t *testing.T) {
-	type fields struct {
-		baseURL string
-		Client  http.Client
-	}
-	type args struct {
-		ctx context.Context
-	}
-	tests := []struct {
-		name    string
-		fields  fields
-		args    args
-		wantErr bool
-	}{
-		// TODO: Add test cases.
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			c := &client{
-				baseURL: tt.fields.baseURL,
-				Client:  tt.fields.Client,
-			}
-			if err := c.HealthCheck(tt.args.ctx); (err != nil) != tt.wantErr {
-				t.Errorf("HealthCheck() error = %v, wantErr %v", err, tt.wantErr)
-			}
-		})
-	}
+func TestUpdateModel(t *testing.T) {
+	// Arrange
+	ctx := context.Background()
+	client := New(URL)
+
+	// Act
+	err := client.UpdateModel(ctx, &UpdateModelRequest{ModelName: "titanic_model"})
+
+	// Assert
+	assert.NoError(t, err)
 }
 
-func Test_client_Predict(t *testing.T) {
-	type fields struct {
-		baseURL string
-		Client  http.Client
-	}
-	type args struct {
-		ctx     context.Context
-		request *PredictRequest
-	}
-	tests := []struct {
-		name    string
-		fields  fields
-		args    args
-		want    types.Prediction
-		wantErr bool
-	}{
-		// TODO: Add test cases.
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			c := &client{
-				baseURL: tt.fields.baseURL,
-				Client:  tt.fields.Client,
-			}
-			got, err := c.Predict(tt.args.ctx, tt.args.request)
-			if (err != nil) != tt.wantErr {
-				t.Errorf("Predict() error = %v, wantErr %v", err, tt.wantErr)
-				return
-			}
-			if !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("Predict() got = %v, want %v", got, tt.want)
-			}
-		})
-	}
-}
+func TestPredict(t *testing.T) {
+	// Arrange
+	ctx := context.Background()
+	client := New(URL)
 
-func Test_client_UpdateModel(t *testing.T) {
-	type fields struct {
-		baseURL string
-		Client  http.Client
-	}
-	type args struct {
-		ctx     context.Context
-		request *UpdateModelRequest
-	}
-	tests := []struct {
-		name    string
-		fields  fields
-		args    args
-		wantErr bool
-	}{
-		// TODO: Add test cases.
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			c := &client{
-				baseURL: tt.fields.baseURL,
-				Client:  tt.fields.Client,
-			}
-			if err := c.UpdateModel(tt.args.ctx, tt.args.request); (err != nil) != tt.wantErr {
-				t.Errorf("UpdateModel() error = %v, wantErr %v", err, tt.wantErr)
-			}
-		})
-	}
+	// Act
+	resp, err := client.Predict(ctx, &PredictRequest{
+		ModelName: "titanic_model",
+		Input:     "{\"adult_male\":[\"True\",\"False\"],\"age\":[22.0,23.79929292929293],\"alone\":[\"True\",\"False\"],\"class\":[\"First\",\"Third\"],\"deck\":[\"Unknown\",\"Unknown\"],\"embark_town\":[\"Southampton\",\"Cherbourg\"],\"embarked\":[\"S\",\"C\"],\"fare\":[151.55,14.4542],\"parch\":[\"0\",\"0\"],\"pclass\":[\"1\",\"3\"],\"sex\":[\"male\",\"female\"],\"sibsp\":[\"0\",\"1\"],\"who\":[\"man\",\"woman\"]}",
+	})
+
+	// Assert
+	assert.NoError(t, err)
+	assert.NotNil(t, resp)
 }
