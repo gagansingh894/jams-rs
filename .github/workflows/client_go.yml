@@ -15,14 +15,28 @@ jobs:
     name: Lint and Test
     runs-on: ubuntu-latest
 
+    container:
+      image: golang:1.23.1
+      options: --user root
+      env:
+        PROTOC: /usr/bin/protoc
+        JAMS_HTTP_HOSTNAME: jams_http
+        JAMS_GRPC_HOSTNAME: jams_grpc
+
+    services:
+      jams_http:
+        image: gagansingh894/jams_http:latest
+        ports:
+          - 3000:3000
+
+      jams_grpc:
+        image: gagansingh894/jams_grpc:latest
+        ports:
+          - 4000:4000
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-
-      - name: Set up Go
-        uses: actions/setup-go@v4
-        with:
-          go-version: 1.22
 
       - name: Install dependencies
         run: |
