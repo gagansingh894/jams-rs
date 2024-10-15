@@ -53,7 +53,11 @@ jobs:
         run: cargo install cargo-nextest
 
       - name: Lint
-        run: make lint
+        run: |
+          cd clients/rust/jams-client
+          make lint
 
       - name: Run tests
-        run: make nextest
+        run: |
+          cd clients/rust/jams-client
+          make nextest
