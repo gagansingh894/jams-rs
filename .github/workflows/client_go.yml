@@ -16,7 +16,7 @@ jobs:
     runs-on: ubuntu-latest
 
     container:
-      image: golang:1.22
+      image: golang:1.23.1
       options: --user root
       env:
         PROTOC: /usr/bin/protoc
@@ -43,16 +43,11 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Set up Go
-        uses: actions/setup-go@v4
-        with:
-          go-version: 1.22
-
       - name: Install dependencies
         run: |
           cd clients/go/jams
           go mod download
-          go install github.com/vektra/mockery/v2/...@2.43.2
+          go install github.com/vektra/mockery/v2/...@latest
           go install github.com/golangci/golangci-lint/cmd/golangci-lint@v1.51.2
           go install google.golang.org/protobuf/cmd/protoc-gen-go@latest
           go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@latest
