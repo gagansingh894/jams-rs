@@ -2,17 +2,25 @@ package http
 
 import (
 	"context"
+	"fmt"
+	"os"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
 )
 
-const URL = "0.0.0.0:3000"
+func getURL() string {
+	hostname := os.Getenv("JAMS_HTTP_HOSTNAME")
+	if hostname == "" {
+		hostname = "0.0.0.0"
+	}
+	return fmt.Sprintf("%s:3000", hostname)
+}
 
 func TestHealthCheck(t *testing.T) {
 	// Arrange
 	ctx := context.Background()
-	client := New(URL)
+	client := New(getURL())
 
 	// Act
 	err := client.HealthCheck(ctx)
@@ -24,7 +32,7 @@ func TestHealthCheck(t *testing.T) {
 func TestGetModels(t *testing.T) {
 	// Arrange
 	ctx := context.Background()
-	client := New(URL)
+	client := New(getURL())
 
 	// Act
 	resp, err := client.GetModels(ctx)
@@ -37,7 +45,7 @@ func TestGetModels(t *testing.T) {
 func TestDeleteModel(t *testing.T) {
 	// Arrange
 	ctx := context.Background()
-	client := New(URL)
+	client := New(getURL())
 
 	// Act
 	err := client.DeleteModel(ctx, "my_awesome_californiahousing_model")
@@ -49,7 +57,7 @@ func TestDeleteModel(t *testing.T) {
 func TestAddModel(t *testing.T) {
 	// Arrange
 	ctx := context.Background()
-	client := New(URL)
+	client := New(getURL())
 
 	// Act
 	err := client.DeleteModel(ctx, "my_awesome_penguin_model")
@@ -63,7 +71,7 @@ func TestAddModel(t *testing.T) {
 func TestUpdateModel(t *testing.T) {
 	// Arrange
 	ctx := context.Background()
-	client := New(URL)
+	client := New(getURL())
 
 	// Act
 	err := client.UpdateModel(ctx, &UpdateModelRequest{ModelName: "titanic_model"})
@@ -75,7 +83,7 @@ func TestUpdateModel(t *testing.T) {
 func TestPredict(t *testing.T) {
 	// Arrange
 	ctx := context.Background()
-	client := New(URL)
+	client := New(getURL())
 
 	// Act
 	resp, err := client.Predict(ctx, &PredictRequest{

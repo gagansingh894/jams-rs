@@ -2,6 +2,8 @@ package grpc
 
 import (
 	"context"
+	"fmt"
+	"os"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -10,12 +12,18 @@ import (
 	"github.com/gagansingh894/jams-rs/clients/go/jams/pkg/pb/jams"
 )
 
-const URL = "[::]:4000"
+func getURL() string {
+	hostname := os.Getenv("JAMS_GRPC_HOSTNAME")
+	if hostname == "" {
+		hostname = "0.0.0.0"
+	}
+	return fmt.Sprintf("%s:4000", hostname)
+}
 
 func TestHealthCheck(t *testing.T) {
 	// Arrange
 	ctx := context.Background()
-	client, err := New(URL)
+	client, err := New(getURL())
 	assert.Nil(t, err)
 
 	// Act
@@ -28,7 +36,7 @@ func TestHealthCheck(t *testing.T) {
 func TestGetModels(t *testing.T) {
 	// Arrange
 	ctx := context.Background()
-	client, err := New(URL)
+	client, err := New(getURL())
 	assert.Nil(t, err)
 
 	// Act
@@ -42,7 +50,7 @@ func TestGetModels(t *testing.T) {
 func TestDeleteModel(t *testing.T) {
 	// Arrange
 	ctx := context.Background()
-	client, err := New(URL)
+	client, err := New(getURL())
 	assert.Nil(t, err)
 
 	// Act
@@ -55,7 +63,7 @@ func TestDeleteModel(t *testing.T) {
 func TestAddModel(t *testing.T) {
 	// Arrange
 	ctx := context.Background()
-	client, err := New(URL)
+	client, err := New(getURL())
 	assert.Nil(t, err)
 
 	// Act
@@ -70,7 +78,7 @@ func TestAddModel(t *testing.T) {
 func TestUpdateModel(t *testing.T) {
 	// Arrange
 	ctx := context.Background()
-	client, err := New(URL)
+	client, err := New(getURL())
 	assert.Nil(t, err)
 
 	// Act
@@ -83,7 +91,7 @@ func TestUpdateModel(t *testing.T) {
 func TestPredict(t *testing.T) {
 	// Arrange
 	ctx := context.Background()
-	client, err := New(URL)
+	client, err := New(getURL())
 	assert.Nil(t, err)
 
 	// Act

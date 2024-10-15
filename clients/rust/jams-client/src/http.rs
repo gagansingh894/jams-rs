@@ -200,12 +200,16 @@ impl Client for ApiClient {
 #[cfg(test)]
 mod tests {
     use super::*;
-    const URL: &str = "0.0.0.0:3000";
+    use std::env;
+    fn get_url() -> String {
+        let hostname = env::var("JAMS_HTTP_HOSTNAME").unwrap_or("0.0.0.0".to_string());
+        format!("{}:3000", hostname)
+    }
 
     #[tokio::test]
     async fn successfully_sends_health_check_request() {
         // Arrange
-        let client = ApiClient::new(URL.to_string()).unwrap();
+        let client = ApiClient::new(get_url()).unwrap();
 
         // Act
         let resp = client.health_check().await;
@@ -217,7 +221,7 @@ mod tests {
     #[tokio::test]
     async fn successfully_sends_get_model_request() {
         // Arrange
-        let client = ApiClient::new(URL.to_string()).unwrap();
+        let client = ApiClient::new(get_url()).unwrap();
 
         // Act
         let result = client.get_models().await;
@@ -232,7 +236,7 @@ mod tests {
     #[tokio::test]
     async fn successfully_sends_delete_model_request() {
         // Arrange
-        let client = ApiClient::new(URL.to_string()).unwrap();
+        let client = ApiClient::new(get_url()).unwrap();
 
         // Act
         let resp = client
@@ -246,7 +250,7 @@ mod tests {
     #[tokio::test]
     async fn successfully_sends_add_model_request() {
         // Arrange
-        let client = ApiClient::new(URL.to_string()).unwrap();
+        let client = ApiClient::new(get_url()).unwrap();
 
         // Act
         client
@@ -265,7 +269,7 @@ mod tests {
     #[tokio::test]
     async fn successfully_sends_update_model_request() {
         // Arrange
-        let client = ApiClient::new(URL.to_string()).unwrap();
+        let client = ApiClient::new(get_url()).unwrap();
 
         // Act
         let resp = client.update_model("titanic_model".to_string()).await;
@@ -277,7 +281,7 @@ mod tests {
     #[tokio::test]
     async fn successfully_sends_predict_model_request() {
         // Arrange
-        let client = ApiClient::new(URL.to_string()).unwrap();
+        let client = ApiClient::new(get_url()).unwrap();
 
         // Act
         let model_name = "titanic_model".to_string();
