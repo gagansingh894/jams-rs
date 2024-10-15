@@ -30,7 +30,7 @@ use tonic::transport::Server;
 ///
 pub async fn start(config: server::Config) -> anyhow::Result<()> {
     // init port number
-    let port = config.port.unwrap_or(3000);
+    let port = config.port.unwrap_or(4000);
 
     // set log level
     let use_debug_level = config.use_debug_level.unwrap_or(false);
