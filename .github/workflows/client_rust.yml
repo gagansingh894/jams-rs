@@ -21,12 +21,25 @@ jobs:
       env:
         PROTOC: /usr/bin/protoc
 
+    services:
+      jams-http:
+        image: gagansingh894/jams-http:latest
+        ports:
+          - 3000:3000
+        env:
+          TEST_MODEL_DIR: ${{ github.workspace }}/assets/model_store
+
+      jams-grpc:
+        image: gagansingh894/jams-grpc:latest
+        ports:
+          - 4000:4000
+        env:
+          TEST_MODEL_DIR: ${{ github.workspace }}/assets/model_store
+
     steps:
-      # Step 1: Checkout the repository
       - name: Checkout
         uses: actions/checkout@v4
 
-      # Step 2: Install Protoc
       - name: Install Protoc
         run: |
           echo "Installing protoc..."
@@ -34,45 +47,11 @@ jobs:
           apt-get install -y protobuf-compiler
           rm -rf /var/lib/apt/lists/*
 
-      # Step 3: Install cargo-nextest
       - name: Install cargo-nextest
         run: cargo install cargo-nextest
 
-      # Step 4: Set up Docker
-      - name: Set up Docker
-        run: |
-          apt-get update
-          apt-get install -y docker.io
-          systemctl start docker
-          systemctl enable docker
+      - name: Lint
+        run: make lint
 
-      # Step 5: Start jams-http service in default bridge network
-      - name: Start jams-http Service
-        run: |
-          docker run --rm -d \
-          --name jams-http \
-          -v ${{ github.workspace }}/assets/model_store:/model_store \
-          -p 3000:3000 \
-          gagansingh894/jams start http --model-dir model_store
-
-      # Step 6: Start jams-grpc service in default bridge network
-      - name: Start jams-grpc Service
-        run: |
-          docker run --rm -d \
-          --name jams-grpc \
-          -v ${{ github.workspace }}/assets/model_store:/model_store \
-          -p 4000:4000 \
-          gagansingh894/jams start grpc --model-dir model_store
-
-      # Step 7: Run tests (ensure they interact with the services)
       - name: Run tests
-        run: |
-          # Ensure that Rust interacts with the containers via their Docker names
-          cargo nextest run --all
-
-      # Step 8: Clean up (stop the containers)
-      - name: Stop services
-        if: always()
-        run: |
-          docker stop jams-http
-          docker stop jams-grpc
+        run: make nextest
