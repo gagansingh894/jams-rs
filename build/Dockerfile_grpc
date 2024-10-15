@@ -1,3 +1,3 @@
 FROM --platform=linux/amd64 gagansingh894/jams
 LABEL authors="gagandeepsingh"
-CMD ["start", "grpc", "model-dir", "$TEST_MODEL_DIR"]
+CMD ["start", "grpc", "--model-dir", "$TEST_MODEL_DIR"]
