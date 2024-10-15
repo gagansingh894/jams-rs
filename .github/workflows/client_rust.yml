@@ -20,17 +20,19 @@ jobs:
       options: --user root
       env:
         PROTOC: /usr/bin/protoc
+        JAMS_HTTP_HOSTNAME: jams_http
+        JAMS_GRPC_HOSTNAME: jams_grpc
 
     services:
-      jams-http:
-        image: gagansingh894/jams-http:latest
+      jams_http:
+        image: gagansingh894/jams_http:latest
         ports:
           - 3000:3000
         env:
           TEST_MODEL_DIR: ${{ github.workspace }}/assets/model_store
 
-      jams-grpc:
-        image: gagansingh894/jams-grpc:latest
+      jams_grpc:
+        image: gagansingh894/jams_grpc:latest
         ports:
           - 4000:4000
         env:
