@@ -38,7 +38,15 @@ jobs:
       - name: Install cargo-nextest
         run: cargo install cargo-nextest
 
-      # Step 4: Start jams-http service in default bridge network
+      # Step 4: Set up Docker
+      - name: Set up Docker
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y docker.io
+          sudo systemctl start docker
+          sudo systemctl enable docker
+
+      # Step 5: Start jams-http service in default bridge network
       - name: Start jams-http Service
         run: |
           docker run --rm -d \
@@ -47,7 +55,7 @@ jobs:
           -p 3000:3000 \
           gagansingh894/jams start http --model-dir model_store
 
-      # Step 5: Start jams-grpc service in default bridge network
+      # Step 6: Start jams-grpc service in default bridge network
       - name: Start jams-grpc Service
         run: |
           docker run --rm -d \
@@ -56,13 +64,13 @@ jobs:
           -p 4000:4000 \
           gagansingh894/jams start grpc --model-dir model_store
 
-      # Step 6: Run tests (ensure they interact with the services)
+      # Step 7: Run tests (ensure they interact with the services)
       - name: Run tests
         run: |
           # Ensure that Rust interacts with the containers via their Docker names
           cargo nextest run --all
 
-      # Step 7: Clean up (stop the containers)
+      # Step 8: Clean up (stop the containers)
       - name: Stop services
         if: always()
         run: |
