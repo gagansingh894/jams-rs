@@ -1,3 +1,5 @@
 FROM --platform=linux/amd64 gagansingh894/jams
 LABEL authors="gagandeepsingh"
-CMD ["start", "grpc", "model-dir", "$TEST_MODEL_DIR"]
+RUN mkdir -p /model_store
+COPY assets/model_store /model_store
+CMD ["start", "http", "--model-dir", "/model_store"]
