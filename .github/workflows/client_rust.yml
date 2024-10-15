@@ -28,15 +28,11 @@ jobs:
         image: gagansingh894/jams_http:latest
         ports:
           - 3000:3000
-        env:
-          TEST_MODEL_DIR: ${{ github.workspace }}/assets/model_store
 
       jams_grpc:
         image: gagansingh894/jams_grpc:latest
         ports:
           - 4000:4000
-        env:
-          TEST_MODEL_DIR: ${{ github.workspace }}/assets/model_store
 
     steps:
       - name: Checkout
