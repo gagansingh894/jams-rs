@@ -1,4 +1,4 @@
-from typing import List
+from typing import Dict, List
 
 import json
 
@@ -20,7 +20,11 @@ class Prediction:
             ValueError: If the input data cannot be decoded or parsed.
         """
         try:
-            self._values: List[List[float]] = json.loads(data)
+            _values: Dict[str, List[List[float]]] = json.loads(data)
+            # Loop over the map to get the value (since we know there is only one key)
+            for value in _values.values():
+                self._values: List[List[float]] = value
+                break # Stop after the first (and only) iteration
         except (json.JSONDecodeError, TypeError) as e:
             raise ValueError(f"input data cannot be decoded or parsed: {e}")
 
