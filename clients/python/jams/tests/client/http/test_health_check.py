@@ -13,4 +13,3 @@ def test_successfully_makes_health_check_request() -> None:
 
     # Assert
     # If the function errors out then we can assume the test has failed
-

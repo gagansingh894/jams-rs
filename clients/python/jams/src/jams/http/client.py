@@ -19,7 +19,9 @@ class HttpClient:
 
     def predict(self, model_name: str, model_input: str) -> type.Prediction:
         url = f"{self.base_url}/api/predict"
-        request = models.PredictRequest(model_name=model_name, input=model_input).model_dump()
+        request = models.PredictRequest(
+            model_name=model_name, input=model_input
+        ).model_dump()
 
         try:
             response = requests.post(url, json=request)

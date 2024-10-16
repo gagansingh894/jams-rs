@@ -24,7 +24,7 @@ class Prediction:
             # Loop over the map to get the value (since we know there is only one key)
             for value in _values.values():
                 self._values: List[List[float]] = value
-                break # Stop after the first (and only) iteration
+                break  # Stop after the first (and only) iteration
         except (json.JSONDecodeError, TypeError) as e:
             raise ValueError(f"input data cannot be decoded or parsed: {e}")
 
