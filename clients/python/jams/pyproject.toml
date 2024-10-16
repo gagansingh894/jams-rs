@@ -1,5 +1,5 @@
 [tool.ruff]
-exclude = [".venv", "src/jams/proto"]
+exclude = [".venv", "venv", "src/jams/proto"]
 
 [tool.mypy]
 # Enable strict mode for comprehensive type checking
