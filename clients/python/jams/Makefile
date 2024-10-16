@@ -2,7 +2,7 @@
 
 all: format lint test
 
-setup-dependencies:
+requirements:
 	python -m venv venv
 	. venv/bin/activate
 	pip install -r requirements.txt
