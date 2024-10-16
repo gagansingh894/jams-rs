@@ -10,7 +10,7 @@ class GrpcClient:
         self._channel = grpc.insecure_channel(base_url)
         self._stub = jams_pb2_grpc.ModelServerStub(self._channel)  # type: ignore
 
-    def __del__(self):
+    def __del__(self) -> None:
         self._channel.close()
 
     def health_check(self) -> None:
