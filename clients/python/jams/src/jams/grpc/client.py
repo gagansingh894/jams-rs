@@ -10,13 +10,14 @@ class GrpcClient:
         self._channel = grpc.insecure_channel(base_url)
         self._stub = jams_pb2_grpc.ModelServerStub(self._channel)  # type: ignore
 
+    def __del__(self):
+        self._channel.close()
+
     def health_check(self) -> None:
         try:
             self._stub.HealthCheck(empty_pb2.Empty())
         except grpc.RpcError as e:
             raise e
-        finally:
-            self._channel.close()
 
     def predict(self, model_name: str, model_input: str) -> type.Prediction:
         try:
@@ -26,32 +27,24 @@ class GrpcClient:
             return type.Prediction(resp.output)
         except grpc.RpcError as e:
             raise e
-        finally:
-            self._channel.close()
 
     def add_model(self, model_name: str) -> None:
         try:
             self._stub.AddModel(jams_pb2.AddModelRequest(model_name=model_name))
         except grpc.RpcError as e:
             raise e
-        finally:
-            self._channel.close()
 
     def update_model(self, model_name: str) -> None:
         try:
             self._stub.UpdateModel(jams_pb2.UpdateModelRequest(model_name=model_name))
         except grpc.RpcError as e:
             raise e
-        finally:
-            self._channel.close()
 
     def delete_model(self, model_name: str) -> None:
         try:
             self._stub.DeleteModel(jams_pb2.DeleteModelRequest(model_name=model_name))
         except grpc.RpcError as e:
             raise e
-        finally:
-            self._channel.close()
 
     def get_models(self) -> jams_pb2.GetModelsResponse:
         try:
@@ -59,5 +52,3 @@ class GrpcClient:
             return resp
         except grpc.RpcError as e:
             raise e
-        finally:
-            self._channel.close()
