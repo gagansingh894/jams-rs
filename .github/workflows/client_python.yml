@@ -46,7 +46,7 @@ jobs:
       - name: Install Dependencies
         run: |
           cd clients/python/jams
-          make setup-dependencies
+          make requirements
 
       - name: Lint
         run: |
