@@ -1,13 +1,8 @@
+from google.protobuf import empty_pb2 as _empty_pb2
 from google.protobuf.internal import containers as _containers
 from google.protobuf import descriptor as _descriptor
 from google.protobuf import message as _message
-from typing import (
-    ClassVar as _ClassVar,
-    Iterable as _Iterable,
-    Mapping as _Mapping,
-    Optional as _Optional,
-    Union as _Union,
-)
+from typing import ClassVar as _ClassVar, Iterable as _Iterable, Mapping as _Mapping, Optional as _Optional, Union as _Union
 
 DESCRIPTOR: _descriptor.FileDescriptor
 
@@ -17,9 +12,7 @@ class PredictRequest(_message.Message):
     INPUT_FIELD_NUMBER: _ClassVar[int]
     model_name: str
     input: str
-    def __init__(
-        self, model_name: _Optional[str] = ..., input: _Optional[str] = ...
-    ) -> None: ...
+    def __init__(self, model_name: _Optional[str] = ..., input: _Optional[str] = ...) -> None: ...
 
 class PredictResponse(_message.Message):
     __slots__ = ("output",)
@@ -39,23 +32,12 @@ class GetModelsResponse(_message.Message):
         framework: str
         path: str
         last_updated: str
-        def __init__(
-            self,
-            name: _Optional[str] = ...,
-            framework: _Optional[str] = ...,
-            path: _Optional[str] = ...,
-            last_updated: _Optional[str] = ...,
-        ) -> None: ...
-
+        def __init__(self, name: _Optional[str] = ..., framework: _Optional[str] = ..., path: _Optional[str] = ..., last_updated: _Optional[str] = ...) -> None: ...
     TOTAL_FIELD_NUMBER: _ClassVar[int]
     MODELS_FIELD_NUMBER: _ClassVar[int]
     total: int
     models: _containers.RepeatedCompositeFieldContainer[GetModelsResponse.Model]
-    def __init__(
-        self,
-        total: _Optional[int] = ...,
-        models: _Optional[_Iterable[_Union[GetModelsResponse.Model, _Mapping]]] = ...,
-    ) -> None: ...
+    def __init__(self, total: _Optional[int] = ..., models: _Optional[_Iterable[_Union[GetModelsResponse.Model, _Mapping]]] = ...) -> None: ...
 
 class AddModelRequest(_message.Message):
     __slots__ = ("model_name",)
