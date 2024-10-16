@@ -38,6 +38,11 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
+      - name: Install Protoc
+        run: |
+          apt-get update
+          apt-get install -y protobuf-compiler libprotobuf-dev
+
       - name: Install Dependencies
         run: |
           cd clients/python/jams
