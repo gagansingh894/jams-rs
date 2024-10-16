@@ -5,7 +5,7 @@ all: format lint test
 setup-dependencies:
 	python -m venv venv
 	. venv/bin/activate
-	pip install -r clients/python/requirements.txt
+	pip install -r requirements.txt
 
 mypy:
 	mypy .
