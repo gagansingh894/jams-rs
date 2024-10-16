@@ -35,6 +35,11 @@ ignore_missing_imports = false
 # Show error codes in output
 show_error_codes = true
 
+# Disable the 'import-untyped' error code
+[[tool.mypy.overrides]]
+module = "src.jams.proto.*"
+disable_error_code = ["no-untyped-def", "type-arg", "import-untyped"]
+
 [tool.pydantic-mypy]
 # Pydantic plugin options
 init_forbid_extra = true
