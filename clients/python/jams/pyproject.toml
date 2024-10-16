@@ -1,5 +1,5 @@
 [tool.ruff]
-exclude = [".venv", "venv", "src/jams/proto"]
+exclude = [".venv", "venv", "src/jams/client/models/proto"]
 
 [tool.mypy]
 # Enable strict mode for comprehensive type checking
@@ -9,10 +9,10 @@ strict = true
 plugins = ["pydantic.mypy"]
 
 # Exclude proto/ folder from type checking
-exclude = "proto/"
+exclude = "src/client/models/proto/"
 
 # Specify directories to check
-files = ["common/", "grpc/", "http/"]
+files = ["src/jams/client/models/common.py", "src/jams/client/models/http.py", "src/jams/client/grpc.py", "src/jams/client/http.py"]
 
 # Report missing type hints in function definitions
 disallow_untyped_defs = true
@@ -37,7 +37,7 @@ show_error_codes = true
 
 # Disable the 'import-untyped' error code
 [[tool.mypy.overrides]]
-module = "src.jams.proto.*"
+module = "src.jams.client.models.proto.*"
 disable_error_code = ["no-untyped-def", "type-arg", "import-untyped"]
 
 [tool.pydantic-mypy]

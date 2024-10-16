@@ -1,11 +1,12 @@
 import grpc  # type: ignore
 
 from google.protobuf import empty_pb2
-from src.jams.proto import jams_pb2_grpc, jams_pb2
-from src.jams.common import type
+from src.jams.client.models.proto import jams_pb2
+from src.jams.client.models.proto import jams_pb2_grpc
+from src.jams.client.models import common
 
 
-class GrpcClient:
+class Client:
     def __init__(self, base_url: str):
         self._channel = grpc.insecure_channel(base_url)
         self._stub = jams_pb2_grpc.ModelServerStub(self._channel)  # type: ignore
@@ -19,12 +20,12 @@ class GrpcClient:
         except grpc.RpcError as e:
             raise e
 
-    def predict(self, model_name: str, model_input: str) -> type.Prediction:
+    def predict(self, model_name: str, model_input: str) -> common.Prediction:
         try:
             resp: jams_pb2.PredictResponse = self._stub.Predict(
                 jams_pb2.PredictRequest(model_name=model_name, input=model_input)
             )
-            return type.Prediction(resp.output)
+            return common.Prediction(resp.output)
         except grpc.RpcError as e:
             raise e
 

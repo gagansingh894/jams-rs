@@ -1,5 +1,5 @@
-from src.jams.grpc import client
-from src.jams.proto import jams_pb2
+from src.jams.client import grpc
+from src.jams.client.models.proto import jams_pb2
 
 from tests.helper import get_grpc_url
 
@@ -7,7 +7,7 @@ from tests.helper import get_grpc_url
 def test_successfully_makes_get_models_request() -> None:
     # Arrange
     base_url = get_grpc_url()
-    grpc_client = client.GrpcClient(base_url)
+    grpc_client = grpc.Client(base_url)
 
     # Act
     resp = grpc_client.get_models()
@@ -20,7 +20,7 @@ def test_successfully_makes_get_models_request() -> None:
 def test_successfully_makes_delete_model_request() -> None:
     # Arrange
     base_url = get_grpc_url()
-    grpc_client = client.GrpcClient(base_url)
+    grpc_client = grpc.Client(base_url)
 
     # Act
     grpc_client.delete_model(model_name="my_awesome_californiahousing_model")
@@ -32,7 +32,7 @@ def test_successfully_makes_delete_model_request() -> None:
 def test_successfully_makes_add_model_request() -> None:
     # Arrange
     base_url = get_grpc_url()
-    grpc_client = client.GrpcClient(base_url)
+    grpc_client = grpc.Client(base_url)
 
     # Act
     grpc_client.delete_model(model_name="my_awesome_penguin_model")
@@ -45,7 +45,7 @@ def test_successfully_makes_add_model_request() -> None:
 def test_successfully_makes_update_model_request() -> None:
     # Arrange
     base_url = get_grpc_url()
-    grpc_client = client.GrpcClient(base_url)
+    grpc_client = grpc.Client(base_url)
 
     # Act
     grpc_client.update_model(model_name="titanic_model")

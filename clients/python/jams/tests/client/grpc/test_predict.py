@@ -1,15 +1,15 @@
 import json
 
-from src.jams.http import client
-from src.jams.common.type import Prediction
+from src.jams.client import grpc
+from src.jams.client.models import common
 
-from tests.helper import get_http_url
+from tests.helper import get_grpc_url
 
 
 def test_successfully_makes_predict_request() -> None:
     # Arrange
-    base_url = get_http_url()
-    http_client = client.HttpClient(base_url)
+    base_url = get_grpc_url()
+    grpc_client = grpc.Client(base_url)
 
     # Act
     model_name = "titanic_model"
@@ -33,9 +33,9 @@ def test_successfully_makes_predict_request() -> None:
             "alone": ["True", "False"],
         }
     )
-    resp = http_client.predict(model_name=model_name, model_input=model_input)
+    resp = grpc_client.predict(model_name=model_name, model_input=model_input)
 
     # Assert
     # If the function errors out then we can assume the test has failed
-    assert isinstance(resp, Prediction)
+    assert isinstance(resp, common.Prediction)
     assert 2 == len(resp.values)

@@ -1,7 +1,7 @@
 import json
 
-from src.jams.http import client
-from src.jams.common.type import Prediction
+from src.jams.client import http
+from src.jams.client.models import common
 
 from tests.helper import get_http_url
 
@@ -9,7 +9,7 @@ from tests.helper import get_http_url
 def test_successfully_makes_predict_request() -> None:
     # Arrange
     base_url = get_http_url()
-    http_client = client.HttpClient(base_url)
+    http_client = http.Client(base_url)
 
     # Act
     model_name = "titanic_model"
@@ -37,5 +37,5 @@ def test_successfully_makes_predict_request() -> None:
 
     # Assert
     # If the function errors out then we can assume the test has failed
-    assert isinstance(resp, Prediction)
+    assert isinstance(resp, common.Prediction)
     assert 2 == len(resp.values)

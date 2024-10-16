@@ -1,4 +1,4 @@
-from src.jams.http import client
+from src.jams.client import http
 
 from tests.helper import get_http_url
 
@@ -6,7 +6,7 @@ from tests.helper import get_http_url
 def test_successfully_makes_health_check_request() -> None:
     # Arrange
     base_url = get_http_url()
-    http_client = client.HttpClient(base_url)
+    http_client = http.Client(base_url)
 
     # Act
     http_client.health_check()
