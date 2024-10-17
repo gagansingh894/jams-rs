@@ -1,0 +1,59 @@
+name: J.A.M.S Python Client CI Pipeline
+
+on:
+  push:
+    branches: [ "main" ]
+    paths:
+      - 'clients/python/**'
+  pull_request:
+    branches: [ "main" ]
+    paths:
+      - 'clients/python/**'
+
+jobs:
+  build:
+    name: Lint and Test
+    runs-on: ubuntu-latest
+
+    container:
+      image: python:3.10
+      options: --user root
+      env:
+        PROTOC: /usr/bin/protoc
+        JAMS_HTTP_HOSTNAME: jams_http
+        JAMS_GRPC_HOSTNAME: jams_grpc
+
+    services:
+      jams_http:
+        image: gagansingh894/jams_http:latest
+        ports:
+          - 3000:3000
+
+      jams_grpc:
+        image: gagansingh894/jams_grpc:latest
+        ports:
+          - 4000:4000
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install Protoc
+        run: |
+          apt-get update
+          apt-get install -y protobuf-compiler libprotobuf-dev
+
+      - name: Install Dependencies
+        run: |
+          cd clients/python/jams
+          make requirements
+
+      - name: Lint
+        run: |
+          cd clients/python/jams
+          make lint
+
+      - name: Test
+        run: |
+          cd clients/python/jams
+          make test    

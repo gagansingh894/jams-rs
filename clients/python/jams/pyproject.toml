@@ -1,0 +1,80 @@
+[build-system]
+requires = ["setuptools"]
+build-backend = "setuptools.build_meta"  # If not defined, then legacy behavior can happen.
+
+[project]
+name = "jams"
+version = "0.0.1"
+authors = [
+  { name="gagansingh894" },
+]
+description = "A HTTP & gRPC client for J.A.M.S - Just Another Model Server in Python"
+readme = "README.md"
+requires-python = ">=3.8"
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: Apache 2.0 License",
+    "Operating System :: OS Independent",
+]
+
+dependencies = [
+    "pydantic",
+    "requests",
+    "grpcio",
+    "protobuf",
+    "grpcio-tools"
+]
+
+[project.urls]
+Homepage = "https://github.com/gagansingh894/jams-rs/tree/main/clients/python/jams"
+
+[tool.ruff]
+exclude = [".venv", "venv", "src/jams/client/models/proto"]
+
+[tool.mypy]
+# Enable strict mode for comprehensive type checking
+strict = true
+
+# Specify plugin for Pydantic
+plugins = ["pydantic.mypy"]
+
+# Exclude proto/ folder from type checking
+exclude = ["src/client/models/proto/", "noxfile.py"]
+
+# Specify directories to check
+files = ["src/jams/client/models/common.py", "src/jams/client/models/http.py", "src/jams/client/grpc.py", "src/jams/client/http.py"]
+
+# Report missing type hints in function definitions
+disallow_untyped_defs = true
+
+# Ensure all function arguments are annotated with types
+disallow_incomplete_defs = true
+
+# Disallow explicit 'Any' in function signatures and expressions
+disallow_any_explicit = true
+disallow_any_generics = true
+
+# Warning flags for unused ignores, unreachable code, and no return annotations
+warn_unused_ignores = true
+warn_unreachable = true
+warn_no_return = true
+
+# Enable error reporting for missing imports
+ignore_missing_imports = false
+
+# Show error codes in output
+show_error_codes = true
+
+# Disable the 'import-untyped' error code
+[[tool.mypy.overrides]]
+module = "src.jams.client.models.proto.*"
+disable_error_code = ["no-untyped-def", "type-arg", "import-untyped"]
+
+[tool.pydantic-mypy]
+# Pydantic plugin options
+init_forbid_extra = true
+init_typed = true
+warn_required_dynamic_aliases = true
+
+[project.optional-dependencies]
+dev = ["check-manifest"]
