@@ -40,12 +40,15 @@ func New(url string) (Client, error) {
 	}, nil
 }
 
+func (c *client) Close() {
+	defer c.conn.Close()
+}
+
 func (c *client) HealthCheck(ctx context.Context, _ *emptypb.Empty, opts ...grpc.CallOption) error {
 	_, err := c.client.HealthCheck(ctx, &emptypb.Empty{}, opts...)
 	if err != nil {
 		return fmt.Errorf("failed to check health: %w", err)
 	}
-	defer c.conn.Close()
 
 	return nil
 }
