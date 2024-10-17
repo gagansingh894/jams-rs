@@ -23,6 +23,7 @@ def test_successfully_makes_delete_model_request() -> None:
     grpc_client = grpc.Client(base_url)
 
     # Act
+    grpc_client.add_model(model_name="pytorch-my_awesome_californiahousing_model")
     grpc_client.delete_model(model_name="my_awesome_californiahousing_model")
 
     # Assert

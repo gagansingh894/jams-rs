@@ -48,7 +48,9 @@ func TestDeleteModel(t *testing.T) {
 	client := New(getURL())
 
 	// Act
-	err := client.DeleteModel(ctx, "my_awesome_californiahousing_model")
+	err := client.AddModel(ctx, &AddModelRequest{ModelName: "pytorch-my_awesome_californiahousing_model"})
+	assert.NoError(t, err)
+	err = client.DeleteModel(ctx, "my_awesome_californiahousing_model")
 
 	// Assert
 	assert.NoError(t, err)

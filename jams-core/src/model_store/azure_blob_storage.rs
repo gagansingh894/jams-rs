@@ -202,37 +202,46 @@ impl Storage for AzureBlobStorageModelStore {
         // If pytorch -> append '.pt'
         // If lightgbm -> append '.txt'
 
-        // We will not be using the model_path from the request
-        // as we have all the information to load the model
-        let model_path = format!("{}/{}", self.model_store_dir, model_name);
-
-        // Load the model into memory
-        match extract_framework_from_path(model_path.clone()) {
+        // Extract model framework
+        let model_framework = match extract_framework_from_path(model_name.clone()) {
             None => {
                 anyhow::bail!("Failed to extract framework from path");
             }
-            Some(framework) => match load_predictor(
-                framework,
-                append_model_format(framework, model_path.clone()).as_str(),
-            )
-            .await
-            {
-                Ok(predictor) => {
-                    let now = Utc::now();
-                    let model = Model::new(
-                        predictor,
-                        model_name.clone(),
-                        framework,
-                        model_path.to_string(),
-                        now.to_rfc2822(),
-                    );
-                    self.models.insert(model_name, Arc::new(model));
-                    Ok(())
-                }
-                Err(e) => {
-                    anyhow::bail!("Failed to add new model: {e}")
-                }
-            },
+            Some(model_framework) => model_framework,
+        };
+
+        // We will not be using the model_path from the request
+        // as we have all the information to load the model
+        let model_path = append_model_format(
+            model_framework,
+            format!("{}/{}", self.model_store_dir, model_name.clone()),
+        );
+
+        // Load the model into memory
+        match load_predictor(model_framework, model_path.as_str()).await {
+            Ok(predictor) => {
+                let sanitized_model_name =
+                    match model_name.strip_prefix(format!("{}-", model_framework).as_str()) {
+                        None => {
+                            anyhow::bail!("Failed to sanitize model name");
+                        }
+                        Some(name) => name.to_string(),
+                    };
+
+                let now = Utc::now();
+                let model = Model::new(
+                    predictor,
+                    sanitized_model_name.clone(),
+                    model_framework,
+                    model_path.to_string(),
+                    now.to_rfc2822(),
+                );
+                self.models.insert(sanitized_model_name, Arc::new(model));
+                Ok(())
+            }
+            Err(e) => {
+                anyhow::bail!("Failed to add new model: {e}")
+            }
         }
     }
 
@@ -791,8 +800,7 @@ mod tests {
 
         // assert
         assert!(add.is_ok());
-        // todo: this is a bug which needs to fixed. When adding model the framework prefix should be removed
-        let model = model_store.get_model("catboost-titanic_model".to_string());
+        let model = model_store.get_model("titanic_model".to_string());
         assert!(model.is_some());
         assert_eq!(num_models_after_add - num_models, 1);
 

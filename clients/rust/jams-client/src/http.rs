@@ -240,6 +240,11 @@ mod tests {
 
         // Act
         let resp = client
+            .add_model("pytorch-my_awesome_californiahousing_model".to_string())
+            .await
+            .unwrap();
+
+        let resp = client
             .delete_model("my_awesome_californiahousing_model".to_string())
             .await;
 

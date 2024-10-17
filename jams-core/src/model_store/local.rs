@@ -2,7 +2,8 @@ use crate::model_store::common::{
     cleanup, unpack_tarball, DOWNLOADED_MODELS_DIRECTORY_NAME_PREFIX,
 };
 use crate::model_store::storage::{
-    extract_framework_from_path, load_models, load_predictor, Metadata, Model, ModelName, Storage,
+    append_model_format, extract_framework_from_path, load_models, load_predictor, Metadata, Model,
+    ModelName, Storage,
 };
 use async_trait::async_trait;
 use chrono::Utc;
@@ -129,35 +130,48 @@ impl Storage for LocalModelStore {
         let lms_model_name = format!("{}.tar.gz", model_name.clone());
 
         let local_model_store_path = format!("{}/{}", self.local_model_store_dir, lms_model_name);
-
         unpack_tarball(
             local_model_store_path.as_str(),
             self.temp_model_dir.as_str(),
         )?;
 
-        let model_path = format!("{}/{}", self.temp_model_dir, model_name);
-
-        match extract_framework_from_path(model_path.clone()) {
+        // Extract model framework
+        let model_framework = match extract_framework_from_path(model_name.clone()) {
             None => {
                 anyhow::bail!("Failed to extract framework from path");
             }
-            Some(framework) => match load_predictor(framework, model_path.as_str()).await {
-                Ok(predictor) => {
-                    let now = Utc::now();
-                    let model = Model::new(
-                        predictor,
-                        model_name.clone(),
-                        framework,
-                        model_path.to_string(),
-                        now.to_rfc2822(),
-                    );
-                    self.models.insert(model_name, Arc::new(model));
-                    Ok(())
-                }
-                Err(e) => {
-                    anyhow::bail!("Failed to add new model: {e}")
-                }
-            },
+            Some(model_framework) => model_framework,
+        };
+
+        let model_path = append_model_format(
+            model_framework,
+            format!("{}/{}", self.temp_model_dir, model_name.clone()),
+        );
+
+        match load_predictor(model_framework, model_path.as_str()).await {
+            Ok(predictor) => {
+                let sanitized_model_name =
+                    match model_name.strip_prefix(format!("{}-", model_framework).as_str()) {
+                        None => {
+                            anyhow::bail!("Failed to sanitize model name");
+                        }
+                        Some(name) => name.to_string(),
+                    };
+
+                let now = Utc::now();
+                let model = Model::new(
+                    predictor,
+                    sanitized_model_name.clone(),
+                    model_framework,
+                    model_path.to_string(),
+                    now.to_rfc2822(),
+                );
+                self.models.insert(sanitized_model_name, Arc::new(model));
+                Ok(())
+            }
+            Err(e) => {
+                anyhow::bail!("Failed to add new model: {e}")
+            }
         }
     }
 
@@ -431,7 +445,7 @@ mod tests {
 
         // assert
         assert!(add.is_ok());
-        let model = local_model_store.get_model("tensorflow-my_awesome_penguin_model".to_string());
+        let model = local_model_store.get_model("my_awesome_penguin_model".to_string());
         assert!(model.is_some());
         assert_eq!(num_models_after_add - num_models, 1);
     }
