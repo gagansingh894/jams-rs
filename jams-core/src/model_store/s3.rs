@@ -876,8 +876,7 @@ mod tests {
 
         // assert
         assert!(add.is_ok());
-        // todo: this is a bug which needs to fixed. When adding model the framework prefix should be removed
-        let model = model_store.get_model("catboost-titanic_model".to_string());
+        let model = model_store.get_model("titanic_model".to_string());
         assert!(model.is_some());
         assert_eq!(num_models_after_add - num_models, 1);
 

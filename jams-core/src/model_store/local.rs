@@ -445,7 +445,7 @@ mod tests {
 
         // assert
         assert!(add.is_ok());
-        let model = local_model_store.get_model("tensorflow-my_awesome_penguin_model".to_string());
+        let model = local_model_store.get_model("my_awesome_penguin_model".to_string());
         assert!(model.is_some());
         assert_eq!(num_models_after_add - num_models, 1);
     }
