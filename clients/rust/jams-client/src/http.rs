@@ -239,7 +239,7 @@ mod tests {
         let client = ApiClient::new(get_url()).unwrap();
 
         // Act
-        let resp = client
+        client
             .add_model("pytorch-my_awesome_californiahousing_model".to_string())
             .await
             .unwrap();
