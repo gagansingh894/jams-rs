@@ -3,11 +3,10 @@ package grpc
 import (
 	"context"
 	"fmt"
-	"os"
-	"testing"
-
 	"github.com/stretchr/testify/assert"
 	"google.golang.org/protobuf/types/known/emptypb"
+	"os"
+	"testing"
 
 	"github.com/gagansingh894/jams-rs/clients/go/jams/pkg/pb/jams"
 )
@@ -97,8 +96,12 @@ func TestPredict(t *testing.T) {
 	assert.Nil(t, err)
 
 	// Act
-	err = client.HealthCheck(ctx, &emptypb.Empty{})
+	resp, err := client.Predict(ctx, &jams.PredictRequest{
+		ModelName: "titanic_model",
+		Input:     "{\"adult_male\":[\"True\",\"False\"],\"age\":[22.0,23.79929292929293],\"alone\":[\"True\",\"False\"],\"class\":[\"First\",\"Third\"],\"deck\":[\"Unknown\",\"Unknown\"],\"embark_town\":[\"Southampton\",\"Cherbourg\"],\"embarked\":[\"S\",\"C\"],\"fare\":[151.55,14.4542],\"parch\":[\"0\",\"0\"],\"pclass\":[\"1\",\"3\"],\"sex\":[\"male\",\"female\"],\"sibsp\":[\"0\",\"1\"],\"who\":[\"man\",\"woman\"]}",
+	})
 
 	// Assert
 	assert.NoError(t, err)
+	assert.NotNil(t, resp)
 }
