@@ -49,7 +49,7 @@ func main() {
 	fmt.Println(predictions.Values()) // use values
 
 	// add model
-	err = client.AddModel(ctx, &http.AddModelRequest{ModelName: "catboost-titanic_model"})
+	err = client.AddModel(ctx, &http.AddModelRequest{ModelName: "catboost-titanic_model"})  // <MODEL_FRAMEWORK>-<MODEL_NAME>
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -118,7 +118,7 @@ func main() {
 	fmt.Println(predictions.Values()) // use values
 
 	// add model
-	err = client.AddModel(ctx, &pb.AddModelRequest{ModelName: "catboost-titanic_model"})
+	err = client.AddModel(ctx, &pb.AddModelRequest{ModelName: "catboost-titanic_model"})  // <MODEL_FRAMEWORK>-<MODEL_NAME>
 	if err != nil {
 		log.Fatal(err)
 	}
