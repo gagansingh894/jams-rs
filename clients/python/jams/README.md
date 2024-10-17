@@ -5,7 +5,7 @@ A HTTP & gRPC client for `J.A.M.S - Just Another Model Server`
 
 ## Installation
 ```
-pip install jams
+pip install jamspy
 ```
 
 ## Usage
@@ -15,7 +15,7 @@ Start `J.A.M.S` by following the instructions [here](https://github.com/gagansin
 ### HTTP
 
 ```
-from jams.client.http import Client
+from jamspy.client.http import Client
 
 # init client
 client = Client('0.0.0.0:3000')
@@ -67,7 +67,7 @@ print(models)
 ### gRPC
 
 ```
-from jams.client.grpc import Client
+from jamspy.client.grpc import Client
 
 # init client
 client = Client('0.0.0.0:4000')
