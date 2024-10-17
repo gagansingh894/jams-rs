@@ -1,0 +1,12 @@
+{
+  "proto": "internal/jams-proto/proto/api/v1/jams.proto",
+  "call": "jams_v1.ModelServer.Predict",
+  "host": "0.0.0.0:4000",
+  "insecure": true,
+  "concurrency": 50,
+  "total": 500000,
+  "data": {
+    "model_name": "titanic_model",
+    "input": "{\"adult_male\":[\"True\",\"False\"],\"age\":[22.0,23.79929292929293],\"alone\":[\"True\",\"False\"],\"class\":[\"First\",\"Third\"],\"deck\":[\"Unknown\",\"Unknown\"],\"embark_town\":[\"Southampton\",\"Cherbourg\"],\"embarked\":[\"S\",\"C\"],\"fare\":[151.55,14.4542],\"parch\":[\"0\",\"0\"],\"pclass\":[\"1\",\"3\"],\"sex\":[\"male\",\"female\"],\"sibsp\":[\"0\",\"1\"],\"who\":[\"man\",\"woman\"]}"
+  }
+}
