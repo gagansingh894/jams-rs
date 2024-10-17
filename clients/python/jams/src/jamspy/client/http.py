@@ -1,6 +1,6 @@
 import requests
 
-from src.jams.client.models import common, http
+from src.jamspy.client.models import common, http
 
 
 class Client:

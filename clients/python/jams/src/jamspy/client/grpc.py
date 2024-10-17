@@ -1,9 +1,9 @@
 import grpc  # type: ignore
 
 from google.protobuf import empty_pb2
-from src.jams.client.models.proto import jams_pb2
-from src.jams.client.models.proto import jams_pb2_grpc
-from src.jams.client.models import common
+from src.jamspy.client.models.proto import jams_pb2
+from src.jamspy.client.models.proto import jams_pb2_grpc
+from src.jamspy.client.models import common
 
 
 class Client:

@@ -1,4 +1,4 @@
-from src.jams.client import http
+from src.jamspy.client import http
 
 from tests.helper import get_http_url
 

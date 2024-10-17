@@ -1,4 +1,4 @@
-from src.jams.client import grpc
+from src.jamspy.client import grpc
 
 from tests.helper import get_grpc_url
 

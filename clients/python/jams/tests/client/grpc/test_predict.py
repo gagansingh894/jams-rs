@@ -1,7 +1,7 @@
 import json
 
-from src.jams.client import grpc
-from src.jams.client.models import common
+from src.jamspy.client import grpc
+from src.jamspy.client.models import common
 
 from tests.helper import get_grpc_url
 

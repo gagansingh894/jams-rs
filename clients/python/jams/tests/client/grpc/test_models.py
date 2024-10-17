@@ -1,5 +1,5 @@
-from src.jams.client import grpc
-from src.jams.client.models.proto import jams_pb2
+from src.jamspy.client import grpc
+from src.jamspy.client.models.proto import jams_pb2
 
 from tests.helper import get_grpc_url
 

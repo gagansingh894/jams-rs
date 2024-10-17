@@ -1,5 +1,5 @@
-from src.jams.client import http
-from src.jams.client.models.http import GetModelsResponse
+from src.jamspy.client import http
+from src.jamspy.client.models.http import GetModelsResponse
 
 from tests.helper import get_http_url
 
