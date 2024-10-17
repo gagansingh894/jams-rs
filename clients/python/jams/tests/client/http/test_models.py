@@ -23,6 +23,7 @@ def test_successfully_makes_delete_model_request() -> None:
     http_client = http.Client(base_url)
 
     # Act
+    http_client.add_model(model_name="pytorch-my_awesome_californiahousing_model")
     http_client.delete_model(model_name="my_awesome_californiahousing_model")
 
     # Assert

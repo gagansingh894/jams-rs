@@ -54,6 +54,8 @@ func TestDeleteModel(t *testing.T) {
 	assert.Nil(t, err)
 
 	// Act
+	err = client.AddModel(ctx, &jams.AddModelRequest{ModelName: "pytorch-my_awesome_californiahousing_model"})
+	assert.NoError(t, err)
 	err = client.DeleteModel(ctx, &jams.DeleteModelRequest{ModelName: "my_awesome_californiahousing_model"})
 
 	// Assert
