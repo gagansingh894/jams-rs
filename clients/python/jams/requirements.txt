@@ -8,3 +8,4 @@ mypy==1.11.1
 types-requests==2.32.0.20240914
 types-protobuf==5.28.0.20240924
 pytest==8.0.0
+nox==2024.4.15
