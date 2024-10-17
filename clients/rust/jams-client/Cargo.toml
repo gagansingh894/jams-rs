@@ -4,7 +4,7 @@ version = "0.1.0"
 edition = "2021"
 description = "A HTTP and gRPC client library for interacting with  J.A.M.S - Just Another Model Server"
 homepage = "https://github.com/gagansingh894/jams-rs"
-repository = "https://github.com/gagansingh894/jams-rs/tree/main/clients/rust/jams-proto"
+repository = "https://github.com/gagansingh894/jams-rs/tree/main/clients/rust/jams-client"
 license = "Apache-2.0"
 
 [lib]
