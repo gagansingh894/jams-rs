@@ -38,6 +38,9 @@ check-gpu-linux:
 
 all: format lint test
 
+grpc-load-test:
+	ghz --config build/ghz-config.json
+
 generate-proto:
 	@echo "Generating proto files for Go"
 	protoc -I=internal/jams-proto/proto/api/v1/ --go_out=clients/go/jams --go-grpc_out=clients/go/jams jams.proto
