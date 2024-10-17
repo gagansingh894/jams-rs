@@ -7,6 +7,14 @@ requirements:
 	. venv/bin/activate
 	pip install -r requirements.txt
 
+	@if [[ $(shell uname -s) == "Darwin" && $(shell uname -m) == "arm64" ]]; then \
+		echo "Detected macOS ARM (Apple Silicon). Installing TensorFlow for ARM."; \
+		pip install -r requirements_tf_arm.txt; \
+	else \
+		echo "Detected non-ARM system. Installing standard TensorFlow."; \
+		pip install -r requirements_tf.txt; \
+	fi
+
 mypy:
 	mypy .
 
