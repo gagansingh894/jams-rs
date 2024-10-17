@@ -41,6 +41,10 @@ all: format lint test
 grpc-load-test:
 	ghz --config build/ghz-config.json
 
+http-load-test:
+	ulimit -n 65535
+	wrk -t12 -c400 -d30s -s build/post.lua http://0.0.0.0:3000/api/predict
+
 generate-proto:
 	@echo "Generating proto files for Go"
 	protoc -I=internal/jams-proto/proto/api/v1/ --go_out=clients/go/jams --go-grpc_out=clients/go/jams jams.proto
