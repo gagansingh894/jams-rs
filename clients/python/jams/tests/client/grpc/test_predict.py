@@ -3,7 +3,7 @@ import json
 from src.jamspy.client import grpc
 from src.jamspy.client.models import common
 
-from tests.helper import get_grpc_url
+from tests.client.helper import get_grpc_url
 
 
 def test_successfully_makes_predict_request() -> None:

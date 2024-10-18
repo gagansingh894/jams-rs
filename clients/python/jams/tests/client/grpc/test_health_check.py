@@ -1,6 +1,6 @@
 from src.jamspy.client import grpc
 
-from tests.helper import get_grpc_url
+from tests.client.helper import get_grpc_url
 
 
 def test_successfully_makes_health_check_request() -> None:

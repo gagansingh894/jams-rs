@@ -1,7 +1,7 @@
 from src.jamspy.client import http
 from src.jamspy.client.models.http import GetModelsResponse
 
-from tests.helper import get_http_url
+from tests.client.helper import get_http_url
 
 
 def test_successfully_makes_get_models_request() -> None:
