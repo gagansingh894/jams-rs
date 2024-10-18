@@ -1,3 +1,1 @@
 tensorflow-macos==2.14.0
-tensorflow-metal
-tensorflow-datasets==4.9.1
