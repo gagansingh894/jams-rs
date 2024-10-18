@@ -1,6 +1,6 @@
 import os
 
-from catboost import CatBoostClassifier, CatBoostRegressor
+from catboost import CatBoostClassifier, CatBoostRegressor  # type: ignore
 
 from src.jamspy.utils.bundler.catboost import CatBoostBundler
 
@@ -20,7 +20,7 @@ def test_successfully_creates_bundle_for_catboost_classifier_model() -> None:
 
 def test_successfully_creates_bundle_for_catboost_regressor_model() -> None:
     # Arrange - load existing model
-    model = CatBoostClassifier()
+    model = CatBoostRegressor()
     model.load_model('tests/utils/artefacts/catboost-my_awesome_regressor_model')
 
     # Act

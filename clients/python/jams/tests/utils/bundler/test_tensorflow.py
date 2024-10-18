@@ -1,6 +1,6 @@
 import os
 
-import tensorflow as tf
+import tensorflow as tf  # type: ignore
 
 from src.jamspy.utils.bundler.tensorflow import TensorflowBundler
 
