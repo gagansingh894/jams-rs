@@ -1,6 +1,6 @@
 from src.jamspy.client import http
 
-from tests.helper import get_http_url
+from tests.client.helper import get_http_url
 
 
 def test_successfully_makes_health_check_request() -> None:

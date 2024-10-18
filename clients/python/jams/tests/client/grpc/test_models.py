@@ -1,7 +1,7 @@
 from src.jamspy.client import grpc
 from src.jamspy.client.models.proto import jams_pb2
 
-from tests.helper import get_grpc_url
+from tests.client.helper import get_grpc_url
 
 
 def test_successfully_makes_get_models_request() -> None:
