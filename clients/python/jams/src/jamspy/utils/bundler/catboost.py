@@ -3,7 +3,6 @@ from typing import Union
 from catboost import CatBoostClassifier, CatBoostRegressor  # type: ignore
 
 from src.jamspy.utils.bundler.common import ARTEFACTS_DIR, Bundle, create_tar_gz
-from src.jamspy.utils.bundler.type import ModelSpec
 
 
 class CatBoostBundler(Bundle):
@@ -19,6 +18,3 @@ class CatBoostBundler(Bundle):
 
         self.model.save_model(model_save_path, format='cbm')
         create_tar_gz(model_save_path, tar_gz_path)
-
-    def spec(self) -> ModelSpec:
-        raise NotImplementedError

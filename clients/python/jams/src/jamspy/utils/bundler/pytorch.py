@@ -1,7 +1,6 @@
 from typing import Union
 
 from src.jamspy.utils.bundler.common import ARTEFACTS_DIR, Bundle, create_tar_gz
-from src.jamspy.utils.bundler.type import ModelSpec
 
 import torch.nn
 
@@ -20,6 +19,3 @@ class PytorchBundler(Bundle):
         script_module = torch.jit.script(self.model)
         script_module.save(model_save_path)
         create_tar_gz(model_save_path, tar_gz_path)
-
-    def spec(self) -> ModelSpec:
-        raise NotImplementedError

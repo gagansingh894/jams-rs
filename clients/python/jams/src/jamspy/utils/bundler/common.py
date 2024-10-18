@@ -2,9 +2,6 @@ import os
 import tarfile
 from abc import ABC, abstractmethod
 
-from src.jamspy.utils.bundler.type import ModelSpec
-
-
 ARTEFACTS_DIR = 'jams_artefacts'
 
 
@@ -16,10 +13,6 @@ class Bundle(ABC):
 
     @abstractmethod
     def bundle(self, model_name: str) -> None:
-        pass
-
-    @abstractmethod
-    def spec(self) -> ModelSpec:
         pass
 
 
