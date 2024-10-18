@@ -184,7 +184,7 @@ jobs:
           password: ${{ secrets.DOCKER_PASSWORD }}
 
       - name: Build Docker image for ARM
-        run: docker build --platform linux/arm64 -t ${{ secrets.DOCKER_USERNAME }}/jams:arm64 -f build/Dockerfile_arm64 .
+        run: docker build -t ${{ secrets.DOCKER_USERNAME }}/jams:arm64 -f build/Dockerfile_arm64 .
 
       - name: Push Docker image for ARM
         run: docker push ${{ secrets.DOCKER_USERNAME }}/jams:arm64
