@@ -15,9 +15,9 @@ class CatBoostBundler(Bundle):
     def bundle(self, model_name: str) -> None:
         framework = 'catboost'
         model_save_path = f'{ARTEFACTS_DIR}/{framework}-{model_name}'
-        tar_gz_path = f'{ARTEFACTS_DIR}/{framework}.tar.gz'
+        tar_gz_path = f'{ARTEFACTS_DIR}/{framework}-{model_name}.tar.gz'
 
-        self.model.save_model(save_path, format='cbm')  # type: ignore
+        self.model.save_model(model_save_path, format='cbm')
         create_tar_gz(model_save_path, tar_gz_path)
 
     def spec(self) -> ModelSpec:

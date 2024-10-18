@@ -4,7 +4,7 @@ from src.jamspy.utils.bundler.common import ARTEFACTS_DIR, Bundle, create_tar_gz
 from src.jamspy.utils.bundler.type import ModelSpec
 
 
-class LightBoostBundler(Bundle):
+class LGBMBundler(Bundle):
 
     def __init__(self, model_obj: Booster):
         super().__init__()
@@ -14,7 +14,7 @@ class LightBoostBundler(Bundle):
         framework = 'lightgbm'
         # model_spec = _model_spec(framework)
         model_save_path = f'{ARTEFACTS_DIR}/{framework}-{model_name}.txt'
-        tar_gz_path = f'{ARTEFACTS_DIR}/{framework}.tar.gz'
+        tar_gz_path = f'{ARTEFACTS_DIR}/{framework}-{model_name}.tar.gz'
 
         self.model.save_model(model_save_path)
         create_tar_gz(model_save_path, tar_gz_path)

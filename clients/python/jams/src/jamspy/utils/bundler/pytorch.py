@@ -15,7 +15,7 @@ class PytorchBundler(Bundle):
         framework = 'pytorch'
         # model_spec = _model_spec(framework)
         model_save_path = f'{ARTEFACTS_DIR}/{framework}-{model_name}.pt'
-        tar_gz_path = f'{ARTEFACTS_DIR}/{framework}.tar.gz'
+        tar_gz_path = f'{ARTEFACTS_DIR}/{framework}-{model_name}.tar.gz'
 
         script_module = torch.jit.script(self.model)
         script_module.save(model_save_path)

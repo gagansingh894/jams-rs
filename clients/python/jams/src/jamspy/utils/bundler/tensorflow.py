@@ -15,7 +15,7 @@ class TensorflowBundler(Bundle):
         framework = 'tensorflow'
         # model_spec = _model_spec(framework)
         model_save_path = f'{ARTEFACTS_DIR}/{framework}-{model_name}'
-        tar_gz_path = f'{ARTEFACTS_DIR}/{framework}.tar.gz'
+        tar_gz_path = f'{ARTEFACTS_DIR}/{framework}-{model_name}.tar.gz'
 
         self.model.save(model_save_path)
         create_tar_gz(model_save_path, tar_gz_path)
