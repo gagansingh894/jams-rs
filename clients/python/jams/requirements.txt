@@ -2,7 +2,7 @@ pydantic==2.6
 requests==2.32.3
 grpcio==1.67.0
 protobuf>=3.20.3
-grpcio-tools==1.47.0
+grpcio-tools==1.65.5
 ruff==0.6.9
 mypy==1.11.1
 types-requests==2.32.0.20240914
