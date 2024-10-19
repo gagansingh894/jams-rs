@@ -36,24 +36,33 @@ impl LightGBMModelInput {
 
         for values in input_matrix {
             // get the value type
-            let first = values.0.first().unwrap();
-
-            // strings values are pushed to separate vector of type Vec<String>
-            // int and float are pushed to separate of type Vec<f32>
-            match first {
-                Value::String(_) => {
-                    anyhow::bail!("String type as input features is not supported")
+            match values.0.first() {
+                Some(first) => {
+                    // strings values are pushed to separate vector of type Vec<String>
+                    // int and float are pushed to separate of type Vec<f32>
+                    match first {
+                        Value::String(_) => {
+                            anyhow::bail!("string type as input feature is not supported")
+                        }
+                        Value::Int(_) => {
+                            let ints = values.to_ints();
+                            // convert to float
+                            let floats = ints.into_iter().map(|x| x as f32).collect();
+                            numerical_features.push(floats);
+                        }
+                        Value::Float(_) => {
+                            numerical_features.push(values.to_floats());
+                        }
+                    }
                 }
-                Value::Int(_) => {
-                    let ints = values.to_ints();
-                    // convert to float
-                    let floats = ints.into_iter().map(|x| x as f32).collect();
-                    numerical_features.push(floats);
-                }
-                Value::Float(_) => {
-                    numerical_features.push(values.to_floats());
+                None => {
+                    anyhow::bail!("failed to get first value ❌")
                 }
             }
+        }
+        
+        if numerical_features.is_empty() {
+            anyhow::bail!("input is empty")
         }
 
         // determine the number of rows and columns in the matrix
@@ -175,6 +184,23 @@ mod tests {
         // length 1 i.e [[1]]. This is because this is a regression model with single output
         // and batch size of 1
         assert_eq!(predictions.first().unwrap().len(), 1);
+    }
+
+    #[test]
+    fn fails_to_make_prediction_using_lightgbm_when_input_is_empty() {
+        let path = "tests/model_storage/models/lightgbm-my_awesome_reg_model.txt";
+        let model = LightGBM::load(path).unwrap();
+
+        // lightgbm models do not support string input features. They have to preprocessed if the
+        // model is using a string feature
+        let size = 0;
+        let model_inputs = test_utils::utils::create_model_inputs(28, 0, size);
+
+        // make predictions
+        let output = model.predict(model_inputs);
+
+        // assert the result is err
+        assert!(output.is_err());
     }
 
     #[test]

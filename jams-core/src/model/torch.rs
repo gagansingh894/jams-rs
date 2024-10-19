@@ -27,22 +27,27 @@ impl TorchModelInput {
 
         for values in input_matrix {
             // get the value type
-            let first = values.0.first().unwrap();
-
-            // strings values are pushed to separate vector of type Vec<String>
-            // int and float are pushed to separate of type Vec<f32>
-            match first {
-                Value::String(_) => {
-                    anyhow::bail!("not supported string tensors")
+             match values.0.first() {
+                Some(first) => {
+                    // strings values are pushed to separate vector of type Vec<String>
+                    // int and float are pushed to separate of type Vec<f32>
+                    match first {
+                        Value::String(_) => {
+                            anyhow::bail!("not supported string tensors")
+                        }
+                        Value::Int(_) => {
+                            let ints = values.to_ints();
+                            // convert to float
+                            let floats = ints.into_iter().map(|x| x as f32).collect();
+                            numerical_features.push(floats);
+                        }
+                        Value::Float(_) => {
+                            numerical_features.push(values.to_floats());
+                        }
+                    }
                 }
-                Value::Int(_) => {
-                    let ints = values.to_ints();
-                    // convert to float
-                    let floats = ints.into_iter().map(|x| x as f32).collect();
-                    numerical_features.push(floats);
-                }
-                Value::Float(_) => {
-                    numerical_features.push(values.to_floats());
+                None => {
+                    anyhow::bail!("failed to get first value ❌")
                 }
             }
         }
@@ -99,7 +104,7 @@ impl Predictor for Torch {
         let preds = self.model.forward_ts(&[input.tensor]);
         match preds {
             Ok(predictions) => {
-                let predictions: Vec<Vec<f64>> = predictions.try_into().unwrap();
+                let predictions: Vec<Vec<f64>> = predictions.try_into()?;
                 Ok(Output { predictions })
             }
             Err(e) => anyhow::bail!(

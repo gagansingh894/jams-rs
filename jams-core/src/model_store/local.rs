@@ -58,7 +58,13 @@ impl LocalModelStore {
                 for entry in dir {
                     let entry = entry?;
                     let path = entry.path();
-                    unpack_tarball(path.to_str().unwrap(), temp_model_dir.as_str())?
+                    let tarball_path = match path.to_str() {
+                        None => {
+                            anyhow::bail!("failed to convert file path to str ❌")
+                        }
+                        Some(path) => { path }
+                    };
+                    unpack_tarball(tarball_path, temp_model_dir.as_str())?
                 }
             }
             Err(e) => {

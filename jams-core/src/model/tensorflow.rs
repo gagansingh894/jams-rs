@@ -110,8 +110,7 @@ fn parse_sequential(
             .get_input(input.0)
             .expect("Specified tensor name not found");
         let input_op = graph
-            .operation_by_name_required(&input_info.name().name)
-            .unwrap();
+            .operation_by_name_required(&input_info.name().name)?;
         match input_info.dtype() {
             DataType::Int32 => {
                 // Swapping num_rows and num_cols to satisfy shape

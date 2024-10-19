@@ -107,9 +107,16 @@ async fn build_s3_client(use_localstack: bool) -> anyhow::Result<s3::Client> {
         }
     };
 
+    let credentials = match aws_config.credentials_provider() {
+        None => {
+            anyhow::bail!("failed to get credentials provider ❌")
+        }
+        Some(credentials) => { credentials }
+    } ;
+    
     let mut s3_config = s3::Config::builder()
         .region(region)
-        .credentials_provider(aws_config.credentials_provider().unwrap())
+        .credentials_provider(credentials)
         .behavior_version_latest();
     if use_localstack {
         let hostname = env::var("LOCALSTACK_HOSTNAME").unwrap_or("localhost".to_string());
@@ -405,9 +412,9 @@ async fn fetch_models(
     bucket_name: String,
     model_store_dir: String,
 ) -> anyhow::Result<DashMap<ModelName, Arc<Model>>> {
-    let keys = get_keys(client, bucket_name.clone()).await;
+    let keys = get_keys(client, bucket_name.clone()).await?;
 
-    match download_objects(client, bucket_name, keys.unwrap(), model_store_dir.as_str()).await {
+    match download_objects(client, bucket_name, keys, model_store_dir.as_str()).await {
         Ok(_) => {
             log::info!("Downloaded objects from s3 ✅")
         }
@@ -525,7 +532,12 @@ async fn download_objects(
             anyhow::bail!("Failed to create temporary directory ❌: {}", e.to_string());
         }
     };
-    let temp_path = dir.path().to_str().unwrap();
+    let temp_path = match dir.path().to_str() {
+        None => {
+            anyhow::bail!("failed to convert path to str ❌")
+        }
+        Some(path) => { path }
+    };
 
     for object_key in object_keys {
         let response = client
