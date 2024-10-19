@@ -15,8 +15,11 @@ jobs:
     name: Lint and Test
     runs-on: ubuntu-latest
 
+    strategy:
+      matrix:
+        python-version: [3.8, 3.9, 3.10, 3.11]  # Define multiple Python versions
     container:
-      image: python:3.10
+      image: python:${{ matrix.python-version }}  # Use the current Python version in the matrix
       options: --user root
       env:
         PROTOC: /usr/bin/protoc
@@ -56,4 +59,4 @@ jobs:
       - name: Test
         run: |
           cd clients/python/jams
-          make test    
+          make test
