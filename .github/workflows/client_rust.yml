@@ -5,10 +5,12 @@ on:
     branches: [ "main" ]
     paths:
       - 'clients/rust/**'
+      - '.github/workflows/client_rust.yml'
   pull_request:
     branches: [ "main" ]
     paths:
       - 'clients/rust/**'
+      - '.github/workflows/client_rust.yml'
 
 jobs:
   build:
