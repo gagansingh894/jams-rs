@@ -60,7 +60,7 @@ impl LightGBMModelInput {
                 }
             }
         }
-        
+
         if numerical_features.is_empty() {
             anyhow::bail!("input is empty")
         }

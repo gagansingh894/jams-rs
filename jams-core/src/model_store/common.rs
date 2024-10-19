@@ -63,12 +63,12 @@ pub fn save_and_upack_tarball(
             anyhow::bail!("Failed to create file {:?} ⚠️: {}", file_path, e.to_string())
         }
     }
-    
+
     let tarball_path = match file_path.to_str() {
         None => {
             anyhow::bail!("failed to convert file path to str ❌")
         }
-        Some(path) => { path }
+        Some(path) => path,
     };
 
     match unpack_tarball(tarball_path, out_dir) {

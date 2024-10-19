@@ -111,9 +111,9 @@ async fn build_s3_client(use_localstack: bool) -> anyhow::Result<s3::Client> {
         None => {
             anyhow::bail!("failed to get credentials provider ❌")
         }
-        Some(credentials) => { credentials }
-    } ;
-    
+        Some(credentials) => credentials,
+    };
+
     let mut s3_config = s3::Config::builder()
         .region(region)
         .credentials_provider(credentials)
@@ -536,7 +536,7 @@ async fn download_objects(
         None => {
             anyhow::bail!("failed to convert path to str ❌")
         }
-        Some(path) => { path }
+        Some(path) => path,
     };
 
     for object_key in object_keys {

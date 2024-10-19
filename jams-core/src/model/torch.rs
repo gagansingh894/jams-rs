@@ -27,7 +27,7 @@ impl TorchModelInput {
 
         for values in input_matrix {
             // get the value type
-             match values.0.first() {
+            match values.0.first() {
                 Some(first) => {
                     // strings values are pushed to separate vector of type Vec<String>
                     // int and float are pushed to separate of type Vec<f32>

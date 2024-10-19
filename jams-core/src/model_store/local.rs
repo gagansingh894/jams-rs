@@ -62,7 +62,7 @@ impl LocalModelStore {
                         None => {
                             anyhow::bail!("failed to convert file path to str ❌")
                         }
-                        Some(path) => { path }
+                        Some(path) => path,
                     };
                     unpack_tarball(tarball_path, temp_model_dir.as_str())?
                 }
