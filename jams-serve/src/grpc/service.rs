@@ -46,12 +46,12 @@ impl ModelServer for JamsService {
                 Ok(output) => Ok(Response::new(PredictResponse { output })),
                 Err(e) => Err(Status::new(
                     tonic::Code::Internal,
-                    format!("Failed to make predictions: {}", e),
+                    format!("Failed to predict ❌: {}", e),
                 )),
             },
             Err(e) => Err(Status::new(
                 tonic::Code::Internal,
-                format!("Failed to make predictions: {}", e),
+                format!("Failed to predict ❌: {}", e),
             )),
         }
     }
@@ -65,9 +65,9 @@ impl ModelServer for JamsService {
                 total: models.len() as i32,
                 models: parse_to_proto_models(models),
             })),
-            Err(_) => Err(Status::new(
+            Err(e) => Err(Status::new(
                 tonic::Code::Internal,
-                "Failed to add new model",
+                format!("Failed to get models ❌: {}", e),
             )),
         }
     }
@@ -83,7 +83,7 @@ impl ModelServer for JamsService {
             Ok(_) => Ok(Response::new(())),
             Err(_) => Err(Status::new(
                 tonic::Code::Internal,
-                "Failed to add new model",
+                "Failed to add model ❌. Please check server logs",
             )),
         }
     }
@@ -101,7 +101,7 @@ impl ModelServer for JamsService {
             Ok(_) => Ok(Response::new(())),
             Err(_) => Err(Status::new(
                 tonic::Code::Internal,
-                "Failed to update existing model",
+                "Failed to update model ❌. Please check server logs",
             )),
         }
     }
@@ -116,9 +116,9 @@ impl ModelServer for JamsService {
             .delete_model(request.into_inner().model_name.to_string())
         {
             Ok(_) => Ok(Response::new(())),
-            Err(_) => Err(Status::new(
+            Err(e) => Err(Status::new(
                 tonic::Code::Internal,
-                "Failed to delete existing model",
+                format!("Failed to delete model ❌: {}", e),
             )),
         }
     }
