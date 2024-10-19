@@ -80,6 +80,19 @@ pub struct PredictResponse {
     output: String,
 }
 
+/// A structure representing an error response returned by the API.
+///
+/// This struct is serialized into a JSON response when an error occurs
+/// in an API handler. The response includes a description of the error.
+///
+/// # Fields
+/// - `error`: A string describing the error that occurred.
+#[derive(Serialize)]
+pub struct ErrorResponse {
+    /// A description of the error.
+    pub error: String,
+}
+
 /// Health check endpoint handler.
 ///
 /// This function handles the health check ("/health") endpoint and returns a simple status code indicating the server is healthy.
@@ -104,10 +117,10 @@ pub async fn healthcheck() -> StatusCode {
 ///
 /// # Returns
 ///
-/// - `Result<StatusCode, (StatusCode, String)>`:
+/// - `Result<StatusCode, (StatusCode, Json<ErrorResponse>)>`:
 ///   - If the model is successfully added, it returns `StatusCode::OK`.
 ///   - If an error occurs during the addition process, it returns `StatusCode::INTERNAL_SERVER_ERROR` along with an error message.
-/// 
+///
 /// # Error Handling
 /// If there is an error while adding the model, such as a failure to interact with the file system or any underlying issues
 /// with the model manager, the function returns an `INTERNAL_SERVER_ERROR` status code along with a generic error message. Detailed
@@ -115,13 +128,18 @@ pub async fn healthcheck() -> StatusCode {
 pub async fn add_model(
     State(app_state): State<Arc<AppState>>,
     Json(payload): Json<AddModelRequest>,
-) -> Result<StatusCode, (StatusCode, String)> {
+) -> Result<StatusCode, (StatusCode, Json<ErrorResponse>)> {
     match app_state.manager.add_model(payload.model_name).await {
         Ok(_) => Ok(StatusCode::OK),
-        Err(_) => Err((
-            StatusCode::INTERNAL_SERVER_ERROR,
-            "Failed to add model ❌. Please check server logs".to_string(),
-        )),
+        Err(e) => {
+            tracing::error!(format!("Failed to add model ❌: {}", e));
+            Err((
+                StatusCode::INTERNAL_SERVER_ERROR,
+                Json(ErrorResponse {
+                    error: "Failed to add model ❌. Please check server logs".to_string(),
+                }),
+            ))
+        }
     }
 }
 
@@ -134,12 +152,12 @@ pub async fn add_model(
 ///
 /// - `State(app_state)`: The shared application state (`Arc<AppState>`), which contains the `Manager` responsible for
 ///   managing models in the system.
-/// - `Json(payload)`: The JSON payload containing the `UpdateModelRequest`, which includes the `model_name` 
+/// - `Json(payload)`: The JSON payload containing the `UpdateModelRequest`, which includes the `model_name`
 ///   of the model to be updated and any additional relevant information (such as updated model parameters).
 ///
 /// # Returns
 ///
-/// - `Result<StatusCode, (StatusCode, String)>`:
+/// - `Result<StatusCode, (StatusCode, Json<ErrorResponse>)>`:
 ///   - If the model is successfully updated, it returns `StatusCode::OK`.
 ///   - If an error occurs during the update process, it returns `StatusCode::INTERNAL_SERVER_ERROR` along with an error message.
 ///
@@ -150,13 +168,18 @@ pub async fn add_model(
 pub async fn update_model(
     State(app_state): State<Arc<AppState>>,
     Json(payload): Json<UpdateModelRequest>,
-) -> Result<StatusCode, (StatusCode, String)> {
+) -> Result<StatusCode, (StatusCode, Json<ErrorResponse>)> {
     match app_state.manager.update_model(payload.model_name).await {
         Ok(_) => Ok(StatusCode::OK),
-        Err(_) => Err((
-            StatusCode::INTERNAL_SERVER_ERROR,
-            "Failed to update model ❌. Please check server logs".to_string(),
-        )),
+        Err(e) => {
+            tracing::error!(format!("Failed to update model ❌: {}", e));
+            Err((
+                StatusCode::INTERNAL_SERVER_ERROR,
+                Json(ErrorResponse {
+                    error: "Failed to update model ❌. Please check server logs".to_string(),
+                }),
+            ))
+        }
     }
 }
 
@@ -175,7 +198,7 @@ pub async fn update_model(
 ///
 /// # Returns
 ///
-/// - `Result<StatusCode, (StatusCode, String)>`:
+/// - `Result<StatusCode, (StatusCode, Json<ErrorResponse>)>`:
 ///   - If the model is successfully deleted, returns `StatusCode::OK`.
 ///   - If an error occurs during the deletion process or if the model does not exist, it returns
 ///     `StatusCode::INTERNAL_SERVER_ERROR` along with a detailed error message.
@@ -186,19 +209,24 @@ pub async fn update_model(
 pub async fn delete_model(
     State(app_state): State<Arc<AppState>>,
     request: Query<DeleteModelRequest>,
-) -> Result<StatusCode, (StatusCode, String)> {
+) -> Result<StatusCode, (StatusCode, Json<ErrorResponse>)> {
     match app_state.manager.delete_model(request.0.model_name) {
         Ok(_) => Ok(StatusCode::OK),
-        Err(e) => Err((
-            StatusCode::INTERNAL_SERVER_ERROR,
-            format!("Failed to delete model ❌: {}", e),
-        )),
+        Err(e) => {
+            tracing::error!(format!("Failed to delete model ❌: {}", e));
+            Err((
+                StatusCode::INTERNAL_SERVER_ERROR,
+                Json(ErrorResponse {
+                    error: format!("Failed to delete model ❌: {}", e),
+                }),
+            ))
+        }
     }
 }
 
 /// Retrieves the list of models available in the server.
 ///
-/// This endpoint fetches the list of models and their metadata from the server. 
+/// This endpoint fetches the list of models and their metadata from the server.
 /// It interacts with the shared `Manager` in the application state to retrieve the data.
 ///
 /// # Arguments
@@ -208,7 +236,7 @@ pub async fn delete_model(
 ///
 /// # Returns
 ///
-/// A `Result<(StatusCode, Json<GetModelsResponse>), (StatusCode, String)>`:
+/// A `Result<(StatusCode, Json<GetModelsResponse>), (StatusCode, Json<ErrorResponse>)>`:
 /// - On success, it returns:
 ///   - `StatusCode::OK` with a JSON response containing the total count of models and their metadata.
 /// - On failure, it returns:
@@ -219,7 +247,7 @@ pub async fn delete_model(
 /// the function returns an `INTERNAL_SERVER_ERROR` status code along with a descriptive error message.
 pub async fn get_models(
     State(app_state): State<Arc<AppState>>,
-) -> Result<(StatusCode, Json<GetModelsResponse>), (StatusCode, String)> {
+) -> Result<(StatusCode, Json<GetModelsResponse>), (StatusCode, Json<ErrorResponse>)> {
     match app_state.manager.get_models() {
         Ok(models) => Ok((
             StatusCode::OK,
@@ -228,10 +256,15 @@ pub async fn get_models(
                 models,
             }),
         )),
-        Err(e) => Err((
-            StatusCode::INTERNAL_SERVER_ERROR,
-            format!("Failed to get models ❌: {}", e),
-        )),
+        Err(e) => {
+            tracing::error!(format!("Failed to get models ❌: {}", e));
+            Err((
+                StatusCode::INTERNAL_SERVER_ERROR,
+                Json(ErrorResponse {
+                    error: format!("Failed to get models ❌: {}", e),
+                }),
+            ))
+        }
     }
 }
 
@@ -249,7 +282,7 @@ pub async fn get_models(
 ///   the model to be used) and `input` (the input data for the model in serialized form).
 ///
 /// # Returns
-/// - `Result<(StatusCode, Json<PredictResponse>), (StatusCode, String)>`:
+/// - `Result<(StatusCode, Json<PredictResponse>), (StatusCode, Json<ErrorResponse>)>`:
 ///   - On success, it returns `StatusCode::OK` with the prediction result wrapped in a `PredictResponse` struct.
 ///   - On failure, it returns `StatusCode::INTERNAL_SERVER_ERROR` with an error message in plain text.
 ///
@@ -289,7 +322,7 @@ pub async fn get_models(
 pub async fn predict(
     State(app_state): State<Arc<AppState>>,
     Json(payload): Json<PredictRequest>,
-) -> Result<(StatusCode, Json<PredictResponse>), (StatusCode, String)> {
+) -> Result<(StatusCode, Json<PredictResponse>), (StatusCode, Json<ErrorResponse>)> {
     let (tx, rx) = oneshot::channel();
 
     let cpu_pool = &app_state.cpu_pool;
@@ -302,14 +335,24 @@ pub async fn predict(
     match rx.await {
         Ok(predictions) => match predictions {
             Ok(output) => Ok((StatusCode::OK, Json(PredictResponse { output }))),
-            Err(e) => Err((
-                StatusCode::INTERNAL_SERVER_ERROR,
-                format!("Failed to predict ❌: {}", e),
-            )),
+            Err(e) => {
+                tracing::error!(format!("Failed to get models ❌: {}", e));
+                Err((
+                    StatusCode::INTERNAL_SERVER_ERROR,
+                    Json(ErrorResponse {
+                        error: format!("Failed to predict ❌: {}", e),
+                    }),
+                ))
+            }
         },
-        Err(e) => Err((
-            StatusCode::INTERNAL_SERVER_ERROR,
-            format!("Failed to predict ❌: {}", e),
-        )),
+        Err(e) => {
+            tracing::error!(format!("Failed to get models ❌: {}", e));
+            Err((
+                StatusCode::INTERNAL_SERVER_ERROR,
+                Json(ErrorResponse {
+                    error: format!("Failed to predict ❌: {}", e),
+                }),
+            ))
+        }
     }
 }
