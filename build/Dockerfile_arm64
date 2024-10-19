@@ -1,4 +1,4 @@
-FROM --platform=linux/arm64 rust:1.78 as builder
+FROM --platform=linux/arm64/v8 rust:1.78 as builder
 LABEL authors="gagandeepsingh"
 
 # Install necessary dependencies
@@ -34,7 +34,7 @@ ENV LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$COMMON_LIBS_PATH/libtensorflow/lib
 # Build the binaries in release mode
 RUN cargo build --release
 
-FROM --platform=linux/arm64 ubuntu:22.04 AS runtime
+FROM --platform=linux/arm64/v8 ubuntu:22.04 AS runtime
 # Install OpenSSL - it is dynamically linked by some of our dependencies
 # Install ca-certificates - it is needed to verify TLS certificates
 # when establishing HTTPS connections
