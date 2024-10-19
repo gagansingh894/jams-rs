@@ -230,7 +230,7 @@ pub async fn get_models(
         )),
         Err(e) => Err((
             StatusCode::INTERNAL_SERVER_ERROR,
-            format!("Failed to predict ❌: {}", e),
+            format!("Failed to get models ❌: {}", e),
         )),
     }
 }
