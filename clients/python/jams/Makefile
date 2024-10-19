@@ -5,7 +5,6 @@ all: format lint test
 requirements:
 	python -m venv venv
 	. venv/bin/activate
-	pip install setuptools==68.2.2
 	pip install -r requirements.txt
 
 	@if [[ $(shell uname -s) == "Darwin" && $(shell uname -m) == "arm64" ]]; then \

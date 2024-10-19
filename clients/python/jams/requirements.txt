@@ -13,4 +13,4 @@ catboost==1.2.3
 lightgbm==4.0.0
 torch==2.2.0
 xgboost==2.0.3
-numpy==1.23.5
+numpy==1.26.0
