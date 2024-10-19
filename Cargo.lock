@@ -2031,6 +2031,20 @@ dependencies = [
 ]
 
 [[package]]
+name = "jams-client"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "async-trait",
+ "jams-proto",
+ "reqwest",
+ "serde",
+ "serde_json",
+ "tokio",
+ "tonic",
+]
+
+[[package]]
 name = "jams-core"
 version = "0.2.4"
 dependencies = [
