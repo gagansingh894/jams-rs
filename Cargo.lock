@@ -2046,7 +2046,7 @@ dependencies = [
 
 [[package]]
 name = "jams-core"
-version = "0.2.4"
+version = "0.2.5"
 dependencies = [
  "anyhow",
  "async-trait",
@@ -2088,7 +2088,7 @@ dependencies = [
 
 [[package]]
 name = "jams-serve"
-version = "0.1.22"
+version = "0.1.23"
 dependencies = [
  "anyhow",
  "axum 0.7.7",
