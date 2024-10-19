@@ -132,7 +132,7 @@ pub async fn add_model(
     match app_state.manager.add_model(payload.model_name).await {
         Ok(_) => Ok(StatusCode::OK),
         Err(e) => {
-            tracing::error!(format!("Failed to add model ❌: {}", e));
+            tracing::error!("{}", format!("Failed to add model ❌: {}", e));
             Err((
                 StatusCode::INTERNAL_SERVER_ERROR,
                 Json(ErrorResponse {
@@ -172,7 +172,7 @@ pub async fn update_model(
     match app_state.manager.update_model(payload.model_name).await {
         Ok(_) => Ok(StatusCode::OK),
         Err(e) => {
-            tracing::error!(format!("Failed to update model ❌: {}", e));
+            tracing::error!("{}", format!("Failed to update model ❌: {}", e));
             Err((
                 StatusCode::INTERNAL_SERVER_ERROR,
                 Json(ErrorResponse {
@@ -213,7 +213,7 @@ pub async fn delete_model(
     match app_state.manager.delete_model(request.0.model_name) {
         Ok(_) => Ok(StatusCode::OK),
         Err(e) => {
-            tracing::error!(format!("Failed to delete model ❌: {}", e));
+            tracing::error!("{}", format!("Failed to delete model ❌: {}", e));
             Err((
                 StatusCode::INTERNAL_SERVER_ERROR,
                 Json(ErrorResponse {
@@ -257,7 +257,7 @@ pub async fn get_models(
             }),
         )),
         Err(e) => {
-            tracing::error!(format!("Failed to get models ❌: {}", e));
+            tracing::error!("{}", format!("Failed to get models ❌: {}", e));
             Err((
                 StatusCode::INTERNAL_SERVER_ERROR,
                 Json(ErrorResponse {
@@ -336,7 +336,7 @@ pub async fn predict(
         Ok(predictions) => match predictions {
             Ok(output) => Ok((StatusCode::OK, Json(PredictResponse { output }))),
             Err(e) => {
-                tracing::error!(format!("Failed to get models ❌: {}", e));
+                tracing::error!("{}", format!("Failed to get models ❌: {}", e));
                 Err((
                     StatusCode::INTERNAL_SERVER_ERROR,
                     Json(ErrorResponse {
@@ -346,7 +346,7 @@ pub async fn predict(
             }
         },
         Err(e) => {
-            tracing::error!(format!("Failed to get models ❌: {}", e));
+            tracing::error!("{}", format!("Failed to get models ❌: {}", e));
             Err((
                 StatusCode::INTERNAL_SERVER_ERROR,
                 Json(ErrorResponse {
