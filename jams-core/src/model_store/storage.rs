@@ -44,7 +44,7 @@ pub trait Storage: Send + Sync + 'static {
 /// # Fields
 ///
 /// * `predictor` - An instance of a type that implements the `Predictor` trait.
-/// This represents the predictive model.
+///     This represents the predictive model.
 /// * `info` - Metadata about the model.
 ///
 pub struct Model {

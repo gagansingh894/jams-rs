@@ -142,7 +142,7 @@ impl ManagerBuilder {
     ///
     /// # Arguments
     /// - `model_store`: An `Arc` reference to a `Storage` trait object that represents
-    /// the model storage.
+    ///     the model storage.
     ///
     /// # Returns
     /// - `ManagerBuilder`: A builder object used to configure and build a `Manager`.
