@@ -383,6 +383,22 @@ impl Storage for S3ModelStore {
         }
     }
 
+    /// Periodically polls the model store to fetch and update models.
+    ///
+    /// This asynchronous function waits for the specified time interval, then fetches models from an S3
+    /// bucket using the `fetch_models` function. If new or updated models are found, they are inserted into
+    /// the in-memory model store (`self.models`). The polling process continues indefinitely with each cycle
+    /// waiting for the specified interval.
+    ///
+    /// # Arguments
+    ///
+    /// * `interval` - A `Duration` specifying the time interval between each polling operation.
+    ///
+    /// # Returns
+    ///
+    /// * `Ok(())` if the models were successfully fetched and updated in the model store.
+    /// * `Err(anyhow::Error)` if there was an error during the fetch or update process, including S3 fetch failures.
+    ///
     async fn poll(&self, interval: Duration) -> anyhow::Result<()> {
         // poll every n time interval
         tokio::time::sleep(interval).await;
@@ -452,15 +468,7 @@ async fn fetch_models(
         }
     }
 
-    let models = match load_models(model_store_dir).await {
-        Ok(models) => {
-            log::info!("Successfully loaded models from directory ✅");
-            models
-        }
-        Err(e) => {
-            anyhow::bail!("Failed to load models - {}", e.to_string());
-        }
-    };
+    let models = load_models(model_store_dir).await?;
 
     Ok(models)
 }

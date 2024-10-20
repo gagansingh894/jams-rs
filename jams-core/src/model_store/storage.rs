@@ -290,6 +290,7 @@ pub async fn load_models(model_dir: String) -> anyhow::Result<DashMap<ModelName,
         }
     }
 
+    log::info!("Successfully loaded models from directory ✅");
     Ok(models)
 }
 

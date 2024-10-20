@@ -382,6 +382,22 @@ impl Storage for AzureBlobStorageModelStore {
         }
     }
 
+    /// Periodically polls the model store in Azure Blob Storage to fetch and update models.
+    ///
+    /// This asynchronous function waits for a specified time interval, then attempts to fetch models
+    /// from the Azure Blob Storage container, and updates the internal model cache (`self.models`).
+    /// The polling interval ensures that the model store is regularly updated with new models, if available.
+    ///
+    /// # Arguments
+    ///
+    /// * `interval` - A `Duration` representing the time interval between each polling operation.
+    ///
+    /// # Returns
+    ///
+    /// * `Ok(())` - If the models were successfully fetched and updated in the model store.
+    /// * `Err(anyhow::Error)` - If an error occurs during the fetch or update process, such as when
+    ///   the models fail to be retrieved from Azure Blob Storage.
+    ///
     async fn poll(&self, interval: Duration) -> anyhow::Result<()> {
         // poll every n time interval
         tokio::time::sleep(interval).await;
@@ -390,7 +406,7 @@ impl Storage for AzureBlobStorageModelStore {
         let models = match fetch_models(&self.container_client, self.model_store_dir.clone()).await
         {
             Ok(models) => {
-                log::info!("Successfully fetched valid models from S3 ✅");
+                log::info!("Successfully fetched valid models from Azure Blob Storage ✅");
                 models
             }
             Err(e) => {
@@ -455,15 +471,7 @@ async fn fetch_models(
         }
     }
 
-    let models = match load_models(model_store_dir).await {
-        Ok(models) => {
-            log::info!("Successfully loaded models from directory ✅");
-            models
-        }
-        Err(e) => {
-            anyhow::bail!("Failed to load models - {}", e.to_string());
-        }
-    };
+    let models = load_models(model_store_dir).await?;
 
     Ok(models)
 }
