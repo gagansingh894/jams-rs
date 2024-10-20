@@ -1,0 +1,7 @@
+[config]
+protocol = "http"
+port = 3000
+model_store = "aws"
+s3_bucket_name = "jamsmodelstore"
+polling = 600 # in seconds
+num_workers = 4
