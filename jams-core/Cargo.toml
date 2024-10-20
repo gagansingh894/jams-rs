@@ -50,3 +50,4 @@ azure_core = { version = "0.20.0", features = ["tokio-fs"] }
 azure_storage = "0.20.0"
 azure_storage_blobs = "0.20.0"
 futures = "0.3.30"
+tracing = "0.1.40"
