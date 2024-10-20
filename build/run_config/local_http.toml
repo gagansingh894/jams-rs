@@ -3,5 +3,5 @@ protocol = "http"
 port = 3000
 model_store = "local"
 model_dir = "/model_store"
-polling = 600 # in seconds
+poll_interval = 600 # in seconds
 num_workers = 4

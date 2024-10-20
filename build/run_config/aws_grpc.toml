@@ -3,5 +3,5 @@ protocol = "grpc"
 port = 4000
 model_store = "aws"
 s3_bucket_name = "jamsmodelstore"
-polling = 600 # in seconds
+poll_interval = 600 # in seconds
 num_workers = 4
