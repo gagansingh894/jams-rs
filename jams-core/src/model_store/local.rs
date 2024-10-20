@@ -56,11 +56,10 @@ impl LocalModelStore {
         let models = match fetch_models(local_model_store_dir.clone(), temp_model_dir.clone()).await
         {
             Ok(models) => {
-                log::info!("Successfully loaded models from directory ✅");
                 models
             }
             Err(e) => {
-                anyhow::bail!("Failed to load models - {}", e.to_string());
+                anyhow::bail!("Failed to load models - {} ❌", e.to_string());
             }
         };
 
@@ -371,7 +370,6 @@ async fn fetch_models(
         }
         false => match load_models(temp_model_dir.clone()).await {
             Ok(models) => {
-                log::info!("Successfully fetched valid models from directory ✅");
                 Ok(models)
             }
             Err(e) => {
