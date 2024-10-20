@@ -102,6 +102,7 @@ impl Storage for LocalModelStore {
     /// * The framework cannot be extracted from the model path.
     /// * The model fails to load.
     ///
+    #[tracing::instrument(skip(self))]
     async fn add_model(&self, model_name: ModelName) -> anyhow::Result<()> {
         let lms_model_name = format!("{}.tar.gz", model_name.clone());
 
@@ -166,6 +167,7 @@ impl Storage for LocalModelStore {
     /// * The specified model does not exist in the model store.
     /// * The model fails to load.
     ///
+    #[tracing::instrument(skip(self))]
     async fn update_model(&self, model_name: ModelName) -> anyhow::Result<()> {
         // By calling remove on the hashmap, the object is returned on success/
         // We use the returned object, in this case the model to extract the framework and model path
@@ -229,6 +231,7 @@ impl Storage for LocalModelStore {
     /// * `Some(Ref<ModelName, Arc<Model>>)` if the model exists.
     /// * `None` if the model does not exist.
     ///
+    #[tracing::instrument(skip(self))]
     fn get_model(&self, model_name: ModelName) -> Option<Ref<ModelName, Arc<Model>>> {
         self.models.get(model_name.as_str())
     }
@@ -241,6 +244,7 @@ impl Storage for LocalModelStore {
     ///
     /// This function returns an `anyhow::Result` containing a vector of `Metadata`.
     ///
+    #[tracing::instrument(skip(self))]
     fn get_models(&self) -> anyhow::Result<Vec<Metadata>> {
         let model: Vec<Metadata> = self
             .models
@@ -261,6 +265,7 @@ impl Storage for LocalModelStore {
     /// # Errors
     ///
     /// This function returns an error if the specified model does not exist in the store.
+    #[tracing::instrument(skip(self))]
     fn delete_model(&self, model_name: ModelName) -> anyhow::Result<()> {
         match self.models.remove(&model_name) {
             None => {
@@ -289,6 +294,7 @@ impl Storage for LocalModelStore {
     /// * `Err(anyhow::Error)` - If an error occurs during the fetch or update process, such as when
     ///   the models fail to be retrieved.
     ///
+    #[tracing::instrument(skip(self))]
     async fn poll(&self, interval: Duration) -> anyhow::Result<()> {
         // poll every n time interval
         tokio::time::sleep(interval).await;
@@ -334,6 +340,7 @@ impl Storage for LocalModelStore {
 ///   or an empty map if the local model store directory is not specified.
 /// * `Err(anyhow::Error)` - If any errors occur during reading the directory, unpacking tarballs, or loading models.
 ///
+#[tracing::instrument]
 async fn fetch_models(
     local_model_store_dir: String,
     temp_model_dir: String,

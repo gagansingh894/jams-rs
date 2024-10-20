@@ -28,6 +28,7 @@ pub const DOWNLOADED_MODELS_DIRECTORY_NAME_PREFIX: &str = "model_store";
 /// * The tarball file cannot be saved or created.
 /// * The tarball file cannot be unpacked into the output directory.
 ///
+#[tracing::instrument(skip(path, key, data, out_dir))]
 pub fn save_and_upack_tarball(
     path: &str,
     key: String,
@@ -103,6 +104,7 @@ pub fn save_and_upack_tarball(
 /// * The `.tar.gz` file cannot be opened or read.
 /// * The contents of the `.tar.gz` file cannot be unpacked into the output directory.
 ///
+#[tracing::instrument(skip(tarball_path, out_dir))]
 pub fn unpack_tarball(tarball_path: &str, out_dir: &str) -> anyhow::Result<()> {
     match File::open(tarball_path) {
         Ok(tar_gz) => {
@@ -134,6 +136,7 @@ pub fn unpack_tarball(tarball_path: &str, out_dir: &str) -> anyhow::Result<()> {
     }
 }
 
+#[tracing::instrument]
 pub fn cleanup(dir: String) {
     match remove_dir_all(dir) {
         Ok(_) => {
