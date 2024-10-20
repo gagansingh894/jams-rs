@@ -39,6 +39,7 @@ pub async fn start(config: server::Config) -> anyhow::Result<()> {
     tracing_subscriber::fmt()
         .with_line_number(true)
         .with_max_level(log_level)
+        .pretty()
         .init();
 
     // setup shared state
