@@ -1,4 +1,4 @@
-use crate::cli::{predict, Commands, PredictSubCommands, StartSubCommands, Data};
+use crate::cli::{predict, Commands, Data, PredictSubCommands, StartSubCommands};
 use clap::Parser;
 use std::fs;
 
@@ -53,16 +53,22 @@ J.A.M.S - Just Another Model Server
                     };
 
                     let config = jams_serve::common::server::Config {
-                        model_dir: config_data.config.model_dor,
+                        model_dir: config_data.config.model_dir,
                         port: config_data.config.port,
                         use_debug_level: Some(false),
                         num_workers: config_data.config.num_workers,
-                        with_s3_model_store: Some(config_data.config.store == AWS),
-                        s3_bucket_name: config_data.config.s3_bucket_name,
-                        with_azure_model_store: Some(config_data.config.store == AZURE),
-                        azure_storage_container_name: config_data
-                            .config
-                            .azure_storage_container_name,
+                        with_s3_model_store: Some(false)
+                            .filter(|_| config_data.config.model_store == LOCAL)
+                            .or(Some(config_data.config.model_store == AWS)),
+                        s3_bucket_name: None
+                            .filter(|_| config_data.config.model_store == LOCAL)
+                            .or(config_data.config.s3_bucket_name),
+                        with_azure_model_store: Some(false)
+                            .filter(|_| config_data.config.model_store == LOCAL)
+                            .or(Some(config_data.config.model_store == AZURE)),
+                        azure_storage_container_name: None
+                            .filter(|_| config_data.config.model_store == LOCAL)
+                            .or(config_data.config.azure_storage_container_name),
                         poll_interval: config_data.config.poll_interval,
                     };
 
@@ -74,7 +80,7 @@ J.A.M.S - Just Another Model Server
                         // shutdown signal received
                         tracing::error!("Shutdown signal received ⚠️");
                         Ok(())
-                    } else {
+                    } else if config_data.config.protocol == HTTP {
                         jams_serve::http::server::start(config)
                             .await
                             .expect("Failed to start server ❌ \n");
@@ -82,6 +88,8 @@ J.A.M.S - Just Another Model Server
                         // shutdown signal received
                         tracing::error!("Shutdown signal received ⚠️");
                         Ok(())
+                    } else {
+                        anyhow::bail!("Unrecognised protocol ❌")
                     }
                 }
                 None => {

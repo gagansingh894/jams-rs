@@ -32,6 +32,7 @@ pub struct StartCommands {
     #[clap(subcommand)]
     pub cmd: Option<StartSubCommands>,
 
+    /// Path to config file
     #[arg(short = 'f', long)]
     pub file: Option<String>,
 }
@@ -125,13 +126,13 @@ pub struct Data {
 
 // Config struct holds to data from the `[config]` section.
 #[derive(Deserialize)]
-struct Config {
+pub struct Config {
     pub protocol: String,
     pub port: Option<u16>,
-    pub store: String,
+    pub model_store: String,
     pub num_workers: Option<usize>,
     pub poll_interval: Option<u64>,
-    pub model_dor: Option<String>,
+    pub model_dir: Option<String>,
     pub azure_storage_container_name: Option<String>,
     pub s3_bucket_name: Option<String>,
 }
