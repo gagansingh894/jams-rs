@@ -130,6 +130,7 @@ impl Model {
 ///
 /// This function will return an error if it fails to read the directory, convert file paths, or
 /// load any of the models.
+#[tracing::instrument(skip(model_dir))]
 pub async fn load_models(model_dir: String) -> anyhow::Result<DashMap<ModelName, Arc<Model>>> {
     let models: DashMap<ModelName, Arc<Model>> = DashMap::new();
 
@@ -311,6 +312,7 @@ pub async fn load_models(model_dir: String) -> anyhow::Result<DashMap<ModelName,
 /// * The model framework is unsupported.
 /// * The model fails to load due to an internal error specific to the framework.
 ///
+#[tracing::instrument]
 pub async fn load_predictor(
     model_framework: ModelFramework,
     model_path: &str,

@@ -69,6 +69,7 @@ impl CatboostModelInput {
 /// # Errors
 ///
 /// Returns an `Err` if there is an issue with the shape or content of the input vectors.
+#[tracing::instrument(skip(categorical_features, numeric_features))]
 fn create_catboost_model_inputs(
     categorical_features: Vec<Vec<String>>,
     numeric_features: Vec<Vec<f32>>,
@@ -189,6 +190,7 @@ impl Predictor for Catboost {
     /// # Errors
     ///
     /// Returns an `Err` if there is an issue with parsing the input or making predictions.
+    #[tracing::instrument(skip(self, input))]
     fn predict(&self, input: ModelInput) -> anyhow::Result<Output> {
         let input = CatboostModelInput::parse(input)?;
         let preds = self

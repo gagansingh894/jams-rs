@@ -19,6 +19,7 @@ impl TorchModelInput {
     /// # Returns
     /// * `Ok(TorchModelInput)` - If parsing was successful.
     /// * `Err(anyhow::Error)` - If there was an error during parsing.
+    #[tracing::instrument(skip(input))]
     fn parse(input: ModelInput) -> anyhow::Result<Self> {
         let mut numerical_features: Vec<Vec<f32>> = Vec::new();
 
@@ -99,6 +100,7 @@ impl Predictor for Torch {
     /// # Returns
     /// * `Ok(Output)` - The prediction output.
     /// * `Err(anyhow::Error)` - If there was an error during prediction.
+    #[tracing::instrument(skip(self, input))]
     fn predict(&self, input: ModelInput) -> anyhow::Result<Output> {
         let input = TorchModelInput::parse(input)?;
         let preds = self.model.forward_ts(&[input.tensor]);

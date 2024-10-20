@@ -173,6 +173,7 @@ impl Storage for S3ModelStore {
     /// * The model cannot be downloaded from S3.
     /// * The framework cannot be extracted from the model path.
     /// * The model cannot be loaded into memory.
+    #[tracing::instrument(skip(self))]
     async fn add_model(&self, model_name: ModelName) -> anyhow::Result<()> {
         // Prepare the S3 key from model_name
         // It is assumed that model will always be present as a .tar.gz file in S3
@@ -266,6 +267,7 @@ impl Storage for S3ModelStore {
     /// * The latest model version cannot be downloaded from S3.
     /// * The framework cannot be extracted from the model path.
     /// * The model cannot be loaded into memory.
+    #[tracing::instrument(skip(self))]
     async fn update_model(&self, model_name: ModelName) -> anyhow::Result<()> {
         // By calling remove on the hashmap, the object is returned on success/
         // We use the returned object, in this case the model to extract the framework and model path
@@ -339,6 +341,7 @@ impl Storage for S3ModelStore {
     /// * `Some(Ref<ModelName, Arc<Model>>)` if the model exists.
     /// * `None` if the model does not exist.
     ///
+    #[tracing::instrument(skip(self))]
     fn get_model(&self, model_name: ModelName) -> Option<Ref<ModelName, Arc<Model>>> {
         self.models.get(model_name.as_str())
     }
@@ -351,6 +354,7 @@ impl Storage for S3ModelStore {
     ///
     /// This function returns an `anyhow::Result` containing a vector of `Metadata`.
     ///
+    #[tracing::instrument(skip(self))]
     fn get_models(&self) -> anyhow::Result<Vec<Metadata>> {
         let model: Vec<Metadata> = self
             .models
@@ -371,6 +375,7 @@ impl Storage for S3ModelStore {
     /// # Errors
     ///
     /// This function returns an error if the specified model does not exist in the store.
+    #[tracing::instrument(skip(self))]
     fn delete_model(&self, model_name: ModelName) -> anyhow::Result<()> {
         match self.models.remove(&model_name) {
             None => {
@@ -399,6 +404,7 @@ impl Storage for S3ModelStore {
     /// * `Ok(())` if the models were successfully fetched and updated in the model store.
     /// * `Err(anyhow::Error)` if there was an error during the fetch or update process, including S3 fetch failures.
     ///
+    #[tracing::instrument(skip(self))]
     async fn poll(&self, interval: Duration) -> anyhow::Result<()> {
         // poll every n time interval
         tokio::time::sleep(interval).await;
@@ -452,6 +458,7 @@ impl Storage for S3ModelStore {
 /// * Downloaded tarballs cannot be unpacked.
 /// * Models cannot be loaded from the local directory.
 ///
+#[tracing::instrument(skip(client))]
 async fn fetch_models(
     client: &s3::Client,
     bucket_name: String,
@@ -492,6 +499,7 @@ async fn fetch_models(
 /// This function will return an error if:
 /// * Object keys cannot be listed from the S3 bucket.
 ///
+#[tracing::instrument(skip(client))]
 async fn get_keys(client: &s3::Client, bucket_name: String) -> anyhow::Result<Vec<String>> {
     let mut keys: Vec<String> = Vec::new();
 
@@ -557,6 +565,7 @@ async fn get_keys(client: &s3::Client, bucket_name: String) -> anyhow::Result<Ve
 /// * Objects cannot be downloaded from the S3 bucket.
 /// * Downloaded tarballs cannot be saved or unpacked.
 ///
+#[tracing::instrument(skip(client, object_keys, out_dir))]
 async fn download_objects(
     client: &s3::Client,
     bucket_name: String,

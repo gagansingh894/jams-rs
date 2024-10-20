@@ -2048,7 +2048,7 @@ dependencies = [
 
 [[package]]
 name = "jams-core"
-version = "0.2.6"
+version = "0.2.7"
 dependencies = [
  "anyhow",
  "async-trait",
@@ -2074,6 +2074,7 @@ dependencies = [
  "tempfile",
  "tensorflow",
  "tokio",
+ "tracing",
  "uuid",
 ]
 
@@ -2090,7 +2091,7 @@ dependencies = [
 
 [[package]]
 name = "jams-serve"
-version = "0.1.24"
+version = "0.1.25"
 dependencies = [
  "anyhow",
  "axum 0.7.7",

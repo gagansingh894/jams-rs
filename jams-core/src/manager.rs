@@ -33,6 +33,7 @@ impl Manager {
     /// # Errors
     /// Returns an error if there are issues fetching the model names from the store.
     ///
+    #[tracing::instrument(skip(self))]
     pub fn get_models(&self) -> anyhow::Result<Vec<Metadata>> {
         self.model_store.get_models()
     }
@@ -48,6 +49,7 @@ impl Manager {
     ///
     /// * `Ok(())` if the model is successfully added.
     /// * `Err(anyhow::Error)` if there is an error during the addition process.
+    #[tracing::instrument(skip(self))]
     pub async fn add_model(&self, model_name: ModelName) -> anyhow::Result<()> {
         self.model_store.add_model(model_name).await
     }
@@ -62,6 +64,7 @@ impl Manager {
     ///
     /// * `Ok(())` if the model is successfully updated.
     /// * `Err(anyhow::Error)` if there is an error during the update process or if the model does not exist.
+    #[tracing::instrument(skip(self))]
     pub async fn update_model(&self, model_name: ModelName) -> anyhow::Result<()> {
         self.model_store.update_model(model_name).await
     }
@@ -76,6 +79,7 @@ impl Manager {
     ///
     /// * `Ok(())` if the model is successfully deleted.
     /// * `Err(anyhow::Error)` if there is an error during the deletion process or if the model does not exist.
+    #[tracing::instrument(skip(self))]
     pub fn delete_model(&self, model_name: ModelName) -> anyhow::Result<()> {
         self.model_store.delete_model(model_name)
     }
@@ -93,6 +97,7 @@ impl Manager {
     /// - `Ok(())`: If the prediction was successfully made.
     /// - `Err(anyhow::Error)`: If there was an error fetching the model, parsing the input, or making the prediction.
     ///
+    #[tracing::instrument(skip(self, input_json))]
     pub fn predict(&self, model_name: ModelName, input_json: &str) -> anyhow::Result<String> {
         let model = self.model_store.get_model(model_name.clone());
         match model {

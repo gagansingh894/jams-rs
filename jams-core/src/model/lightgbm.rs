@@ -28,6 +28,7 @@ impl LightGBMModelInput {
     ///
     /// Returns an `Err` if the input contains unsupported string values or if there are
     /// issues converting or organizing the numerical features.
+    #[tracing::instrument(skip(input))]
     pub fn parse(input: ModelInput) -> anyhow::Result<Self> {
         let mut numerical_features: Vec<Vec<f32>> = Vec::new();
 
@@ -120,6 +121,7 @@ impl Predictor for LightGBM {
     /// # Errors
     ///
     /// Returns an `Err` if there is an issue parsing the input or performing the prediction.
+    #[tracing::instrument(skip(self, input))]
     fn predict(&self, input: ModelInput) -> anyhow::Result<Output> {
         let input = LightGBMModelInput::parse(input)?;
         let p = Parameters::new();

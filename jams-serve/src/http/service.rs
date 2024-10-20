@@ -99,6 +99,7 @@ pub struct ErrorResponse {
 ///
 /// # Returns
 /// - `StatusCode`: An HTTP status code indicating the health status. Always returns `StatusCode::OK`.
+#[tracing::instrument]
 pub async fn healthcheck() -> StatusCode {
     StatusCode::OK
 }
@@ -125,6 +126,7 @@ pub async fn healthcheck() -> StatusCode {
 /// If there is an error while adding the model, such as a failure to interact with the file system or any underlying issues
 /// with the model manager, the function returns an `INTERNAL_SERVER_ERROR` status code along with a generic error message. Detailed
 /// error information is expected to be logged on the server side.
+#[tracing::instrument(skip(app_state, payload))]
 pub async fn add_model(
     State(app_state): State<Arc<AppState>>,
     Json(payload): Json<AddModelRequest>,
@@ -165,6 +167,7 @@ pub async fn add_model(
 /// If there is an error while updating the model, such as failure to find the model or issues with underlying data,
 /// the function returns an `INTERNAL_SERVER_ERROR` status code along with a generic error message. Detailed
 /// error information is expected to be logged on the server side.
+#[tracing::instrument(skip(app_state, payload))]
 pub async fn update_model(
     State(app_state): State<Arc<AppState>>,
     Json(payload): Json<UpdateModelRequest>,
@@ -206,6 +209,7 @@ pub async fn update_model(
 /// # Error Handling
 /// If the model cannot be found or an error occurs during the deletion process (e.g., file system error or database error),
 /// the function returns an `INTERNAL_SERVER_ERROR` status code along with a string that provides a detailed description of the error.
+#[tracing::instrument(skip(app_state, request))]
 pub async fn delete_model(
     State(app_state): State<Arc<AppState>>,
     request: Query<DeleteModelRequest>,
@@ -245,6 +249,7 @@ pub async fn delete_model(
 /// # Error Handling
 /// If there is an error retrieving the models (e.g., failure to access the underlying storage or an unexpected exception),
 /// the function returns an `INTERNAL_SERVER_ERROR` status code along with a descriptive error message.
+#[tracing::instrument(skip(app_state))]
 pub async fn get_models(
     State(app_state): State<Arc<AppState>>,
 ) -> Result<(StatusCode, Json<GetModelsResponse>), (StatusCode, Json<ErrorResponse>)> {
@@ -319,6 +324,7 @@ pub async fn get_models(
 ///
 /// This handler ensures that any blocking operation (like model prediction) is offloaded to the `cpu_pool` to avoid
 /// blocking the main async runtime.
+#[tracing::instrument(skip(app_state, payload))]
 pub async fn predict(
     State(app_state): State<Arc<AppState>>,
     Json(payload): Json<PredictRequest>,

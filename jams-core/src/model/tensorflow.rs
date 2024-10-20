@@ -28,6 +28,7 @@ impl TensorflowModelInput {
     /// # Returns
     /// * `Ok(TensorflowModelInput)` - If parsing was successful.
     /// * `Err(anyhow::Error)` - If there was an error during parsing.
+    #[tracing::instrument(skip(input, signature_def, graph))]
     pub fn parse(
         input: ModelInput,
         signature_def: &SignatureDef,
@@ -54,6 +55,7 @@ impl TensorflowModelInput {
 /// # Returns
 /// * `Ok(TensorflowModelInput)` - If parsing was successful.
 /// * `Err(anyhow::Error)` - If there was an error during parsing.
+#[tracing::instrument(skip(input, signature_def, graph))]
 fn parse_sequential(
     input: ModelInput,
     signature_def: &SignatureDef,
@@ -152,6 +154,7 @@ fn parse_sequential(
 /// # Returns
 /// * `Ok(TensorflowModelInput)` - If parsing was successful.
 /// * `Err(anyhow::Error)` - If there was an error during parsing.
+#[tracing::instrument(skip(model_inputs, signature_def, graph))]
 fn parse_functional(
     model_inputs: ModelInput,
     signature_def: &SignatureDef,
@@ -360,6 +363,7 @@ impl Predictor for Tensorflow {
     /// # Returns
     /// * `Ok(Output)` - If prediction was successful, containing the predicted output.
     /// * `Err(anyhow::Error)` - If there was an error during prediction.
+    #[tracing::instrument(skip(self, input))]
     fn predict(&self, input: ModelInput) -> anyhow::Result<Output> {
         // Parse input into TensorFlow model input format
         let input = TensorflowModelInput::parse(input, &self.signature_def, &self.graph)?;
