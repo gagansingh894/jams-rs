@@ -1,12 +1,13 @@
 use clap::{Args, Parser, Subcommand};
 use jams_core::model::predictor::Predictor;
+use serde::Deserialize;
 use std::fs;
 
 /// CLI for starting an J.A.M.S
 #[derive(Parser, Debug)]
 #[clap(
     name = "J.A.M.S - Just Another Model Server",
-    version = "0.1.0",
+    version = "0.1.20",
     author = "Gagandeep Singh",
     about = "J.A.M.S aims to provide a fast, comprehensive and modular serving solution for tree based and deep learning models written in Rust 🦀"
 )]
@@ -29,7 +30,11 @@ pub enum Commands {
 #[derive(Parser, Debug)]
 pub struct StartCommands {
     #[clap(subcommand)]
-    pub cmd: StartSubCommands,
+    pub cmd: Option<StartSubCommands>,
+
+    /// Path to config file
+    #[arg(short = 'f', long)]
+    pub file: Option<String>,
 }
 
 #[derive(Subcommand, Debug)]
@@ -111,6 +116,25 @@ pub struct PredictCommandArgs {
     /// Path to JSON file containing input data
     #[clap(long)]
     pub input_path: Option<String>,
+}
+
+// Top level struct to hold the TOML data.
+#[derive(Deserialize)]
+pub struct Data {
+    pub config: Config,
+}
+
+// Config struct holds to data from the `[config]` section.
+#[derive(Deserialize)]
+pub struct Config {
+    pub protocol: String,
+    pub port: Option<u16>,
+    pub model_store: String,
+    pub num_workers: Option<usize>,
+    pub poll_interval: Option<u64>,
+    pub model_dir: Option<String>,
+    pub azure_storage_container_name: Option<String>,
+    pub s3_bucket_name: Option<String>,
 }
 
 pub fn predict(

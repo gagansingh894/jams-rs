@@ -1,0 +1,32 @@
+[config]
+protocol = "http"                               # Specifies the protocol to be used by the server.
+                                                # Allowed values: "http", "grpc"
+
+port = 3000                                     # Defines the port number on which the server will listen.
+                                                # This should be an integer between 1 and 65535.
+                                                # Example: 3000 for HTTP, 443 for HTTPS
+
+model_store = "local"                           # Indicates the type of model store being used.
+                                                # Allowed values:
+                                                # - "local": Use local storage.
+                                                # - "aws": Use AWS S3 for model storage.
+                                                # - "azure": Use Azure Blob Storage.
+
+model_dir = "<absolute path>"                   # Specifies the directory path where models are stored locally.
+                                                # If `model_store` is set to "local", this directory is used
+                                                # to store or load models.
+
+azure_storage_container_name = "jamsmodelstore" # Specifies the name of the Azure Blob Storage container
+                                                # used for storing models when `model_store` is set to "azure".
+                                                # This should be a valid container name in Azure.
+
+s3_bucket_name = "jamsmodelstore"               # Indicates the name of the S3 bucket used for storing models
+                                                # when `model_store` is set to "aws".
+                                                # This should be a valid bucket name in AWS S3.
+
+poll_interval = 600                             # Defines the time interval (in seconds) for polling the model store
+                                                # to check for updates.
+                                                # Example: 600 means the application will poll every 10 minutes.
+
+num_workers = 4                                 # Sets the number of Rayon threadpool worker threads
+                                                # Example: 4 threads
