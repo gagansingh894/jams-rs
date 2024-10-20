@@ -18,7 +18,7 @@ jobs:
     runs-on: ubuntu-latest
 
     container:
-      image: rust:1.78
+      image: rust:1.81
       options: --user root
       env:
         PROTOC: /usr/bin/protoc
