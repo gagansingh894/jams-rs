@@ -1,6 +1,7 @@
 use crate::model::predictor::ModelInput;
 use crate::model_store::storage::{Metadata, ModelName, Storage};
 use std::sync::Arc;
+use tokio::time;
 
 /// Manages model storage and prediction requests.
 ///
@@ -25,7 +26,21 @@ impl Manager {
     /// - `Ok(Manager)`: If the models were successfully fetched.
     /// - `Err(anyhow::Error)`: If there was an error fetching the models.
     ///
-    pub fn new(model_store: Arc<dyn Storage>) -> anyhow::Result<Self> {
+    pub async fn new(model_store: Arc<dyn Storage>) -> anyhow::Result<Self> {
+        let model_store_clone = Arc::clone(&model_store);
+        tokio::spawn(async move {
+            loop {
+                match model_store_clone.poll(time::Duration::from_secs(900)).await {
+                    Ok(_) => {
+                        log::info!("Successfully polled the model store ✅");
+                    }
+                    Err(e) => {
+                        log::error!("Failed to poll the model store ❌: {}", e);
+                    }
+                }
+            }
+        });
+
         Ok(Manager { model_store })
     }
 
@@ -141,7 +156,7 @@ mod tests {
     async fn successfully_create_manager_with_local_model_store() {
         let model_dir = "./tests/model_storage/model_store";
         let local_model_store = LocalModelStore::new(model_dir.to_string()).await.unwrap();
-        let manager = Manager::new(Arc::new(local_model_store));
+        let manager = Manager::new(Arc::new(local_model_store)).await;
 
         // assert
         assert!(manager.is_ok());
@@ -151,7 +166,7 @@ mod tests {
     async fn successfully_make_predictions_via_manager_with_local_model_store() {
         let model_dir = "tests/model_storage/model_store";
         let local_model_store = LocalModelStore::new(model_dir.to_string()).await.unwrap();
-        let manager = Manager::new(Arc::new(local_model_store)).unwrap();
+        let manager = Manager::new(Arc::new(local_model_store)).await.unwrap();
 
         // dummy input
         let input = "{\"pclass\":[\"1\",\"3\",\"3\",\"3\",\"3\",\"3\",\"3\",\"3\",\"3\",\"1\"],\"sex\":[\"female\",\"female\",\"male\",\"female\",\"male\",\"female\",\"male\",\"male\",\"male\",\"male\"],\"age\":[22.0,23.79929292929293,32.0,23.79929292929293,14.0,2.0,22.0,28.0,23.79929292929293,23.79929292929293],\"sibsp\":[\"0\",\"1\",\"0\",\"8\",\"5\",\"4\",\"0\",\"0\",\"0\",\"0\"],\"parch\":[\"0\",\"0\",\"0\",\"2\",\"2\",\"2\",\"0\",\"0\",\"0\",\"0\"],\"fare\":[151.55,14.4542,7.925,69.55,46.9,31.275,7.8958,7.8958,7.8958,35.5],\"embarked\":[\"S\",\"C\",\"S\",\"S\",\"S\",\"S\",\"S\",\"S\",\"S\",\"S\"],\"class\":[\"First\",\"Third\",\"Third\",\"Third\",\"Third\",\"Third\",\"Third\",\"Third\",\"Third\",\"First\"],\"who\":[\"woman\",\"woman\",\"man\",\"woman\",\"child\",\"child\",\"man\",\"man\",\"man\",\"man\"],\"adult_male\":[\"True\",\"False\",\"True\",\"False\",\"False\",\"False\",\"True\",\"True\",\"True\",\"True\"],\"deck\":[\"Unknown\",\"Unknown\",\"Unknown\",\"Unknown\",\"Unknown\",\"Unknown\",\"Unknown\",\"Unknown\",\"Unknown\",\"C\"],\"embark_town\":[\"Southampton\",\"Cherbourg\",\"Southampton\",\"Southampton\",\"Southampton\",\"Southampton\",\"Southampton\",\"Southampton\",\"Southampton\",\"Southampton\"],\"alone\":[\"True\",\"False\",\"True\",\"False\",\"False\",\"False\",\"True\",\"True\",\"True\",\"True\"]}";
@@ -169,7 +184,7 @@ mod tests {
     {
         let model_dir = "tests/model_storage/model_store";
         let local_model_store = LocalModelStore::new(model_dir.to_string()).await.unwrap();
-        let manager = Manager::new(Arc::new(local_model_store)).unwrap();
+        let manager = Manager::new(Arc::new(local_model_store)).await.unwrap();
 
         // dummy input
         let input = "{\"pclass\":[\"3\",\"3\",\"3\",\"3\",\"3\",\"3\",\"3\",\"3\",\"1\"],\"sex\":[\"female\",\"female\",\"male\",\"female\",\"male\",\"female\",\"male\",\"male\",\"male\",\"male\"],\"age\":[22.0,23.79929292929293,32.0,23.79929292929293,14.0,2.0,22.0,28.0,23.79929292929293,23.79929292929293],\"sibsp\":[\"0\",\"1\",\"0\",\"8\",\"5\",\"4\",\"0\",\"0\",\"0\",\"0\"],\"parch\":[\"0\",\"0\",\"0\",\"2\",\"2\",\"2\",\"0\",\"0\",\"0\",\"0\"],\"fare\":[151.55,14.4542,7.925,69.55,46.9,31.275,7.8958,7.8958,7.8958,35.5],\"embarked\":[\"S\",\"C\",\"S\",\"S\",\"S\",\"S\",\"S\",\"S\",\"S\",\"S\"],\"class\":[\"First\",\"Third\",\"Third\",\"Third\",\"Third\",\"Third\",\"Third\",\"Third\",\"Third\",\"First\"],\"who\":[\"woman\",\"woman\",\"man\",\"woman\",\"child\",\"child\",\"man\",\"man\",\"man\",\"man\"],\"adult_male\":[\"True\",\"False\",\"True\",\"False\",\"False\",\"False\",\"True\",\"True\",\"True\",\"True\"],\"deck\":[\"Unknown\",\"Unknown\",\"Unknown\",\"Unknown\",\"Unknown\",\"Unknown\",\"Unknown\",\"Unknown\",\"Unknown\",\"C\"],\"embark_town\":[\"Southampton\",\"Cherbourg\",\"Southampton\",\"Southampton\",\"Southampton\",\"Southampton\",\"Southampton\",\"Southampton\",\"Southampton\",\"Southampton\"],\"alone\":[\"True\",\"False\",\"True\",\"False\",\"False\",\"False\",\"True\",\"True\",\"True\",\"True\"]}";
@@ -184,7 +199,7 @@ mod tests {
     async fn successfully_get_models_via_manager_with_local_model_store() {
         let model_dir = "tests/model_storage/model_store";
         let local_model_store = LocalModelStore::new(model_dir.to_string()).await.unwrap();
-        let manager = Manager::new(Arc::new(local_model_store)).unwrap();
+        let manager = Manager::new(Arc::new(local_model_store)).await.unwrap();
 
         // models
         let models = manager.get_models();
@@ -198,7 +213,7 @@ mod tests {
     async fn successfully_add_model_via_manager_with_local_model_store() {
         let model_dir = "tests/model_storage/model_store";
         let local_model_store = LocalModelStore::new(model_dir.to_string()).await.unwrap();
-        let manager = Manager::new(Arc::new(local_model_store)).unwrap();
+        let manager = Manager::new(Arc::new(local_model_store)).await.unwrap();
         let model_name: ModelName = "catboost-titanic_model".to_string();
 
         // delete a model to add it back
@@ -220,7 +235,7 @@ mod tests {
     async fn successfully_update_model_via_manager_with_local_model_store() {
         let model_dir = "tests/model_storage/model_store";
         let local_model_store = LocalModelStore::new(model_dir.to_string()).await.unwrap();
-        let manager = Manager::new(Arc::new(local_model_store)).unwrap();
+        let manager = Manager::new(Arc::new(local_model_store)).await.unwrap();
         let model_name: ModelName = "my_awesome_penguin_model".to_string();
 
         // update model
@@ -234,7 +249,7 @@ mod tests {
     async fn successfully_delete_model_via_manager_with_local_model_store() {
         let model_dir = "tests/model_storage/model_store";
         let local_model_store = LocalModelStore::new(model_dir.to_string()).await.unwrap();
-        let manager = Manager::new(Arc::new(local_model_store)).unwrap();
+        let manager = Manager::new(Arc::new(local_model_store)).await.unwrap();
         let model_name: ModelName = "my_awesome_penguin_model".to_string();
 
         // delete model
