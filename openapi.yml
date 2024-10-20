@@ -57,6 +57,14 @@ paths:
                     example: '{"result_key": "[[result_value]]"}'
         '500':
           description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    example: "Failed to predict ❌: specific error message"
       tags:
         - Predict
 
@@ -94,6 +102,14 @@ paths:
                           example: "Sat, 8 Jun 2024 13:37:56 +0000"
         '500':
           description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    example: "Failed to get models ❌: specific error message"
       tags:
         - Models
     put:
@@ -115,6 +131,14 @@ paths:
           description: Model updated successfully
         '500':
           description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    example: "Failed to update model ❌. Please check server logs"
       tags:
         - Models
     post:
@@ -136,6 +160,14 @@ paths:
           description: Model added successfully
         '500':
           description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    example: "Failed to add model ❌. Please check server logs"
       tags:
         - Models
     delete:

@@ -64,7 +64,14 @@ pub fn save_and_upack_tarball(
         }
     }
 
-    match unpack_tarball(file_path.to_str().unwrap(), out_dir) {
+    let tarball_path = match file_path.to_str() {
+        None => {
+            anyhow::bail!("failed to convert file path to str ❌")
+        }
+        Some(path) => path,
+    };
+
+    match unpack_tarball(tarball_path, out_dir) {
         Ok(_) => Ok(()),
         Err(e) => {
             anyhow::bail!("Failed to unpack ⚠️: {}", e.to_string())
