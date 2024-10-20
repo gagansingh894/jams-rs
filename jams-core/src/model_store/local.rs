@@ -11,6 +11,7 @@ use dashmap::mapref::one::Ref;
 use dashmap::DashMap;
 use std::fs;
 use std::sync::Arc;
+use std::time::Duration;
 use uuid::Uuid;
 
 /// A local model store that manages models stored in a specified directory.
@@ -52,43 +53,12 @@ impl LocalModelStore {
             Uuid::new_v4(),
         );
 
-        // unpack
-        match fs::read_dir(local_model_store_dir.as_str()) {
-            Ok(dir) => {
-                for entry in dir {
-                    let entry = entry?;
-                    let path = entry.path();
-                    let tarball_path = match path.to_str() {
-                        None => {
-                            anyhow::bail!("failed to convert file path to str ❌")
-                        }
-                        Some(path) => path,
-                    };
-                    unpack_tarball(tarball_path, temp_model_dir.as_str())?
-                }
-            }
+        let models = match fetch_models(local_model_store_dir.clone(), temp_model_dir.clone()).await
+        {
+            Ok(models) => models,
             Err(e) => {
-                anyhow::bail!("Failed to read directory: {}", e)
+                anyhow::bail!("Failed to load models - {} ❌", e.to_string());
             }
-        }
-
-        let models = match local_model_store_dir.is_empty() {
-            true => {
-                log::warn!(
-                    "No local model store directory specified, hence no models will be loaded ⚠️"
-                );
-                let models: DashMap<ModelName, Arc<Model>> = DashMap::new();
-                models
-            }
-            false => match load_models(temp_model_dir.clone()).await {
-                Ok(models) => {
-                    log::info!("Successfully fetched valid models from directory ✅");
-                    models
-                }
-                Err(e) => {
-                    anyhow::bail!("Failed to fetch models - {}", e.to_string());
-                }
-            },
         };
 
         Ok(LocalModelStore {
@@ -301,6 +271,107 @@ impl Storage for LocalModelStore {
             }
             Some(_) => Ok(()),
         }
+    }
+
+    /// Periodically polls the local model store to fetch and update models.
+    ///
+    /// This asynchronous function waits for a specified time interval, then attempts to fetch models
+    /// from the local model store, and updates the internal model cache (`self.models`). The polling
+    /// interval ensures that the model store is regularly updated with new models, if available.
+    ///
+    /// # Arguments
+    ///
+    /// * `interval` - A `Duration` representing the time interval between each polling operation.
+    ///
+    /// # Returns
+    ///
+    /// * `Ok(())` - If the models were successfully fetched and updated in the model store.
+    /// * `Err(anyhow::Error)` - If an error occurs during the fetch or update process, such as when
+    ///   the models fail to be retrieved.
+    ///
+    async fn poll(&self, interval: Duration) -> anyhow::Result<()> {
+        // poll every n time interval
+        tokio::time::sleep(interval).await;
+
+        log::info!("Polling model store ⌛");
+        let models = match fetch_models(
+            self.local_model_store_dir.clone(),
+            self.temp_model_dir.clone(),
+        )
+        .await
+        {
+            Ok(models) => {
+                log::info!("Successfully fetched valid models from S3 ✅");
+                models
+            }
+            Err(e) => {
+                anyhow::bail!("Failed to fetch models ❌ - {}", e.to_string());
+            }
+        };
+
+        for (model_name, model) in models {
+            self.models.insert(model_name, model);
+        }
+
+        Ok(())
+    }
+}
+
+/// Fetches and loads models from the local model store directory by unpacking tarball files.
+///
+/// This asynchronous function reads the local model store directory, unpacks model tarballs
+/// to a temporary directory, and then loads the models into memory. If the local model store
+/// directory is empty or not specified, no models are loaded, and an empty `DashMap` is returned.
+///
+/// # Arguments
+///
+/// * `local_model_store_dir` - A `String` representing the path to the local directory where model tarballs are stored.
+/// * `temp_model_dir` - A `String` representing the path to a temporary directory where the tarballs will be unpacked.
+///
+/// # Returns
+///
+/// * `Ok(DashMap<ModelName, Arc<Model>>)` - A map containing model names and their corresponding loaded models,
+///   or an empty map if the local model store directory is not specified.
+/// * `Err(anyhow::Error)` - If any errors occur during reading the directory, unpacking tarballs, or loading models.
+///
+async fn fetch_models(
+    local_model_store_dir: String,
+    temp_model_dir: String,
+) -> anyhow::Result<DashMap<ModelName, Arc<Model>>> {
+    // unpack
+    match fs::read_dir(local_model_store_dir.as_str()) {
+        Ok(dir) => {
+            for entry in dir {
+                let entry = entry?;
+                let path = entry.path();
+                let tarball_path = match path.to_str() {
+                    None => {
+                        anyhow::bail!("failed to convert file path to str ❌")
+                    }
+                    Some(path) => path,
+                };
+                unpack_tarball(tarball_path, temp_model_dir.as_str())?
+            }
+        }
+        Err(e) => {
+            anyhow::bail!("Failed to read directory: {}", e)
+        }
+    }
+
+    match local_model_store_dir.is_empty() {
+        true => {
+            log::warn!(
+                "No local model store directory specified, hence no models will be loaded ⚠️"
+            );
+            let models: DashMap<ModelName, Arc<Model>> = DashMap::new();
+            Ok(models)
+        }
+        false => match load_models(temp_model_dir.clone()).await {
+            Ok(models) => Ok(models),
+            Err(e) => {
+                anyhow::bail!("Failed to fetch models - {}", e.to_string());
+            }
+        },
     }
 }
 

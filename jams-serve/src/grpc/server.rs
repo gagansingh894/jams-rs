@@ -99,6 +99,7 @@ mod tests {
             s3_bucket_name: Some("".to_string()),
             with_azure_model_store: Some(false),
             azure_storage_container_name: Some("".to_string()),
+            poll_interval: Some(0),
         };
 
         // Act
@@ -118,6 +119,7 @@ mod tests {
             s3_bucket_name: Some("".to_string()),
             with_azure_model_store: Some(false),
             azure_storage_container_name: Some("".to_string()),
+            poll_interval: Some(0),
         };
 
         // Act

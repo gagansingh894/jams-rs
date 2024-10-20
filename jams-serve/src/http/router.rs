@@ -28,7 +28,7 @@ pub fn build_router(shared_state: Arc<AppState>) -> anyhow::Result<Router> {
 mod tests {
     use crate::common::state::AppState;
     use crate::http::router::build_router;
-    use jams_core::manager::Manager;
+    use jams_core::manager::ManagerBuilder;
     use jams_core::model_store::local::LocalModelStore;
     use rayon::ThreadPoolBuilder;
     use std::sync::Arc;
@@ -43,8 +43,11 @@ mod tests {
             .await
             .expect("Failed to create model store ❌");
 
-        let manager =
-            Arc::new(Manager::new(Arc::new(model_store)).expect("Failed to initialize manager ❌"));
+        let manager = Arc::new(
+            ManagerBuilder::new(Arc::new(model_store))
+                .build()
+                .expect("Failed to initialize manager ❌"),
+        );
 
         Arc::new(AppState { manager, cpu_pool })
     }

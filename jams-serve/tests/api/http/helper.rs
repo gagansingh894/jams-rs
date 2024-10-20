@@ -1,5 +1,5 @@
 use axum::Router;
-use jams_core::manager::Manager;
+use jams_core::manager::ManagerBuilder;
 use jams_core::model_store::local::LocalModelStore;
 use jams_serve::common::state::AppState;
 use jams_serve::http::router::build_router;
@@ -16,8 +16,11 @@ async fn setup_shared_state() -> Arc<AppState> {
         .await
         .expect("Failed to create model store ❌");
 
-    let manager =
-        Arc::new(Manager::new(Arc::new(model_store)).expect("Failed to initialize manager ❌"));
+    let manager = Arc::new(
+        ManagerBuilder::new(Arc::new(model_store))
+            .build()
+            .expect("Failed to initialize manager ❌"),
+    );
 
     Arc::new(AppState { manager, cpu_pool })
 }

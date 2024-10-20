@@ -1,6 +1,7 @@
 use crate::model::predictor::ModelInput;
 use crate::model_store::storage::{Metadata, ModelName, Storage};
 use std::sync::Arc;
+use tokio::time;
 
 /// Manages model storage and prediction requests.
 ///
@@ -14,19 +15,14 @@ pub struct Manager {
 }
 
 impl Manager {
-    /// Creates a new `Manager` instance.
+    /// Creates a new `ManagerBuilder` instance.
     ///
-    /// This method initializes the `Manager` by fetching the available models from the model storage.
-    ///
-    /// # Arguments
-    /// - `model_store` (Arc&ltdyn Storageglt): A shared reference to the model storage.
+    /// This is the entry point for building a `Manager` with optional configurations.
     ///
     /// # Returns
-    /// - `Ok(Manager)`: If the models were successfully fetched.
-    /// - `Err(anyhow::Error)`: If there was an error fetching the models.
-    ///
-    pub fn new(model_store: Arc<dyn Storage>) -> anyhow::Result<Self> {
-        Ok(Manager { model_store })
+    /// - `ManagerBuilder`: A builder ob
+    pub fn builder() -> ManagerBuilder {
+        ManagerBuilder::default()
     }
 
     /// Retrieves the names of all models stored in the model store.
@@ -132,6 +128,78 @@ impl Manager {
     }
 }
 
+/// The `ManagerBuilder` struct is used to build a `Manager` instance with optional
+/// configurations, such as setting a polling interval for the model store.
+#[derive(Default)]
+pub struct ManagerBuilder {
+    // Note: `model_store` cannot use `#[derive(Default)]` as `Arc<dyn Storage>` doesn't have a default value.
+    model_store: Option<Arc<dyn Storage>>, // Option is used to indicate it's initially None.
+    poll_interval: time::Duration,
+}
+
+impl ManagerBuilder {
+    /// Creates a new `ManagerBuilder` instance with a given `model_store`.
+    ///
+    /// # Arguments
+    /// - `model_store`: An `Arc` reference to a `Storage` trait object that represents
+    ///     the model storage.
+    ///
+    /// # Returns
+    /// - `ManagerBuilder`: A builder object used to configure and build a `Manager`.
+    ///
+    pub fn new(model_store: Arc<dyn Storage>) -> ManagerBuilder {
+        ManagerBuilder {
+            model_store: Some(model_store),
+            poll_interval: time::Duration::from_secs(0),
+        }
+    }
+
+    /// Configures the `ManagerBuilder` to poll the model store at the specified interval.
+    ///
+    /// # Arguments
+    /// - `interval`: A `u64` that specifies the interval(in seconds) between each polling operation.
+    ///
+    /// # Returns
+    /// - `ManagerBuilder`: A builder object used to configure and build a `Manager`.
+    ///
+    pub fn with_polling(mut self, interval: u64) -> ManagerBuilder {
+        self.poll_interval = time::Duration::from_secs(interval);
+        self
+    }
+
+    /// Builds the `Manager` instance.
+    ///
+    /// If a polling interval is set, a background task is spawned that polls the
+    /// model store periodically to update the models.
+    ///
+    /// # Returns
+    /// - `Ok(Manager)`: The successfully created `Manager` instance.
+    /// - `Err(anyhow::Error)`: If there was an error during model polling.
+    ///
+    pub fn build(self) -> anyhow::Result<Manager> {
+        let model_store = self
+            .model_store
+            .ok_or_else(|| anyhow::anyhow!("Model store is required ❌"))?;
+        if !self.poll_interval.is_zero() {
+            let model_store_clone = model_store.clone();
+            tokio::spawn(async move {
+                loop {
+                    match model_store_clone.poll(self.poll_interval).await {
+                        Ok(_) => {
+                            log::info!("Successfully polled the model store ✅");
+                        }
+                        Err(e) => {
+                            log::error!("Failed to poll the model store ❌: {}", e);
+                        }
+                    }
+                }
+            });
+        };
+
+        Ok(Manager { model_store })
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -141,7 +209,19 @@ mod tests {
     async fn successfully_create_manager_with_local_model_store() {
         let model_dir = "./tests/model_storage/model_store";
         let local_model_store = LocalModelStore::new(model_dir.to_string()).await.unwrap();
-        let manager = Manager::new(Arc::new(local_model_store));
+        let manager = ManagerBuilder::new(Arc::new(local_model_store)).build();
+
+        // assert
+        assert!(manager.is_ok());
+    }
+
+    #[tokio::test]
+    async fn successfully_create_manager_with_local_model_store_with_polling() {
+        let model_dir = "./tests/model_storage/model_store";
+        let local_model_store = LocalModelStore::new(model_dir.to_string()).await.unwrap();
+        let manager = ManagerBuilder::new(Arc::new(local_model_store))
+            .with_polling(2)
+            .build();
 
         // assert
         assert!(manager.is_ok());
@@ -151,7 +231,9 @@ mod tests {
     async fn successfully_make_predictions_via_manager_with_local_model_store() {
         let model_dir = "tests/model_storage/model_store";
         let local_model_store = LocalModelStore::new(model_dir.to_string()).await.unwrap();
-        let manager = Manager::new(Arc::new(local_model_store)).unwrap();
+        let manager = ManagerBuilder::new(Arc::new(local_model_store))
+            .build()
+            .unwrap();
 
         // dummy input
         let input = "{\"pclass\":[\"1\",\"3\",\"3\",\"3\",\"3\",\"3\",\"3\",\"3\",\"3\",\"1\"],\"sex\":[\"female\",\"female\",\"male\",\"female\",\"male\",\"female\",\"male\",\"male\",\"male\",\"male\"],\"age\":[22.0,23.79929292929293,32.0,23.79929292929293,14.0,2.0,22.0,28.0,23.79929292929293,23.79929292929293],\"sibsp\":[\"0\",\"1\",\"0\",\"8\",\"5\",\"4\",\"0\",\"0\",\"0\",\"0\"],\"parch\":[\"0\",\"0\",\"0\",\"2\",\"2\",\"2\",\"0\",\"0\",\"0\",\"0\"],\"fare\":[151.55,14.4542,7.925,69.55,46.9,31.275,7.8958,7.8958,7.8958,35.5],\"embarked\":[\"S\",\"C\",\"S\",\"S\",\"S\",\"S\",\"S\",\"S\",\"S\",\"S\"],\"class\":[\"First\",\"Third\",\"Third\",\"Third\",\"Third\",\"Third\",\"Third\",\"Third\",\"Third\",\"First\"],\"who\":[\"woman\",\"woman\",\"man\",\"woman\",\"child\",\"child\",\"man\",\"man\",\"man\",\"man\"],\"adult_male\":[\"True\",\"False\",\"True\",\"False\",\"False\",\"False\",\"True\",\"True\",\"True\",\"True\"],\"deck\":[\"Unknown\",\"Unknown\",\"Unknown\",\"Unknown\",\"Unknown\",\"Unknown\",\"Unknown\",\"Unknown\",\"Unknown\",\"C\"],\"embark_town\":[\"Southampton\",\"Cherbourg\",\"Southampton\",\"Southampton\",\"Southampton\",\"Southampton\",\"Southampton\",\"Southampton\",\"Southampton\",\"Southampton\"],\"alone\":[\"True\",\"False\",\"True\",\"False\",\"False\",\"False\",\"True\",\"True\",\"True\",\"True\"]}";
@@ -163,13 +245,13 @@ mod tests {
     }
 
     #[tokio::test]
-    #[should_panic]
-    // todo: check if we can exit gracefully
     async fn fail_to_make_predictions_via_manager_with_local_model_store_when_input_shape_is_wrong()
     {
         let model_dir = "tests/model_storage/model_store";
         let local_model_store = LocalModelStore::new(model_dir.to_string()).await.unwrap();
-        let manager = Manager::new(Arc::new(local_model_store)).unwrap();
+        let manager = ManagerBuilder::new(Arc::new(local_model_store))
+            .build()
+            .unwrap();
 
         // dummy input
         let input = "{\"pclass\":[\"3\",\"3\",\"3\",\"3\",\"3\",\"3\",\"3\",\"3\",\"1\"],\"sex\":[\"female\",\"female\",\"male\",\"female\",\"male\",\"female\",\"male\",\"male\",\"male\",\"male\"],\"age\":[22.0,23.79929292929293,32.0,23.79929292929293,14.0,2.0,22.0,28.0,23.79929292929293,23.79929292929293],\"sibsp\":[\"0\",\"1\",\"0\",\"8\",\"5\",\"4\",\"0\",\"0\",\"0\",\"0\"],\"parch\":[\"0\",\"0\",\"0\",\"2\",\"2\",\"2\",\"0\",\"0\",\"0\",\"0\"],\"fare\":[151.55,14.4542,7.925,69.55,46.9,31.275,7.8958,7.8958,7.8958,35.5],\"embarked\":[\"S\",\"C\",\"S\",\"S\",\"S\",\"S\",\"S\",\"S\",\"S\",\"S\"],\"class\":[\"First\",\"Third\",\"Third\",\"Third\",\"Third\",\"Third\",\"Third\",\"Third\",\"Third\",\"First\"],\"who\":[\"woman\",\"woman\",\"man\",\"woman\",\"child\",\"child\",\"man\",\"man\",\"man\",\"man\"],\"adult_male\":[\"True\",\"False\",\"True\",\"False\",\"False\",\"False\",\"True\",\"True\",\"True\",\"True\"],\"deck\":[\"Unknown\",\"Unknown\",\"Unknown\",\"Unknown\",\"Unknown\",\"Unknown\",\"Unknown\",\"Unknown\",\"Unknown\",\"C\"],\"embark_town\":[\"Southampton\",\"Cherbourg\",\"Southampton\",\"Southampton\",\"Southampton\",\"Southampton\",\"Southampton\",\"Southampton\",\"Southampton\",\"Southampton\"],\"alone\":[\"True\",\"False\",\"True\",\"False\",\"False\",\"False\",\"True\",\"True\",\"True\",\"True\"]}";
@@ -184,7 +266,9 @@ mod tests {
     async fn successfully_get_models_via_manager_with_local_model_store() {
         let model_dir = "tests/model_storage/model_store";
         let local_model_store = LocalModelStore::new(model_dir.to_string()).await.unwrap();
-        let manager = Manager::new(Arc::new(local_model_store)).unwrap();
+        let manager = ManagerBuilder::new(Arc::new(local_model_store))
+            .build()
+            .unwrap();
 
         // models
         let models = manager.get_models();
@@ -198,7 +282,9 @@ mod tests {
     async fn successfully_add_model_via_manager_with_local_model_store() {
         let model_dir = "tests/model_storage/model_store";
         let local_model_store = LocalModelStore::new(model_dir.to_string()).await.unwrap();
-        let manager = Manager::new(Arc::new(local_model_store)).unwrap();
+        let manager = ManagerBuilder::new(Arc::new(local_model_store))
+            .build()
+            .unwrap();
         let model_name: ModelName = "catboost-titanic_model".to_string();
 
         // delete a model to add it back
@@ -220,7 +306,9 @@ mod tests {
     async fn successfully_update_model_via_manager_with_local_model_store() {
         let model_dir = "tests/model_storage/model_store";
         let local_model_store = LocalModelStore::new(model_dir.to_string()).await.unwrap();
-        let manager = Manager::new(Arc::new(local_model_store)).unwrap();
+        let manager = ManagerBuilder::new(Arc::new(local_model_store))
+            .build()
+            .unwrap();
         let model_name: ModelName = "my_awesome_penguin_model".to_string();
 
         // update model
@@ -234,7 +322,9 @@ mod tests {
     async fn successfully_delete_model_via_manager_with_local_model_store() {
         let model_dir = "tests/model_storage/model_store";
         let local_model_store = LocalModelStore::new(model_dir.to_string()).await.unwrap();
-        let manager = Manager::new(Arc::new(local_model_store)).unwrap();
+        let manager = ManagerBuilder::new(Arc::new(local_model_store))
+            .build()
+            .unwrap();
         let model_name: ModelName = "my_awesome_penguin_model".to_string();
 
         // delete model

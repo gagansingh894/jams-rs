@@ -52,4 +52,10 @@ pub struct Config {
     /// - `Some(String)`: The name of the S3 bucket.
     /// - `None`: No S3 bucket name is specified.
     pub azure_storage_container_name: Option<String>,
+
+    /// An optional value representing the interval (in seconds) for polling the model store.
+    ///
+    /// - `Some(u64)`: The polling interval in seconds.
+    /// - `None`: No polling interval is specified, which may disable periodic checks for model updates.
+    pub poll_interval: Option<u64>,
 }

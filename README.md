@@ -27,6 +27,7 @@ It is primarily targeted for software and data professionals for deploying their
 - Supports PyTorch and Tensorflow Models via FFI Bindings 🤖
 - Supports Tree Models - Catboost, LightGBM, (🚧) XGBoost via FFI Bindings 🌳
 - Supports multiple backends for model stores - local file system, AWS S3, Azure Blob 🗳️
+- Supports model store polling ⌛
 - (🚧) Supports Redis and DynamoDB for in memory feature stores 🗂️
 - HTTP & gRPC API 🚀
 - CLI 💻  
@@ -60,33 +61,34 @@ tested the above on Apple Silicon and Linux x86_64 machines. Future releases wil
 ## Docker Setup
 J.A.M.S is also hosted on [DockerHub](https://hub.docker.com/r/gagansingh894/jams).
 
-Please follow the following commands to start the server inside docker
+Please follow the following commands to start the server inside docker.
+If you want to disable polling, then do not pass `--poll-interval`
 
 1. Run `docker pull gagansingh894/jams`
 
 To run HTTP server, use
 ```
-docker run --rm -v /your/path/to/model_store:/model_store -p 3000:3000 gagansingh894/jams start http
+docker run --rm -v /your/path/to/model_store:/model_store -p 3000:3000 gagansingh894/jams start http --poll-interval 3600
 ```
 
 To run gRPC server, use
 ```
-docker run --rm -v /your/path/to/model_store:/model_store -p 4000:4000 gagansingh894/jams start grpc
+docker run --rm -v /your/path/to/model_store:/model_store -p 4000:4000 gagansingh894/jams start grpc --poll-interval 3600
 ```
 
 ### To run with a S3 backend
-- Create a S3 bucket with some models in it. Please refer to the structure of model store [here](https://github.com/gagansingh894/jams-rs?tab=readme-ov-file#model-store). 
+- Create a S3 bucket with some models in it. Please refer to the structure of model store [here](https://github.com/gagansingh894/jams-rs?tab=readme-ov-file#model-store).
 - Set the environment variables - `AWS_REGION`, `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`. Alternatively if you have multiple AWS profiles then just set the `AWS_PROFILE-<profile_name>`
   You also need to set the bucket name. This can either be set via `S3_BUCKET_NAME` env variable or passed via `--s3-bucket-name` flag
 - Run the command to start HTTP server with S3 model store. It assumes that bucket name is already set via `S3_BUCKET_NAME`
 
 ```
-docker run --rm -p 3000:3000 gagansingh894/jams start http --with-s3-model-store=true
+docker run --rm -p 3000:3000 gagansingh894/jams start http --with-s3-model-store=true --poll-interval 3600
 ```
 
 - For gRPC server, use
 ```
-docker run --rm -p 4000:4000 gagansingh894/jams start grpc --with-s3-model-store=true
+docker run --rm -p 4000:4000 gagansingh894/jams start grpc --with-s3-model-store=true --poll-interval 3600
 ```
 
 - If you want to pass bucket name, use
@@ -96,27 +98,26 @@ docker run --rm -p 3000:3000 gagansingh894/jams start http --with-s3-model-store
 
 ### To run with a Azure Blob Storage backend
 - Create a Azure Storage container with some models in it. Please refer to the structure of model store [here](https://github.com/gagansingh894/jams-rs?tab=readme-ov-file#model-store).
-- Set the environment variables - `STORAGE_ACCOUNT`, `STORAGE_ACCESS_KEY`. You also need to set the azure container name. This can either be set via `AZURE_STORAGE_CONTAINER_NAME` env variable or passed via `--azure-container-name` flag
+- Set the environment variables - `STORAGE_ACCOUNT`, `STORAGE_ACCESS_KEY`. You also need to set the azure container name. This can either be set via `AZURE_STORAGE_CONTAINER_NAME` env variable or passed via `--azure-storage-container-name` flag
 - Run the command to start HTTP server with Azure model store. It assumes that container name is already set via `AZURE_STORAGE_CONTAINER_NAME`
 
 ```
-docker run --rm -p 3000:3000 gagansingh894/jams start http --with-azure-model-store=true
+docker run --rm -p 3000:3000 gagansingh894/jams start http --with-azure-model-store=true --poll-interval 3600
 ```
 
 - For gRPC server, use
 ```
-docker run --rm -p 4000:4000 gagansingh894/jams start grpc --with-azure-model-store=true
+docker run --rm -p 4000:4000 gagansingh894/jams start grpc --with-azure-model-store=true --poll-interval 3600
 ```
 
 - If you want to pass container name, use
 ```
-docker run --rm -p 3000:3000 gagansingh894/jams start http --with-azure-model-store=true --azure-storage-container-name=<container_name>
+docker run --rm -p 3000:3000 gagansingh894/jams start http --with-azure-model-store=true --azure-storage-container-name=<container_name> --poll-interval 3600
 ```
-
 
 Please refer to [OpenAPI Spec](https://github.com/gagansingh894/jams-rs/blob/main/openapi.yml) for API endpoints.
 
-Alternatively, you can also refer to the [proto definition](https://github.com/gagansingh894/jams-rs/blob/main/jams-serve/proto/api/v1/jams.proto).
+Alternatively, you can also refer to the [proto definition](https://github.com/gagansingh894/jams-rs/blob/main/internal/jams-proto/proto/api/v1/jams.proto).
 
 ---
 

@@ -14,6 +14,7 @@ use dashmap::mapref::one::Ref;
 use dashmap::DashMap;
 use std::env;
 use std::sync::Arc;
+use std::time::Duration;
 use uuid::Uuid;
 
 /// A struct representing a model store that interfaces with S3.
@@ -381,6 +382,50 @@ impl Storage for S3ModelStore {
             Some(_) => Ok(()),
         }
     }
+
+    /// Periodically polls the model store to fetch and update models.
+    ///
+    /// This asynchronous function waits for the specified time interval, then fetches models from an S3
+    /// bucket using the `fetch_models` function. If new or updated models are found, they are inserted into
+    /// the in-memory model store (`self.models`). The polling process continues indefinitely with each cycle
+    /// waiting for the specified interval.
+    ///
+    /// # Arguments
+    ///
+    /// * `interval` - A `Duration` specifying the time interval between each polling operation.
+    ///
+    /// # Returns
+    ///
+    /// * `Ok(())` if the models were successfully fetched and updated in the model store.
+    /// * `Err(anyhow::Error)` if there was an error during the fetch or update process, including S3 fetch failures.
+    ///
+    async fn poll(&self, interval: Duration) -> anyhow::Result<()> {
+        // poll every n time interval
+        tokio::time::sleep(interval).await;
+
+        log::info!("Polling model store ⌛");
+        let models = match fetch_models(
+            &self.client,
+            self.bucket_name.clone(),
+            self.model_store_dir.clone(),
+        )
+        .await
+        {
+            Ok(models) => {
+                log::info!("Successfully fetched valid models from S3 ✅");
+                models
+            }
+            Err(e) => {
+                anyhow::bail!("Failed to fetch models ❌ - {}", e.to_string());
+            }
+        };
+
+        for (model_name, model) in models {
+            self.models.insert(model_name, model);
+        }
+
+        Ok(())
+    }
 }
 
 /// Fetches models from an S3 bucket, downloads them to a local directory, and loads them into memory.
@@ -423,15 +468,7 @@ async fn fetch_models(
         }
     }
 
-    let models = match load_models(model_store_dir).await {
-        Ok(models) => {
-            log::info!("Successfully loaded models from directory ✅");
-            models
-        }
-        Err(e) => {
-            anyhow::bail!("Failed to load models - {}", e.to_string());
-        }
-    };
+    let models = load_models(model_store_dir).await?;
 
     Ok(models)
 }
@@ -469,7 +506,9 @@ async fn get_keys(client: &s3::Client, bucket_name: String) -> anyhow::Result<Ve
         match result {
             Ok(output) => match output.contents {
                 None => {
-                    log::warn!("No models found in the S3 bucket hence no models will be loaded ⚠️");
+                    log::warn!(
+                        "No models found in the S3 bucket hence no models will be loaded ⚠️"
+                    );
                 }
                 Some(objects) => {
                     for object in objects {

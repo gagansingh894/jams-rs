@@ -7,6 +7,7 @@ use dashmap::mapref::one::Ref;
 use dashmap::DashMap;
 use serde::Serialize;
 use std::sync::Arc;
+use std::time;
 use tokio::fs;
 
 pub type ModelName = String;
@@ -28,6 +29,9 @@ pub trait Storage: Send + Sync + 'static {
 
     /// Removes a specific machine learning/deep learning model by its name.
     fn delete_model(&self, model_name: ModelName) -> anyhow::Result<()>;
+
+    /// Polls the model store at fixed intervals and updates the models
+    async fn poll(&self, interval: time::Duration) -> anyhow::Result<()>;
 }
 
 /// Represents a machine learning model.
@@ -40,7 +44,7 @@ pub trait Storage: Send + Sync + 'static {
 /// # Fields
 ///
 /// * `predictor` - An instance of a type that implements the `Predictor` trait.
-/// This represents the predictive model.
+///     This represents the predictive model.
 /// * `info` - Metadata about the model.
 ///
 pub struct Model {
@@ -286,6 +290,7 @@ pub async fn load_models(model_dir: String) -> anyhow::Result<DashMap<ModelName,
         }
     }
 
+    log::info!("Successfully loaded models from directory ✅");
     Ok(models)
 }
 

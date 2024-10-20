@@ -92,6 +92,10 @@ pub struct StartCommandArgs {
     /// Name of Azure Storage container hosting models
     #[clap(long)]
     pub azure_storage_container_name: Option<String>,
+
+    /// Polling interval for model store
+    #[clap(long)]
+    pub poll_interval: Option<u64>,
 }
 
 #[derive(Args, Debug, Clone)]
