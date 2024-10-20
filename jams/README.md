@@ -4,8 +4,8 @@ This crate provides a CLI for interacting [**J.A.M.S - Just Another Model Server
 
 ![Alt text](https://github.com/gagansingh894/jams-rs/blob/main/jams/screenshot.png?raw=true)
 
-⚠️ **DISCLAIMER: jams is currently unstable and may not run properly on your machines. I have
-tested the above on Apple Silicon and Linux x86_64 machines. Future releases will fix this**
+⚠️ **DISCLAIMER: jams is currently unstable and may not run properly on ARM chips. Future releases will fix this.
+For now use docker image (Linux x86_64)**
 ---
 
 ## Features
@@ -34,12 +34,58 @@ tested the above on Apple Silicon and Linux x86_64 machines. Future releases wil
 ---
 
 ## Docker Setup
-J.A.M.S is also hosted on [DockerHub](https://hub.docker.com/r/gagansingh894/jams).
+J.A.M.S is also on [DockerHub](https://hub.docker.com/r/gagansingh894/jams).
 
+`docker pull gagansingh894/jams`
+
+The easiest way to start J.A.M.S is by providing a config TOML file
+
+##### Config File
+```
+[config]
+protocol = "http"                               # Specifies the protocol to be used by the server.
+                                                # Allowed values: "http", "grpc"
+
+port = 3000                                     # Defines the port number on which the server will listen.
+                                                # This should be an integer between 1 and 65535.
+                                                # Example: 3000 for HTTP, 443 for HTTPS
+
+model_store = "local"                           # Indicates the type of model store being used.
+                                                # Allowed values:
+                                                # - "local": Use local storage.
+                                                # - "aws": Use AWS S3 for model storage.
+                                                # - "azure": Use Azure Blob Storage.
+
+model_dir = "<absolute path>"                   # Specifies the directory path where models are stored locally.
+                                                # If `model_store` is set to "local", this directory is used
+                                                # to store or load models.
+
+azure_storage_container_name = "jamsmodelstore" # Specifies the name of the Azure Blob Storage container
+                                                # used for storing models when `model_store` is set to "azure".
+                                                # This should be a valid container name in Azure.
+
+s3_bucket_name = "jamsmodelstore"               # Indicates the name of the S3 bucket used for storing models
+                                                # when `model_store` is set to "aws".
+                                                # This should be a valid bucket name in AWS S3.
+
+poll_interval = 600                             # Defines the time interval (in seconds) for polling the model store
+                                                # to check for updates.
+                                                # Example: 600 means the application will poll every 10 minutes.
+
+num_workers = 4                                 # Sets the number of Rayon threadpool worker threads
+                                                # Example: 4 threads
+```
+
+Then Run
+
+```
+docker run --rm -v /your/path/to/model_store:/model_store -p 3000:3000 gagansingh894/jams start -f config.toml
+```
+
+There are other ways to start J.A.M.S. 
 Please follow the following commands to start the server inside docker. 
-If you want to disable polling, then do not pass `--poll-interval`
 
-1. Run `docker pull gagansingh894/jams`
+If you want to disable polling, then do not pass `--poll-interval`
 
 To run HTTP server, use
 ```
