@@ -506,7 +506,9 @@ async fn get_keys(client: &s3::Client, bucket_name: String) -> anyhow::Result<Ve
         match result {
             Ok(output) => match output.contents {
                 None => {
-                    log::warn!("No models found in the S3 bucket hence no models will be loaded ⚠️");
+                    log::warn!(
+                        "No models found in the S3 bucket hence no models will be loaded ⚠️"
+                    );
                 }
                 Some(objects) => {
                     for object in objects {

@@ -60,7 +60,11 @@ pub fn save_and_upack_tarball(
             }
         },
         Err(e) => {
-            anyhow::bail!("Failed to create file {:?} ⚠️: {}", file_path, e.to_string())
+            anyhow::bail!(
+                "Failed to create file {:?} ⚠️: {}",
+                file_path,
+                e.to_string()
+            )
         }
     }
 

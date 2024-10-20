@@ -89,8 +89,8 @@ fn create_catboost_model_inputs(
                         None => {
                             anyhow::bail!("Incorrect input ❌");
                         }
-                        Some(val) => val
-                    }
+                        Some(val) => val,
+                    },
                 };
                 col.clone_from(val);
             }
@@ -109,8 +109,8 @@ fn create_catboost_model_inputs(
                         None => {
                             anyhow::bail!("Incorrect input ❌");
                         }
-                        Some(val) => val
-                    }
+                        Some(val) => val,
+                    },
                 };
                 col.clone_from(val);
             }
