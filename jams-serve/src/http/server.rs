@@ -36,7 +36,10 @@ pub async fn start(config: server::Config) -> anyhow::Result<()> {
     }
 
     // initialize tracing
-    tracing_subscriber::fmt().with_max_level(log_level).init();
+    tracing_subscriber::fmt()
+        .with_line_number(true)
+        .with_max_level(log_level)
+        .init();
 
     // setup shared state
     let shared_state = match build_app_state_from_config(config).await {

@@ -23,10 +23,12 @@ impl JamsService {
 
 #[tonic::async_trait]
 impl ModelServer for JamsService {
+    #[tracing::instrument(skip(self))]
     async fn health_check(&self, _request: Request<()>) -> Result<Response<()>, Status> {
         Ok(Response::new(()))
     }
 
+    #[tracing::instrument(skip(self, request))]
     async fn predict(
         &self,
         request: Request<PredictRequest>,
@@ -56,6 +58,7 @@ impl ModelServer for JamsService {
         }
     }
 
+    #[tracing::instrument(skip(self, _request))]
     async fn get_models(
         &self,
         _request: Request<()>,
@@ -72,6 +75,7 @@ impl ModelServer for JamsService {
         }
     }
 
+    #[tracing::instrument(skip(self, request))]
     async fn add_model(&self, request: Request<AddModelRequest>) -> Result<Response<()>, Status> {
         let add_model_request = request.into_inner();
         match self
@@ -88,6 +92,7 @@ impl ModelServer for JamsService {
         }
     }
 
+    #[tracing::instrument(skip(self, request))]
     async fn update_model(
         &self,
         request: Request<UpdateModelRequest>,
@@ -106,6 +111,7 @@ impl ModelServer for JamsService {
         }
     }
 
+    #[tracing::instrument(skip(self, request))]
     async fn delete_model(
         &self,
         request: Request<DeleteModelRequest>,
