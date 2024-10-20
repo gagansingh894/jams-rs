@@ -49,6 +49,8 @@ pub async fn build_app_state_from_config(config: server::Config) -> anyhow::Resu
     let worker_pool_threads = config.num_workers.unwrap_or(2);
     let with_s3_model_store = config.with_s3_model_store.unwrap_or(false);
     let with_azure_model_store = config.with_azure_model_store.unwrap_or(false);
+    // run without polling by default
+    let interval = config.poll_interval.unwrap_or(0);
 
     // initialize threadpool for cpu intensive tasks
     if worker_pool_threads < 1 {
@@ -79,6 +81,7 @@ pub async fn build_app_state_from_config(config: server::Config) -> anyhow::Resu
             .expect("Failed to create S3 model store ❌");
         Arc::new(
             ManagerBuilder::new(Arc::new(model_store))
+                .with_polling(interval)
                 .build()
                 .expect("Failed to initialize manager ❌"),
         )
@@ -92,6 +95,7 @@ pub async fn build_app_state_from_config(config: server::Config) -> anyhow::Resu
             .expect("Failed to create Azure model store ❌");
         Arc::new(
             ManagerBuilder::new(Arc::new(model_store))
+                .with_polling(interval)
                 .build()
                 .expect("Failed to initialize manager ❌"),
         )
@@ -101,6 +105,7 @@ pub async fn build_app_state_from_config(config: server::Config) -> anyhow::Resu
             .expect("Failed to create local model store ❌");
         Arc::new(
             ManagerBuilder::new(Arc::new(model_store))
+                .with_polling(interval)
                 .build()
                 .expect("Failed to initialize manager ❌"),
         )
