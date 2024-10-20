@@ -22,4 +22,4 @@ Refer here for the [proto definition](https://github.com/gagansingh894/jams-rs/b
 - `DeleteModel`
 
 
-**This crate is in early stages and is highly unstable**
+**Stable on Linux x86_64 architecture**
