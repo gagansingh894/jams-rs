@@ -14,6 +14,7 @@ use dashmap::mapref::one::Ref;
 use dashmap::DashMap;
 use std::env;
 use std::sync::Arc;
+use std::time::Duration;
 use uuid::Uuid;
 
 /// A struct representing a model store that interfaces with S3.
@@ -380,6 +381,34 @@ impl Storage for S3ModelStore {
             }
             Some(_) => Ok(()),
         }
+    }
+
+    async fn poll(&self, interval: Duration) -> anyhow::Result<()> {
+        // poll every n time interval
+        tokio::time::sleep(interval).await;
+
+        log::info!("Polling model store ⌛");
+        let models = match fetch_models(
+            &self.client,
+            self.bucket_name.clone(),
+            self.model_store_dir.clone(),
+        )
+        .await
+        {
+            Ok(models) => {
+                log::info!("Successfully fetched valid models from S3 ✅");
+                models
+            }
+            Err(e) => {
+                anyhow::bail!("Failed to fetch models ❌ - {}", e.to_string());
+            }
+        };
+
+        for (model_name, model) in models {
+            self.models.insert(model_name, model);
+        }
+
+        Ok(())
     }
 }
 

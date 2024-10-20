@@ -11,6 +11,7 @@ use dashmap::mapref::one::Ref;
 use dashmap::DashMap;
 use std::fs;
 use std::sync::Arc;
+use std::time::Duration;
 use uuid::Uuid;
 
 /// A local model store that manages models stored in a specified directory.
@@ -301,6 +302,28 @@ impl Storage for LocalModelStore {
             }
             Some(_) => Ok(()),
         }
+    }
+
+    async fn poll(&self, interval: Duration) -> anyhow::Result<()> {
+        // poll every n time interval
+        tokio::time::sleep(interval).await;
+
+        log::info!("Polling model store ⌛");
+        let models = match load_models(self.local_model_store_dir.clone()).await {
+            Ok(models) => {
+                log::info!("Successfully fetched valid models from S3 ✅");
+                models
+            }
+            Err(e) => {
+                anyhow::bail!("Failed to fetch models ❌ - {}", e.to_string());
+            }
+        };
+
+        for (model_name, model) in models {
+            self.models.insert(model_name, model);
+        }
+
+        Ok(())
     }
 }
 

@@ -7,6 +7,7 @@ use dashmap::mapref::one::Ref;
 use dashmap::DashMap;
 use serde::Serialize;
 use std::sync::Arc;
+use std::time;
 use tokio::fs;
 
 pub type ModelName = String;
@@ -28,6 +29,9 @@ pub trait Storage: Send + Sync + 'static {
 
     /// Removes a specific machine learning/deep learning model by its name.
     fn delete_model(&self, model_name: ModelName) -> anyhow::Result<()>;
+
+    /// Polls the model store at fixed intervals and updates the models
+    async fn poll(&self, interval: time::Duration) -> anyhow::Result<()>;
 }
 
 /// Represents a machine learning model.
