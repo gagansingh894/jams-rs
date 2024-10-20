@@ -157,13 +157,13 @@ impl ManagerBuilder {
     /// Configures the `ManagerBuilder` to poll the model store at the specified interval.
     ///
     /// # Arguments
-    /// - `interval`: A `Duration` that specifies the interval between each polling operation.
+    /// - `interval`: A `u64` that specifies the interval(in seconds) between each polling operation.
     ///
     /// # Returns
     /// - `ManagerBuilder`: A builder object used to configure and build a `Manager`.
     ///
-    pub fn with_polling(mut self, interval: time::Duration) -> ManagerBuilder {
-        self.poll_interval = interval;
+    pub fn with_polling(mut self, interval: u64) -> ManagerBuilder {
+        self.poll_interval = time::Duration::from_secs(interval);
         self
     }
 
@@ -184,7 +184,7 @@ impl ManagerBuilder {
             let model_store_clone = model_store.clone();
             tokio::spawn(async move {
                 loop {
-                    match model_store_clone.poll(time::Duration::from_secs(900)).await {
+                    match model_store_clone.poll(self.poll_interval).await {
                         Ok(_) => {
                             log::info!("Successfully polled the model store ✅");
                         }
@@ -220,7 +220,7 @@ mod tests {
         let model_dir = "./tests/model_storage/model_store";
         let local_model_store = LocalModelStore::new(model_dir.to_string()).await.unwrap();
         let manager = ManagerBuilder::new(Arc::new(local_model_store))
-            .with_polling(time::Duration::from_secs(5))
+            .with_polling(2)
             .build();
 
         // assert
