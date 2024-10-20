@@ -130,7 +130,7 @@ impl Model {
 ///
 /// This function will return an error if it fails to read the directory, convert file paths, or
 /// load any of the models.
-#[tracing::instrument]
+#[tracing::instrument(skip(model_dir))]
 pub async fn load_models(model_dir: String) -> anyhow::Result<DashMap<ModelName, Arc<Model>>> {
     let models: DashMap<ModelName, Arc<Model>> = DashMap::new();
 

@@ -340,7 +340,7 @@ impl Storage for LocalModelStore {
 ///   or an empty map if the local model store directory is not specified.
 /// * `Err(anyhow::Error)` - If any errors occur during reading the directory, unpacking tarballs, or loading models.
 ///
-#[tracing::instrument]
+#[tracing::instrument(skip(local_model_store_dir, temp_model_dir))]
 async fn fetch_models(
     local_model_store_dir: String,
     temp_model_dir: String,
