@@ -338,26 +338,6 @@ async fn fetch_models(
     local_model_store_dir: String,
     temp_model_dir: String,
 ) -> anyhow::Result<DashMap<ModelName, Arc<Model>>> {
-    // unpack
-    match fs::read_dir(local_model_store_dir.as_str()) {
-        Ok(dir) => {
-            for entry in dir {
-                let entry = entry?;
-                let path = entry.path();
-                let tarball_path = match path.to_str() {
-                    None => {
-                        anyhow::bail!("failed to convert file path to str ❌")
-                    }
-                    Some(path) => path,
-                };
-                unpack_tarball(tarball_path, temp_model_dir.as_str())?
-            }
-        }
-        Err(e) => {
-            anyhow::bail!("Failed to read directory: {}", e)
-        }
-    }
-
     match local_model_store_dir.is_empty() {
         true => {
             log::warn!(
@@ -366,12 +346,34 @@ async fn fetch_models(
             let models: DashMap<ModelName, Arc<Model>> = DashMap::new();
             Ok(models)
         }
-        false => match load_models(temp_model_dir.clone()).await {
-            Ok(models) => Ok(models),
-            Err(e) => {
-                anyhow::bail!("Failed to fetch models - {}", e.to_string());
+        false => {
+            // unpack
+            match fs::read_dir(local_model_store_dir.as_str()) {
+                Ok(dir) => {
+                    for entry in dir {
+                        let entry = entry?;
+                        let path = entry.path();
+                        let tarball_path = match path.to_str() {
+                            None => {
+                                anyhow::bail!("failed to convert file path to str ❌")
+                            }
+                            Some(path) => path,
+                        };
+                        unpack_tarball(tarball_path, temp_model_dir.as_str())?
+                    }
+                }
+                Err(e) => {
+                    anyhow::bail!("Failed to read directory: {}", e)
+                }
             }
-        },
+
+            match load_models(temp_model_dir.clone()).await {
+                Ok(models) => Ok(models),
+                Err(e) => {
+                    anyhow::bail!("Failed to fetch models - {}", e.to_string());
+                }
+            }
+        }
     }
 }
 
