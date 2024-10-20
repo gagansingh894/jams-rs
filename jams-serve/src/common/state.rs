@@ -1,5 +1,5 @@
 use crate::common::server;
-use jams_core::manager::Manager;
+use jams_core::manager::{Manager, ManagerBuilder};
 use jams_core::model_store::azure_blob_storage::AzureBlobStorageModelStore;
 use jams_core::model_store::local::LocalModelStore;
 use jams_core::model_store::s3::S3ModelStore;
@@ -78,8 +78,8 @@ pub async fn build_app_state_from_config(config: server::Config) -> anyhow::Resu
             .await
             .expect("Failed to create S3 model store ❌");
         Arc::new(
-            Manager::new(Arc::new(model_store))
-                .await
+            ManagerBuilder::new(Arc::new(model_store))
+                .build()
                 .expect("Failed to initialize manager ❌"),
         )
     } else if with_azure_model_store {
@@ -91,8 +91,8 @@ pub async fn build_app_state_from_config(config: server::Config) -> anyhow::Resu
             .await
             .expect("Failed to create Azure model store ❌");
         Arc::new(
-            Manager::new(Arc::new(model_store))
-                .await
+            ManagerBuilder::new(Arc::new(model_store))
+                .build()
                 .expect("Failed to initialize manager ❌"),
         )
     } else {
@@ -100,8 +100,8 @@ pub async fn build_app_state_from_config(config: server::Config) -> anyhow::Resu
             .await
             .expect("Failed to create local model store ❌");
         Arc::new(
-            Manager::new(Arc::new(model_store))
-                .await
+            ManagerBuilder::new(Arc::new(model_store))
+                .build()
                 .expect("Failed to initialize manager ❌"),
         )
     };

@@ -143,7 +143,7 @@ fn parse_to_proto_models(models_metadata: Vec<Metadata>) -> Vec<Model> {
 mod tests {
     use super::*;
     use chrono::Utc;
-    use jams_core::manager::Manager;
+    use jams_core::manager::ManagerBuilder;
     use jams_core::model::frameworks::TENSORFLOW;
     use jams_core::model_store::local::LocalModelStore;
     use jams_core::model_store::storage::Metadata;
@@ -160,8 +160,8 @@ mod tests {
             .expect("Failed to create model store ❌");
 
         let manager = Arc::new(
-            Manager::new(Arc::new(model_store))
-                .await
+            ManagerBuilder::new(Arc::new(model_store))
+                .build()
                 .expect("Failed to initialize manager ❌"),
         );
 

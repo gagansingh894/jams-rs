@@ -1,4 +1,4 @@
-use jams_core::manager::Manager;
+use jams_core::manager::ManagerBuilder;
 use jams_core::model_store::local::LocalModelStore;
 use jams_proto::jams_v1::model_server_client::ModelServerClient;
 use jams_proto::jams_v1::model_server_server::ModelServerServer;
@@ -21,8 +21,8 @@ async fn setup_shared_state() -> Arc<AppState> {
         .expect("Failed to create model store ❌");
 
     let manager = Arc::new(
-        Manager::new(Arc::new(model_store))
-            .await
+        ManagerBuilder::new(Arc::new(model_store))
+            .build()
             .expect("Failed to initialize manager ❌"),
     );
 
