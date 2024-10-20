@@ -77,7 +77,11 @@ pub async fn build_app_state_from_config(config: server::Config) -> anyhow::Resu
         let model_store = S3ModelStore::new(s3_bucket_name)
             .await
             .expect("Failed to create S3 model store ❌");
-        Arc::new(Manager::new(Arc::new(model_store)).expect("Failed to initialize manager ❌"))
+        Arc::new(
+            Manager::new(Arc::new(model_store))
+                .await
+                .expect("Failed to initialize manager ❌"),
+        )
     } else if with_azure_model_store {
         let azure_storage_container_name = config.azure_storage_container_name.unwrap_or_else(|| {
             // search for environment variable
@@ -86,12 +90,20 @@ pub async fn build_app_state_from_config(config: server::Config) -> anyhow::Resu
         let model_store = AzureBlobStorageModelStore::new(azure_storage_container_name)
             .await
             .expect("Failed to create Azure model store ❌");
-        Arc::new(Manager::new(Arc::new(model_store)).expect("Failed to initialize manager ❌"))
+        Arc::new(
+            Manager::new(Arc::new(model_store))
+                .await
+                .expect("Failed to initialize manager ❌"),
+        )
     } else {
         let model_store = LocalModelStore::new(model_dir)
             .await
             .expect("Failed to create local model store ❌");
-        Arc::new(Manager::new(Arc::new(model_store)).expect("Failed to initialize manager ❌"))
+        Arc::new(
+            Manager::new(Arc::new(model_store))
+                .await
+                .expect("Failed to initialize manager ❌"),
+        )
     };
 
     // setup shared state

@@ -20,8 +20,11 @@ async fn setup_shared_state() -> Arc<AppState> {
         .await
         .expect("Failed to create model store ❌");
 
-    let manager =
-        Arc::new(Manager::new(Arc::new(model_store)).expect("Failed to initialize manager ❌"));
+    let manager = Arc::new(
+        Manager::new(Arc::new(model_store))
+            .await
+            .expect("Failed to initialize manager ❌"),
+    );
 
     Arc::new(AppState { manager, cpu_pool })
 }
