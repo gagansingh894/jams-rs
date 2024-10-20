@@ -17,7 +17,7 @@ tested the above on Apple Silicon and Linux x86_64 machines. Future releases wil
   - Torch
   - Catboost
   - LightGBM  
-- Multiple Model Store Backends Supported
+- Multiple Model Store Backends Supported with Polling 
   - Local File System
   - AWS S3
   - Azure Blob Storage
@@ -36,18 +36,19 @@ tested the above on Apple Silicon and Linux x86_64 machines. Future releases wil
 ## Docker Setup
 J.A.M.S is also hosted on [DockerHub](https://hub.docker.com/r/gagansingh894/jams).
 
-Please follow the following commands to start the server inside docker
+Please follow the following commands to start the server inside docker. 
+If you want to disable polling, then do not pass `--poll-interval`
 
 1. Run `docker pull gagansingh894/jams`
 
 To run HTTP server, use
 ```
-docker run --rm -v /your/path/to/model_store:/model_store -p 3000:3000 gagansingh894/jams start http
+docker run --rm -v /your/path/to/model_store:/model_store -p 3000:3000 gagansingh894/jams start http --poll-interval 3600
 ```
 
 To run gRPC server, use
 ```
-docker run --rm -v /your/path/to/model_store:/model_store -p 4000:4000 gagansingh894/jams start grpc
+docker run --rm -v /your/path/to/model_store:/model_store -p 4000:4000 gagansingh894/jams start grpc --poll-interval 3600
 ```
 
 ### To run with a S3 backend
@@ -57,12 +58,12 @@ docker run --rm -v /your/path/to/model_store:/model_store -p 4000:4000 gagansing
 - Run the command to start HTTP server with S3 model store. It assumes that bucket name is already set via `S3_BUCKET_NAME`
 
 ```
-docker run --rm -p 3000:3000 gagansingh894/jams start http --with-s3-model-store=true
+docker run --rm -p 3000:3000 gagansingh894/jams start http --with-s3-model-store=true --poll-interval 3600
 ```
 
 - For gRPC server, use
 ```
-docker run --rm -p 4000:4000 gagansingh894/jams start grpc --with-s3-model-store=true
+docker run --rm -p 4000:4000 gagansingh894/jams start grpc --with-s3-model-store=true --poll-interval 3600
 ```
 
 - If you want to pass bucket name, use
@@ -76,19 +77,18 @@ docker run --rm -p 3000:3000 gagansingh894/jams start http --with-s3-model-store
 - Run the command to start HTTP server with Azure model store. It assumes that container name is already set via `AZURE_STORAGE_CONTAINER_NAME`
 
 ```
-docker run --rm -p 3000:3000 gagansingh894/jams start http --with-azure-model-store=true
+docker run --rm -p 3000:3000 gagansingh894/jams start http --with-azure-model-store=true --poll-interval 3600
 ```
 
 - For gRPC server, use
 ```
-docker run --rm -p 4000:4000 gagansingh894/jams start grpc --with-azure-model-store=true
+docker run --rm -p 4000:4000 gagansingh894/jams start grpc --with-azure-model-store=true --poll-interval 3600
 ```
 
 - If you want to pass container name, use
 ```
-docker run --rm -p 3000:3000 gagansingh894/jams start http --with-azure-model-store=true --azure-storage-container-name=<container_name>
+docker run --rm -p 3000:3000 gagansingh894/jams start http --with-azure-model-store=true --azure-storage-container-name=<container_name> --poll-interval 3600
 ```
-
 
 Please refer to [OpenAPI Spec](https://github.com/gagansingh894/jams-rs/blob/main/openapi.yml) for API endpoints.
 
