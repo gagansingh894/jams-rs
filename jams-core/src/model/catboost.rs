@@ -81,7 +81,18 @@ fn create_catboost_model_inputs(
     if !categorical_features.is_empty() {
         for (i, mut row) in categorical_nd.axis_iter_mut(Axis(0)).enumerate() {
             for (j, col) in row.iter_mut().enumerate() {
-                col.clone_from(&categorical_features[i][j]);
+                let val = match categorical_features.get(i) {
+                    None => {
+                        anyhow::bail!("Incorrect input ❌");
+                    }
+                    Some(ith) => match ith.get(j) {
+                        None => {
+                            anyhow::bail!("Incorrect input ❌");
+                        }
+                        Some(val) => val
+                    }
+                };
+                col.clone_from(val);
             }
         }
     }
@@ -90,7 +101,18 @@ fn create_catboost_model_inputs(
     if !numeric_features.is_empty() {
         for (i, mut row) in numeric_nd.axis_iter_mut(Axis(0)).enumerate() {
             for (j, col) in row.iter_mut().enumerate() {
-                *col = numeric_features[i][j];
+                let val = match numeric_features.get(i) {
+                    None => {
+                        anyhow::bail!("Incorrect input ❌");
+                    }
+                    Some(ith) => match ith.get(j) {
+                        None => {
+                            anyhow::bail!("Incorrect input ❌");
+                        }
+                        Some(val) => val
+                    }
+                };
+                col.clone_from(val);
             }
         }
     }
