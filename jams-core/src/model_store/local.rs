@@ -276,6 +276,22 @@ impl Storage for LocalModelStore {
         }
     }
 
+    /// Periodically polls the local model store to fetch and update models.
+    ///
+    /// This asynchronous function waits for a specified time interval, then attempts to fetch models
+    /// from the local model store, and updates the internal model cache (`self.models`). The polling
+    /// interval ensures that the model store is regularly updated with new models, if available.
+    ///
+    /// # Arguments
+    ///
+    /// * `interval` - A `Duration` representing the time interval between each polling operation.
+    ///
+    /// # Returns
+    ///
+    /// * `Ok(())` - If the models were successfully fetched and updated in the model store.
+    /// * `Err(anyhow::Error)` - If an error occurs during the fetch or update process, such as when
+    ///   the models fail to be retrieved.
+    ///
     async fn poll(&self, interval: Duration) -> anyhow::Result<()> {
         // poll every n time interval
         tokio::time::sleep(interval).await;
@@ -304,6 +320,23 @@ impl Storage for LocalModelStore {
     }
 }
 
+/// Fetches and loads models from the local model store directory by unpacking tarball files.
+///
+/// This asynchronous function reads the local model store directory, unpacks model tarballs
+/// to a temporary directory, and then loads the models into memory. If the local model store
+/// directory is empty or not specified, no models are loaded, and an empty `DashMap` is returned.
+///
+/// # Arguments
+///
+/// * `local_model_store_dir` - A `String` representing the path to the local directory where model tarballs are stored.
+/// * `temp_model_dir` - A `String` representing the path to a temporary directory where the tarballs will be unpacked.
+///
+/// # Returns
+///
+/// * `Ok(DashMap<ModelName, Arc<Model>>)` - A map containing model names and their corresponding loaded models,
+///   or an empty map if the local model store directory is not specified.
+/// * `Err(anyhow::Error)` - If any errors occur during reading the directory, unpacking tarballs, or loading models.
+///
 async fn fetch_models(
     local_model_store_dir: String,
     temp_model_dir: String,
