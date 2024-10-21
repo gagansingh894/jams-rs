@@ -1,11 +1,15 @@
 use crate::common::server;
 use crate::common::shutdown::shutdown_signal;
 use crate::common::state::build_app_state_from_config;
+use crate::common::opentelemetry::init_otlp_trace;
 use crate::grpc::service::JamsService;
 use jams_proto::jams_v1::model_server_server::ModelServerServer;
 use jams_proto::jams_v1::FILE_DESCRIPTOR_SET;
 use tonic::codegen::tokio_stream::wrappers::TcpListenerStream;
 use tonic::transport::Server;
+use opentelemetry::global;
+use opentelemetry_sdk::propagation::TraceContextPropagator;
+use tracing_subscriber::layer::SubscriberExt;
 
 /// Starts the gRPC server with the provided configuration.
 ///
@@ -34,17 +38,25 @@ pub async fn start(config: server::Config) -> anyhow::Result<()> {
 
     // set log level
     let use_debug_level = config.use_debug_level.unwrap_or(false);
-    let mut log_level = tracing::Level::INFO;
+    let mut _log_level = tracing::Level::INFO;
     if use_debug_level {
-        log_level = tracing::Level::TRACE
+        _log_level = tracing::Level::TRACE
     }
 
-    // initialize tracing
-    tracing_subscriber::fmt()
-        .with_line_number(true)
-        .with_max_level(log_level)
-        .pretty()
-        .init();
+    global::set_text_map_propagator(TraceContextPropagator::new());
+    let tracer = init_otlp_trace().expect("Failed to create OTLP tracer provider ❌");
+    let telemetry = tracing_opentelemetry::layer().with_tracer(tracer);
+    let subscriber = tracing_subscriber::Registry::default().with(telemetry);
+    tracing::subscriber::set_global_default(subscriber).unwrap();
+    
+
+    // // initialize tracing - by default log to fmt
+    // tracing_subscriber::fmt()
+    //     .with_line_number(true)
+    //     .with_max_level(log_level)
+    //     .pretty()
+    //     .init();
+
 
     // setup shared state
     let shared_state = match build_app_state_from_config(config).await {
