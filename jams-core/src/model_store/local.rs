@@ -347,11 +347,7 @@ async fn fetch_models(
 ) -> anyhow::Result<DashMap<ModelName, Arc<Model>>> {
     match local_model_store_dir.is_empty() {
         true => {
-            log::warn!(
-                "No local model store directory specified, hence no models will be loaded ⚠️"
-            );
-            let models: DashMap<ModelName, Arc<Model>> = DashMap::new();
-            Ok(models)
+            anyhow::bail!("No local model store directory specified ❌");
         }
         false => {
             // unpack

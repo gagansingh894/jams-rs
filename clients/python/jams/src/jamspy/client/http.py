@@ -6,6 +6,8 @@ from src.jamspy.client.models import common, http
 class Client:
     def __init__(self, base_url: str):
         self.base_url = f"http://{base_url}"
+        if base_url.startswith('http://') or base_url.startswith('https://'):
+            self.base_url = base_url
 
     def health_check(self) -> None:
         url = f"{self.base_url}/healthcheck"
