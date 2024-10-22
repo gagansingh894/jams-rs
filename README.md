@@ -23,32 +23,34 @@ It is primarily targeted for software and data professionals for deploying their
 
 ## Features
 - Modular Design 📦
-- (🚧) Configurable 🛠️
+- Config based deployment 🛠️
 - Supports PyTorch and Tensorflow Models via FFI Bindings 🤖
 - Supports Tree Models - Catboost, LightGBM, (🚧) XGBoost via FFI Bindings 🌳
 - Supports multiple backends for model stores - local file system, AWS S3, Azure Blob 🗳️
 - Supports model store polling ⌛
-- (🚧) Supports Redis and DynamoDB for in memory feature stores 🗂️
-- HTTP & gRPC API 🚀
+- HTTP & gRPC API with ready to use clients in Python, Go, Rust, (🚧) TypeScript and (🚧) Java 🚀
 - CLI 💻  
 
 The project is divided into the following crates
 
 - jams-core ![](https://img.shields.io/crates/v/jams-core)
 - jams-serve ![](https://img.shields.io/crates/v/jams-serve)
+- jams-proto ![](https://img.shields.io/crates/v/jams-proto)
 - jams ![](https://img.shields.io/crates/v/jams)
 
-(🚧)`jams-core`
+`jams-core`
 is the core library
-which provides thin abstraction around common machine learning and deep learning models, model stores like AWS S3, Azure Blob Storage, Local Filesystem as well as databases like redis,
-dynamodb which can be used as real time feature stores.
+which provides thin abstraction around common machine learning and deep learning models and model stores like AWS S3, 
+Azure Blob Storage, Local Filesystem.
 You can think of each component as a LEGO block which can be used to build a system depending on the requirements
 
-(🚧)`jams-serve` is a http and gRPC API library for jams-core.
+`jams-proto` is provides the gRPC contract for jams-serve.
+
+`jams-serve` is a http and gRPC API library for jams-core.
 The API is highly configurable, allowing the user to select which components to use when setting up the model server.
 Please refer to examples for different types of setup.
 
-(🚧)`jams` is an easy-to-use CLI allowing user to make predictions by specifying model and an input string.
+`jams` jams is an easy-to-use CLI application for interaction with J.A.M.S - Just Another Model Server.
 
 
 (🚧) **J.A.M.S** also provides HTTP & gRPC client implementations in multiple languages. [See here](https://github.com/gagansingh894/jams-rs/tree/main/clients)
@@ -163,9 +165,9 @@ docker run --rm -p 4000:4000 gagansingh894/jams start grpc --with-azure-model-st
 docker run --rm -p 3000:3000 gagansingh894/jams start http --with-azure-model-store=true --azure-storage-container-name=<container_name> --poll-interval 3600
 ```
 
-Please refer to [OpenAPI Spec](https://github.com/gagansingh894/jams-rs/blob/main/openapi.yml) for API endpoints.
-
+Please refer to [OpenAPI Spec](https://github.com/gagansingh894/jams-rs/blob/main/openapi.yml) for API endpoints. 
 Alternatively, you can also refer to the [proto definition](https://github.com/gagansingh894/jams-rs/blob/main/internal/jams-proto/proto/api/v1/jams.proto).
+
 ---
 
 ## Local Setup
@@ -316,7 +318,7 @@ Use this command for making predictions via CLI for making predictions for the f
 - Catboost
 - LightGBM
 
-This command does not expect the model format to `.tar.gz`.
+This command does not expect the model format to be `.tar.gz`.
 
 Refer below for some examples of the **predict** command.
 

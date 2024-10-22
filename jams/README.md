@@ -24,13 +24,16 @@ For now use docker image or Linux x86_64 architecture**
 - Thin & Fast API Layer
   - HTTP via Axum
   - gRPC via Tonic
+- Ready to use clients
+  - Python
+  - Go
+  - Rust
+  - TypeScript 🚧
+  - JAVA 🚧
 
 ### The following features are in progress 🚧
 - Support XGBoost framework
-- Redis & DynamoDB as feature stores 
-- User defined Configurations via YAML file
 - ModelSpec - Single source of information about models. This will assist in input validations
-- Client Implementations in Python, Go, TypeScript, JAVA
 ---
 
 ## Docker Setup
