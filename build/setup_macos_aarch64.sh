@@ -1,9 +1,9 @@
 #!/bin/bash
 
-# 1. Install Homebrew if not already installed
+# 1. Check Homebrew is installed
 if ! command -v brew &> /dev/null; then
-    echo "Homebrew not found. Installing Homebrew..."
-    /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+    echo "Homebrew not found. Please install Homebrew using the command below..."
+    echo "curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh"
 else
     echo "Homebrew already installed."
 fi
@@ -24,19 +24,22 @@ cp /opt/homebrew/Cellar/lightgbm/$(brew list --versions lightgbm | awk '{print $
 # 5. Dynamically get the version of PyTorch installed by Homebrew
 PYTORCH_VERSION=$(brew list --versions pytorch | awk '{print $2}')
 
-# 6. Add environment variables to ~/.bash_profile or ~/.zshrc based on the shell
-echo "Setting environment variables..."
-
-SHELL_PROFILE="~/.bash_profile"
-if [ "$SHELL" = "/bin/zsh" ]; then
-    SHELL_PROFILE="~/.zshrc"
+# 6. Detect the shell and select the correct profile file
+if [ -n "$ZSH_VERSION" ]; then
+    SHELL_PROFILE="$HOME/.zshrc"
+elif [ -n "$BASH_VERSION" ]; then
+    SHELL_PROFILE="$HOME/.bash_profile"
+else
+    echo "Unsupported shell. Please manually add the environment variables to your shell profile."
+    exit 1
 fi
+
+# 7. Add environment variables to the profile file
+echo "Adding environment variables to $SHELL_PROFILE"
 
 {
     echo "export LIBTORCH=/opt/homebrew/Cellar/pytorch/$PYTORCH_VERSION"
-    echo "export LIGHTGBM_LIB_PATH=/opt/homebrew/Cellar/lightgbm/$(brew list --versions lightgbm | awk '{print $2}')/lib/"
-    echo "export DYLD_LIBRARY_PATH=/usr/local/lib:\$DYLD_LIBRARY_PATH"
-} >> $SHELL_PROFILE
+} >> "$SHELL_PROFILE"
 
 echo "Environment variables added to $SHELL_PROFILE. Please run 'source $SHELL_PROFILE' or restart your terminal for the changes to take effect."
 
