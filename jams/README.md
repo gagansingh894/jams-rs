@@ -159,7 +159,7 @@ This project relies on a couple of shared libraries. To easily set up, please fo
 ```
 brew install bazel lightgbm tensorflow
 ```
-3. Download **Pytorch 2.2.0** from Pytorch website
+3. Download **Pytorch 2.2.0** from Pytorch website and set it to path
 ```
 sudo sh -c '
     echo "Downloading libtorch for macOS (ARM64)...";
@@ -172,12 +172,26 @@ sudo sh -c '
     echo "Cleaning up by deleting the zip file...";
     rm /usr/local/lib/libtorch-macos-arm64-2.2.0.zip;
 
+    echo "Setting up environment variables...";
+    LIBTORCH_PATH="/usr/local/lib/libtorch2_2_0/libtorch";
+    PROFILE_FILE="$HOME/.bash_profile";  # Change to .zshrc if using zsh
+    if [ -n "$ZSH_VERSION" ]; then
+        PROFILE_FILE="$HOME/.zshrc";
+    fi
+
+    if ! grep -q "export LIBTORCH=" "$PROFILE_FILE"; then
+        echo "export LIBTORCH=$LIBTORCH_PATH" >> "$PROFILE_FILE";
+        echo "LIBTORCH environment variable added to $PROFILE_FILE. Please run 'source $PROFILE_FILE' or restart your terminal.";
+    else
+        echo "LIBTORCH environment variable already set in $PROFILE_FILE.";
+    fi
+
     echo "Libtorch installed in /usr/local/lib/libtorch2_2_0 and zip file deleted.";
 '
 ```
 4. Download catboost library(.dylib) directly from Github
 ```
-wget -q https://github.com/catboost/catboost/releases/download/v1.2.5/libcatboostmodel-darwin-universal2-1.2.5.dylib -O /usr/local/lib/libcatboostmodel.dylib
+sudo wget -q https://github.com/catboost/catboost/releases/download/v1.2.5/libcatboostmodel-darwin-universal2-1.2.5.dylib -O /usr/local/lib/libcatboostmodel.dylib
 ```
 5. Copy lightGBM library(.dylib) to usr/local/lib
 ```
