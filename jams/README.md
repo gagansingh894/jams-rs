@@ -5,7 +5,8 @@ This crate provides a CLI for interacting [**J.A.M.S - Just Another Model Server
 ![Alt text](https://github.com/gagansingh894/jams-rs/blob/main/jams/screenshot.png?raw=true)
 
 ⚠️ **DISCLAIMER: jams is reaching stable version but may not run properly on ARM chips. Future releases will fix this.
-For now use docker image or Linux x86_64 architecture. Only Pytorch 2.2.0 is supported for now due to dependencies on FFI bindings**
+For now use docker image or Linux x86_64 architecture. Only Pytorch 2.2.0 is supported for now due to dependencies on FFI bindings.
+Although you may be able to run models trained on version <= 2.2.0**
 
 ---
 
