@@ -4,6 +4,9 @@ This crate provides a CLI for interacting [**J.A.M.S - Just Another Model Server
 
 ![Alt text](https://github.com/gagansingh894/jams-rs/blob/main/jams/screenshot.png?raw=true)
 
+⚠️ **DISCLAIMER: jams is reaching stable version but may not run properly on ARM chips. Future releases will fix this.
+For now use docker image or Linux x86_64 architecture. Only Pytorch 2.2.0 is supported for now due to dependencies on FFI bindings**
+
 ---
 
 ## Features
@@ -28,8 +31,6 @@ This crate provides a CLI for interacting [**J.A.M.S - Just Another Model Server
   - Rust
   - TypeScript 🚧
   - JAVA 🚧
-
-⚠️ **DISCLAIMER: Only Pytorch 2.2.0 is supported for now due to dependencies on FFI bindings**
 
 ### The following features are in progress 🚧
 - Support XGBoost framework

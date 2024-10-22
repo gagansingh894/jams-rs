@@ -55,7 +55,10 @@ Please refer to examples for different types of setup.
 
 (🚧) **J.A.M.S** also provides HTTP & gRPC client implementations in multiple languages. [See here](https://github.com/gagansingh894/jams-rs/tree/main/clients)
 
-⚠️ **DISCLAIMER: Only Pytorch 2.2.0 is supported for now due to dependencies on FFI bindings**
+⚠️ **DISCLAIMER: jams is reaching stable version but may not run properly on ARM chips. Future releases will fix this.
+For now use docker image or Linux x86_64 architecture. Only Pytorch 2.2.0 is supported for now due to dependencies on FFI bindings**
+
+
 
 ---
 
