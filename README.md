@@ -176,32 +176,21 @@ Alternatively, you can also refer to the [proto definition](https://github.com/g
 This project relies on a couple of shared libraries. To easily set up, please follow the steps below
 
 
-### Mac
+### Mac - Apple Silicon
 1. Install [Homebrew](https://brew.sh/) if not already installed
 2. Run the following command to install bazel, lightgbm, pytorch and tensorflow
 ```
-brew install lightgbm pytorch tensorflow
+brew install bazel lightgbm pytorch tensorflow
 ```
 3. Download catboost library(.dylib) directly from Github
 ```
 wget -q https://github.com/catboost/catboost/releases/download/v1.2.5/libcatboostmodel-darwin-universal2-1.2.5.dylib -O /usr/local/lib/libcatboostmodel.dylib
 ```
-4. Copy lightgbm to usr/local/lib
+4. Add the following environment variables
 ```
-cp /opt/homebrew/Cellar/lightgbm/4.3.0/lib/lib_lightgbm.dylib /usr/local/lib
+export LIBTORCH=/opt/homebrew/Cellar/pytorch/$(brew list --versions pytorch | awk '{print $2}')
 ```
-5. Add the following environment variables
-```
-export LIBTORCH=/opt/homebrew/Cellar/pytorch/2.2.0_4
-export LIGHTGBM_LIB_PATH=/opt/homebrew/Cellar/lightgbm/4.3.0/lib/
-export DYLD_LIBRARY_PATH=/usr/local/lib:$DYLD_LIBRARY_PATH
-```
-
-**Remember to check version numbers in the path as homebrew downloads the latest stable version.**
-
-**Use brew info to get the exact path which you can use to set the environment variables**
-
-6. Run the following command to install **jams**
+5. Run the following command to install **jams**
 ```
 cargo install jams
 ```
