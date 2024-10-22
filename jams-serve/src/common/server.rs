@@ -1,5 +1,5 @@
 // Terminal art
-pub const ART: &'static str = r#"
+pub const ART:  &str = r#"
     ___           ________           _____ ______            ________
    |\  \         |\   __  \         |\   _ \  _   \         |\   ____\
    \ \  \        \ \  \|\  \        \ \  \\\__\ \  \        \ \  \___|_
