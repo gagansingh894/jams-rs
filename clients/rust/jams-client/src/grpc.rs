@@ -1,4 +1,4 @@
-use crate::common::{GetModelsResponse, Metadata, Predictions};
+use crate::common::{GetModelsResponse, Metadata, Predictions, get_url};
 use async_trait::async_trait;
 use jams_proto::jams_v1::model_server_client::ModelServerClient;
 use jams_proto::jams_v1::{
@@ -27,14 +27,14 @@ pub struct ApiClient {
 
 impl ApiClient {
     async fn new(base_url: String) -> anyhow::Result<Self> {
-        let base_url = format!("http://{}", base_url);
-        let client = match ModelServerClient::connect(base_url.clone()).await {
+        let url = get_url(base_url);
+        let client = match ModelServerClient::connect(url.clone()).await {
             Ok(client) => client,
             Err(err) => {
                 anyhow::bail!("failed to create grpc client ❌: {}", err.to_string())
             }
         };
-        Ok(ApiClient { client, base_url })
+        Ok(ApiClient { client, base_url: url.clone() })
     }
 }
 
