@@ -50,7 +50,7 @@ You can think of each component as a LEGO block which can be used to build a sys
 The API is highly configurable, allowing the user to select which components to use when setting up the model server.
 Please refer to examples for different types of setup.
 
-`jams` jams is an easy-to-use CLI application for interaction with J.A.M.S - Just Another Model Server.
+`jams` is an easy-to-use CLI application for interaction with J.A.M.S - Just Another Model Server.
 
 
 (🚧) **J.A.M.S** also provides HTTP & gRPC client implementations in multiple languages. [See here](https://github.com/gagansingh894/jams-rs/tree/main/clients)
