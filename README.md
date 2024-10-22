@@ -24,7 +24,7 @@ It is primarily targeted for software and data professionals for deploying their
 ## Features
 - Modular Design 📦
 - Config based deployment 🛠️
-- Supports PyTorch and Tensorflow Models via FFI Bindings 🤖
+- Supports PyTorch* and Tensorflow Models via FFI Bindings 🤖
 - Supports Tree Models - Catboost, LightGBM, (🚧) XGBoost via FFI Bindings 🌳
 - Supports multiple backends for model stores - local file system, AWS S3, Azure Blob 🗳️
 - Supports model store polling ⌛
@@ -55,8 +55,7 @@ Please refer to examples for different types of setup.
 
 (🚧) **J.A.M.S** also provides HTTP & gRPC client implementations in multiple languages. [See here](https://github.com/gagansingh894/jams-rs/tree/main/clients)
 
-⚠️ **DISCLAIMER: jams is currently unstable and may not run properly on ARM chips. Future releases will fix this.
-For now use docker image or Linux x86_64 architecture**
+⚠️ **DISCLAIMER: Only Pytorch 2.2.0 is supported for now due to dependencies on FFI bindings**
 
 ---
 
@@ -178,19 +177,40 @@ This project relies on a couple of shared libraries. To easily set up, please fo
 
 ### Mac - Apple Silicon
 1. Install [Homebrew](https://brew.sh/) if not already installed
-2. Run the following command to install bazel, lightgbm, pytorch and tensorflow
+2. Install [Rust](https://www.rust-lang.org/tools/install) if not already installed. **The MSRV is 1.81.**
+3. Run the following command to install bazel, lightgbm, pytorch and tensorflow
 ```
-brew install bazel lightgbm pytorch tensorflow
+brew install bazel lightgbm tensorflow
 ```
-3. Download catboost library(.dylib) directly from Github
+3. Download **Pytorch 2.2.0** from Pytorch website
+```
+sudo sh -c '
+    echo "Downloading libtorch for macOS (ARM64)...";
+    wget https://download.pytorch.org/libtorch/cpu/libtorch-macos-arm64-2.2.0.zip -O /usr/local/lib/libtorch-macos-arm64-2.2.0.zip;
+
+    echo "Unzipping libtorch into /usr/local/lib/libtorch2_2_0...";
+    mkdir -p /usr/local/lib/libtorch2_2_0;
+    unzip /usr/local/lib/libtorch-macos-arm64-2.2.0.zip -d /usr/local/lib/libtorch2_2_0;
+
+    echo "Cleaning up by deleting the zip file...";
+    rm /usr/local/lib/libtorch-macos-arm64-2.2.0.zip;
+
+    echo "Libtorch installed in /usr/local/lib/libtorch2_2_0 and zip file deleted.";
+'
+```
+4. Download catboost library(.dylib) directly from Github
 ```
 wget -q https://github.com/catboost/catboost/releases/download/v1.2.5/libcatboostmodel-darwin-universal2-1.2.5.dylib -O /usr/local/lib/libcatboostmodel.dylib
 ```
-4. Add the following environment variables
+5. Copy lightGBM library(.dylib) to usr/local/lib
 ```
-export LIBTORCH=/opt/homebrew/Cellar/pytorch/$(brew list --versions pytorch | awk '{print $2}')
+sudo cp /opt/homebrew/Cellar/lightgbm/$(brew list --versions lightgbm | awk '{print $2}')/lib/lib_lightgbm.dylib /usr/local/lib/
 ```
-5. Run the following command to install **jams**
+6. Add the following environment variables
+```
+export LIBTORCH=/usr/local/lib/libtorch2_2_0/libtorch
+```
+6. Run the following command to install **jams**
 ```
 cargo install jams
 ```
