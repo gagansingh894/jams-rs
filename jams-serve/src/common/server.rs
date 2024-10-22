@@ -1,3 +1,17 @@
+// Terminal art
+pub const ART: &'static str = r#"
+    ___           ________           _____ ______            ________
+   |\  \         |\   __  \         |\   _ \  _   \         |\   ____\
+   \ \  \        \ \  \|\  \        \ \  \\\__\ \  \        \ \  \___|_
+ __ \ \  \        \ \   __  \        \ \  \\|__| \  \        \ \_____  \
+|\  \\_\  \  ___   \ \  \ \  \  ___   \ \  \    \ \  \  ___   \|____|\  \
+\ \________\|\__\   \ \__\ \__\|\__\   \ \__\    \ \__\|\__\    ____\_\  \
+ \|________|\|__|    \|__|\|__|\|__|    \|__|     \|__|\|__|   |\_________\
+                                                               \|_________|
+
+J.A.M.S - Just Another Model Server
+    "#;
+
 /// Configuration for the J.A.M.S.
 ///
 /// This common struct holds various configuration options for the HTTP/gRPC server, including the model directory,
