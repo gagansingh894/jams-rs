@@ -81,13 +81,13 @@ fn parse_sequential(
         // Int and float are pushed to separate of type Vec<f32>
         match first {
             Value::String(_) => {
-                string_features.push(values.to_strings());
+                string_features.push(values.to_strings()?);
             }
             Value::Int(_) => {
-                int_features.push(values.to_ints());
+                int_features.push(values.to_ints()?);
             }
             Value::Float(_) => {
-                float_features.push(values.to_floats());
+                float_features.push(values.to_floats()?);
             }
         }
     }
@@ -195,7 +195,7 @@ fn parse_functional(
                     }
                     Some(values) => {
                         match Tensor::<i32>::new(&[values.iter().len() as u64, 1])
-                            .with_values(&values.to_ints())
+                            .with_values(&values.to_ints()?)
                         {
                             Ok(tensor) => {
                                 int_tensors.push((input_op, tensor));
@@ -214,7 +214,7 @@ fn parse_functional(
                     }
                     Some(values) => {
                         match Tensor::<f32>::new(&[values.iter().len() as u64, 1])
-                            .with_values(&values.to_floats())
+                            .with_values(&values.to_floats()?)
                         {
                             Ok(tensor) => {
                                 float_tensors.push((input_op, tensor));
@@ -233,7 +233,7 @@ fn parse_functional(
                     }
                     Some(values) => {
                         match Tensor::<String>::new(&[values.iter().len() as u64, 1])
-                            .with_values(&values.to_strings())
+                            .with_values(&values.to_strings()?)
                         {
                             Ok(tensor) => {
                                 string_tensors.push((input_op, tensor));
