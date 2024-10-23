@@ -1,0 +1,48 @@
+# Docker compose file for starting J.A.M.S locally. Might be unstable on ARM chips as dokcer image is x86_64 based
+services:
+  # LocalStack service for AWS emulation
+  localstack:
+    image: localstack/localstack
+    ports:
+      - "4566:4566"    # Main LocalStack port
+    environment:
+      - SERVICES=s3   # Specify the AWS services you want to enable
+      - DEBUG=1
+    volumes:
+      - "./init-scripts/init-aws.sh:/etc/localstack/init/ready.d/script.sh"  # Mount the init script
+    healthcheck:
+      test: ["CMD", "awslocal", "s3", "ls"]
+      interval: 10s
+      timeout: 5s
+      retries: 2
+#   JAMS
+  jams-http:
+    image: gagansingh894/jams:latest
+    ports:
+      - "3000:3000"    # Expose application port
+    environment:
+      - USE_LOCALSTACK=true
+      - LOCALSTACK_HOSTNAME=localstack
+      - LOCALSTACK_PORT=4566
+      - AWS_ACCESS_KEY_ID=test
+      - AWS_SECRET_ACCESS_KEY=test
+      - S3_BUCKET_NAME=jamsmodelstore
+      - AWS_DEFAULT_REGION=eu-west-2
+    depends_on:
+      - localstack
+    command: ["start", "http", "--with-s3-model-store=true"]
+  jams-grpc:
+    image: gagansingh894/jams:latest
+    ports:
+      - "4000:4000"    # Expose application port
+    environment:
+      - USE_LOCALSTACK=true
+      - LOCALSTACK_HOSTNAME=localstack
+      - LOCALSTACK_PORT=4566
+      - AWS_ACCESS_KEY_ID=test
+      - AWS_SECRET_ACCESS_KEY=test
+      - AWS_DEFAULT_REGION=eu-west-2
+      - S3_BUCKET_NAME=jamsmodelstore
+    depends_on:
+      - localstack
+    command: ["start", "grpc", "--with-s3-model-store=true"]

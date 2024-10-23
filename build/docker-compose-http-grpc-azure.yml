@@ -1,0 +1,36 @@
+# Docker compose file for starting J.A.M.S locally. Might be unstable on ARM chips as dokcer image is x86_64 based
+services:
+  # Azurite service for Azure Storage emulation
+  azurite:
+      image: mcr.microsoft.com/azure-storage/azurite
+      ports:
+        - "10000:10000"  # Blob service
+  #   JAMS
+  jams-http:
+    image: gagansingh894/jams:latest
+    ports:
+      - "3000:3000"    # Expose application port
+    environment:
+          - USE_AZURITE=true
+          - STORAGE_ACCOUNT=devstoreaccount1
+          - STORAGE_ACCESS_KEY=Eby8vdM02xNOcqFlqUwJPLlmEtlCDXJ1OUzFT50uSRZ6IFsuFq2UVErCz4I6tq/K1SZFPTOtr/KBHBeksoGMGw== # Dummy Key
+          - AZURITE_HOSTNAME=azurite
+          - AZURITE_BLOB_PORT=10000
+          - AZURE_STORAGE_CONTAINER_NAME=jamsmodelstore
+    depends_on:
+          - azurite
+    command: ["start", "http", "--with-azure-model-store=true"]
+  jams-grpc:
+    image: gagansingh894/jams:latest
+    ports:
+      - "4000:4000"    # Expose application port
+    environment:
+          - USE_AZURITE=true
+          - STORAGE_ACCOUNT=devstoreaccount1
+          - STORAGE_ACCESS_KEY=Eby8vdM02xNOcqFlqUwJPLlmEtlCDXJ1OUzFT50uSRZ6IFsuFq2UVErCz4I6tq/K1SZFPTOtr/KBHBeksoGMGw== # Dummy Key
+          - AZURITE_HOSTNAME=azurite
+          - AZURITE_BLOB_PORT=10000
+          - AZURE_STORAGE_CONTAINER_NAME=jamsmodelstore
+    depends_on:
+          - azurite
+    command: ["start", "grpc", "--with-azure-model-store=true"]
