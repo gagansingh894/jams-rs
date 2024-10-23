@@ -27,7 +27,7 @@ name = "jams_core"
 crate-type = ["lib"]
 
 [dependencies]
-tensorflow = "0.21.0"
+tensorflow = { version = "0.21.0", features = ["tensorflow_runtime_linking"] }
 lgbm = "0.0.5"
 tch = "0.15.0"
 catboost-rs = {git = "https://github.com/gagansingh894/catboost-rs", branch = "master", version = "0" }
