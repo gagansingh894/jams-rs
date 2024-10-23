@@ -9,66 +9,40 @@ services:
       - SERVICES=s3   # Specify the AWS services you want to enable
       - DEBUG=1
     volumes:
-      - "./init-aws.sh:/etc/localstack/init/ready.d/script.sh"  # Mount the init script
+      - "./init-scripts/init-aws.sh:/etc/localstack/init/ready.d/script.sh"  # Mount the init script
     healthcheck:
       test: ["CMD", "awslocal", "s3", "ls"]
       interval: 10s
       timeout: 5s
       retries: 2
-
-  # Azurite service for Azure Storage emulation
-  azurite:
-    image: mcr.microsoft.com/azure-storage/azurite
+#   JAMS
+  jams-http:
+    image: gagansingh894/jams:latest
     ports:
-      - "10000:10000"  # Blob service
-  wait:
-    image: ubuntu:latest
-    volumes:
-      - ./init-scripts-local:/scripts  # Mount the wait-for-it script
-    command: ["sh", "scripts/wait-for-it.sh", "localstack:4566"]  # Correctly specify command as a string array
-    working_dir: /
-  # JAMS
-#  jams-http:
-#    image: gagansingh894/jams:latest
-#    ports:
-#      - "3000:3000"    # Expose application port
-#    environment:
-#      - USE_LOCALSTACK=true
-#      - LOCALSTACK_HOSTNAME=localstack
-#      - LOCALSTACK_PORT=4566
-#      - AWS_ACCESS_KEY_ID=test
-#      - AWS_SECRET_ACCESS_KEY=test
-#      - S3_BUCKET_NAME=modelstore
-#      - AWS_DEFAULT_REGION=eu-west-2
-#      - USE_AZURITE=true
-#      - STORAGE_ACCOUNT=devstoreaccount1
-#      - STORAGE_ACCESS_KEY=Eby8vdM02xNOcqFlqUwJPLlmEtlCDXJ1OUzFT50uSRZ6IFsuFq2UVErCz4I6tq/K1SZFPTOtr/KBHBeksoGMGw== # Dummy Key
-#      - AZURITE_HOSTNAME=azurite
-#      - AZURITE_BLOB_PORT=10000
-##      - AZURE_STORAGE_CONTAINER_NAME=
-#    depends_on:
-#      - localstack
-##      - azurite
-#    command: ["start", "http", "--with-s3-model-store=true"]
-#  jams-grpc:
-#    image: gagansingh894/jams:latest
-#    ports:
-#      - "4000:4000"    # Expose application port
-#    environment:
-#      - USE_LOCALSTACK=true
-#      - LOCALSTACK_HOSTNAME=localstack
-#      - LOCALSTACK_PORT=4566
-#      - AWS_ACCESS_KEY_ID=test
-#      - AWS_SECRET_ACCESS_KEY=test
-#      - AWS_DEFAULT_REGION=eu-west-2
-#      - S3_BUCKET_NAME=model_store
-#      - USE_AZURITE=true
-#      - STORAGE_ACCOUNT=devstoreaccount1
-#      - STORAGE_ACCESS_KEY=Eby8vdM02xNOcqFlqUwJPLlmEtlCDXJ1OUzFT50uSRZ6IFsuFq2UVErCz4I6tq/K1SZFPTOtr/KBHBeksoGMGw== # Dummy Key
-#      - AZURITE_HOSTNAME=azurite
-#      - AZURITE_BLOB_PORT=10000
-##      - AZURE_STORAGE_CONTAINER_NAME=
-#    depends_on:
-#      - localstack
-##      - azurite
-#    command: ["./wait-for-it.sh", "localstack:4566", "start", "grpc", "--with-s3-model-store=true"]
+      - "3000:3000"    # Expose application port
+    environment:
+      - USE_LOCALSTACK=true
+      - LOCALSTACK_HOSTNAME=localstack
+      - LOCALSTACK_PORT=4566
+      - AWS_ACCESS_KEY_ID=test
+      - AWS_SECRET_ACCESS_KEY=test
+      - S3_BUCKET_NAME=jamsmodelstore
+      - AWS_DEFAULT_REGION=eu-west-2
+    depends_on:
+      - localstack
+    command: ["start", "http", "--with-s3-model-store=true"]
+  jams-grpc:
+    image: gagansingh894/jams:latest
+    ports:
+      - "4000:4000"    # Expose application port
+    environment:
+      - USE_LOCALSTACK=true
+      - LOCALSTACK_HOSTNAME=localstack
+      - LOCALSTACK_PORT=4566
+      - AWS_ACCESS_KEY_ID=test
+      - AWS_SECRET_ACCESS_KEY=test
+      - AWS_DEFAULT_REGION=eu-west-2
+      - S3_BUCKET_NAME=jamsmodelstore
+    depends_on:
+      - localstack
+    command: ["start", "grpc", "--with-s3-model-store=true"]

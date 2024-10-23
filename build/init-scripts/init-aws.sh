@@ -8,4 +8,4 @@ while ! awslocal s3 ls > /dev/null 2>&1; do
 done
 
 echo "Initializing LocalStack..."
-awslocal s3 mb s3://modelstore
+awslocal s3 mb s3://jamsmodelstore
