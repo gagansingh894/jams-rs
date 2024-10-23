@@ -986,7 +986,7 @@ checksum = "0b023947811758c97c59bf9d1c188fd619ad4718dcaa767947df1cadb14f39f4"
 dependencies = [
  "glob",
  "libc",
- "libloading 0.8.5",
+ "libloading",
 ]
 
 [[package]]
@@ -2057,7 +2057,7 @@ dependencies = [
 
 [[package]]
 name = "jams-core"
-version = "0.2.9"
+version = "0.2.8"
 dependencies = [
  "anyhow",
  "async-trait",
@@ -2174,16 +2174,6 @@ name = "libc"
 version = "0.2.160"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "f0b21006cd1874ae9e650973c565615676dc4a274c965bb0a73796dac838ce4f"
-
-[[package]]
-name = "libloading"
-version = "0.7.4"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b67380fd3b2fbe7527a606e18729d21c6f3951633d0500574c4dc22d2d638b9f"
-dependencies = [
- "cfg-if",
- "winapi",
-]
 
 [[package]]
 name = "libloading"
@@ -3545,7 +3535,6 @@ dependencies = [
  "rustversion",
  "tensorflow-internal-macros",
  "tensorflow-sys",
- "tensorflow-sys-runtime",
 ]
 
 [[package]]
@@ -3572,19 +3561,6 @@ dependencies = [
  "semver",
  "tar",
  "zip",
-]
-
-[[package]]
-name = "tensorflow-sys-runtime"
-version = "0.2.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d99ac6571189ba3517a1a165a4b37782f5e4ade7bf6b1578b04ee6e78b102d1b"
-dependencies = [
- "cfg-if",
- "lazy_static",
- "libc",
- "libloading 0.7.4",
- "log",
 ]
 
 [[package]]
