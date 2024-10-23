@@ -127,9 +127,9 @@ dependencies = [
 
 [[package]]
 name = "anyhow"
-version = "1.0.89"
+version = "1.0.91"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "86fdf8605db99b54d3cd748a44c6d04df638eb5dafb219b135d0149bd0db01f6"
+checksum = "c042108f3ed77fd83760a5fd79b53be043192bb3b9dba91d8c574c0ada7850c8"
 
 [[package]]
 name = "async-channel"
@@ -900,6 +900,15 @@ dependencies = [
  "cc",
  "libc",
  "pkg-config",
+]
+
+[[package]]
+name = "catboost"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "jams-client",
+ "tokio",
 ]
 
 [[package]]
@@ -2072,7 +2081,7 @@ dependencies = [
  "tar",
  "tch",
  "tempfile",
- "tensorflow",
+ "tensorflow 0.21.0",
  "tokio",
  "tracing",
  "uuid",
@@ -2197,6 +2206,15 @@ dependencies = [
  "libc",
  "pkg-config",
  "vcpkg",
+]
+
+[[package]]
+name = "lightgbm"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "jams-client",
+ "tokio",
 ]
 
 [[package]]
@@ -2705,6 +2723,15 @@ name = "protobuf"
 version = "2.27.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "cf7e6d18738ecd0902d30d1ad232c9125985a3422929b16c65517b38adc14f96"
+
+[[package]]
+name = "pytorch"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "jams-client",
+ "tokio",
+]
 
 [[package]]
 name = "quick-xml"
@@ -3486,6 +3513,15 @@ dependencies = [
 
 [[package]]
 name = "tensorflow"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "jams-client",
+ "tokio",
+]
+
+[[package]]
+name = "tensorflow"
 version = "0.21.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "70a5aa784c60e18bcca7f79fde117bd7209a30247d3242e9127a7d9496e66272"
@@ -3630,9 +3666,9 @@ checksum = "1f3ccbac311fea05f86f61904b462b55fb3df8837a366dfc601a0161d0532f20"
 
 [[package]]
 name = "tokio"
-version = "1.40.0"
+version = "1.41.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e2b070231665d27ad9ec9b8df639893f46727666c6767db40317fbe920a5d998"
+checksum = "145f3413504347a2be84393cc8a7d2fb4d863b375909ea59f2158261aa258bbb"
 dependencies = [
  "backtrace",
  "bytes",
