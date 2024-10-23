@@ -17,16 +17,16 @@ services:
       retries: 2
 
   # Azurite service for Azure Storage emulation
-#  azurite:
-#    image: mcr.microsoft.com/azure-storage/azurite
-#    ports:
-#      - "10000:10000"  # Blob service
-#  wait:
-#    image: ubuntu:latest
-#    volumes:
-#      - ./init-scripts-local:/scripts  # Mount the wait-for-it script
-#    command: ["sh", "scripts/wait-for-it.sh", "localstack:4566"]  # Correctly specify command as a string array
-#    working_dir: /
+  azurite:
+    image: mcr.microsoft.com/azure-storage/azurite
+    ports:
+      - "10000:10000"  # Blob service
+  wait:
+    image: ubuntu:latest
+    volumes:
+      - ./init-scripts-local:/scripts  # Mount the wait-for-it script
+    command: ["sh", "scripts/wait-for-it.sh", "localstack:4566"]  # Correctly specify command as a string array
+    working_dir: /
   # JAMS
 #  jams-http:
 #    image: gagansingh894/jams:latest
