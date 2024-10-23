@@ -1,3 +1,13 @@
 [workspace]
 
-members = ["clients/rust/jams-client",  "clients/rust/jams-client/examples/catboost", "internal/jams-proto", "jams", "jams-core", "jams-serve"]
+members = [
+    "jams",
+    "jams-core",
+    "jams-serve",
+    "internal/jams-proto",
+    "clients/rust/jams-client",
+    "clients/rust/jams-client/examples/catboost",
+    "clients/rust/jams-client/examples/lightgbm",
+    "clients/rust/jams-client/examples/pytorch",
+    "clients/rust/jams-client/examples/tensorflow"
+]

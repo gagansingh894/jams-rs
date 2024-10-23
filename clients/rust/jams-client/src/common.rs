@@ -37,11 +37,10 @@ impl Predictions {
 
 pub fn get_url(base_url: String) -> String {
     if base_url.starts_with("http://") || base_url.starts_with("https://") {
-        return base_url
+        return base_url;
     }
     format!("http://{}", base_url)
 }
-
 
 #[cfg(test)]
 mod tests {
