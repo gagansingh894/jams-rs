@@ -127,9 +127,9 @@ dependencies = [
 
 [[package]]
 name = "anyhow"
-version = "1.0.89"
+version = "1.0.91"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "86fdf8605db99b54d3cd748a44c6d04df638eb5dafb219b135d0149bd0db01f6"
+checksum = "c042108f3ed77fd83760a5fd79b53be043192bb3b9dba91d8c574c0ada7850c8"
 
 [[package]]
 name = "async-channel"
@@ -900,6 +900,15 @@ dependencies = [
  "cc",
  "libc",
  "pkg-config",
+]
+
+[[package]]
+name = "catboost"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "jams-client 0.2.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "tokio",
 ]
 
 [[package]]
@@ -2038,7 +2047,23 @@ version = "0.2.0"
 dependencies = [
  "anyhow",
  "async-trait",
- "jams-proto",
+ "jams-proto 0.1.0",
+ "reqwest",
+ "serde",
+ "serde_json",
+ "tokio",
+ "tonic",
+]
+
+[[package]]
+name = "jams-client"
+version = "0.2.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "bf24e262ee847f17a92702e176de00eecfe8eadbae5fe50287a66ed896efb83e"
+dependencies = [
+ "anyhow",
+ "async-trait",
+ "jams-proto 0.1.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "reqwest",
  "serde",
  "serde_json",
@@ -2090,6 +2115,19 @@ dependencies = [
 ]
 
 [[package]]
+name = "jams-proto"
+version = "0.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "568fc4e55f93e74db2afb412ea56f66f24c0c13452e2f63954b9e7aef031002e"
+dependencies = [
+ "prost",
+ "prost-types",
+ "tonic",
+ "tonic-build",
+ "tonic-reflection",
+]
+
+[[package]]
 name = "jams-serve"
 version = "0.1.25"
 dependencies = [
@@ -2097,7 +2135,7 @@ dependencies = [
  "axum 0.7.7",
  "chrono",
  "jams-core",
- "jams-proto",
+ "jams-proto 0.1.0",
  "log",
  "rayon",
  "reqwest",

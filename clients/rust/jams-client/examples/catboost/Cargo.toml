@@ -1,0 +1,9 @@
+[package]
+name = "catboost"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+jams-client = "0.2.0"
+tokio = "1"
+anyhow = "1.0.91"

@@ -1,3 +1,3 @@
 [workspace]
 
-members = ["clients/rust/jams-client", "internal/jams-proto", "jams", "jams-core", "jams-serve"]
+members = ["clients/rust/jams-client",  "clients/rust/jams-client/examples/catboost", "internal/jams-proto", "jams", "jams-core", "jams-serve"]
