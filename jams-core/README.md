@@ -13,10 +13,10 @@ This library crate is part of a wider project called **J.A.M.S - Just Another Mo
     - Local File System
     - AWS S3
     - Azure Blob Storage
+- Model Store Polling
 
 ### The following features are in progress 🚧
 - Support XGBoost framework
-- Redis & DynamoDB as feature stores
 - ModelSpec artefacts - Single source of information about models. This will assist in input validations
 ---
 

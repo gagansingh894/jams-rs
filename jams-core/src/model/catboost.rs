@@ -41,16 +41,16 @@ impl CatboostModelInput {
             // int and float are pushed to separate of type Vec<f32>
             match first {
                 Value::String(_) => {
-                    categorical_features.push(values.to_strings());
+                    categorical_features.push(values.to_strings()?);
                 }
                 Value::Int(_) => {
-                    let ints = values.to_ints();
+                    let ints = values.to_ints()?;
                     // convert to float
                     let floats = ints.into_iter().map(|x| x as f32).collect();
                     numerical_features.push(floats);
                 }
                 Value::Float(_) => {
-                    numerical_features.push(values.to_floats());
+                    numerical_features.push(values.to_floats()?);
                 }
             }
         }

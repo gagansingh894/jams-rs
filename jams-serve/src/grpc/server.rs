@@ -29,6 +29,9 @@ use tonic::transport::Server;
 /// * Any failure occurs during the initialization of the services or the server.
 ///
 pub async fn start(config: server::Config) -> anyhow::Result<()> {
+    // print terminal art
+    println!("{}", server::ART);
+
     // init port number
     let port = config.port.unwrap_or(4000);
 

@@ -37,13 +37,13 @@ impl TorchModelInput {
                             anyhow::bail!("not supported string tensors")
                         }
                         Value::Int(_) => {
-                            let ints = values.to_ints();
+                            let ints = values.to_ints()?;
                             // convert to float
                             let floats = ints.into_iter().map(|x| x as f32).collect();
                             numerical_features.push(floats);
                         }
                         Value::Float(_) => {
-                            numerical_features.push(values.to_floats());
+                            numerical_features.push(values.to_floats()?);
                         }
                     }
                 }

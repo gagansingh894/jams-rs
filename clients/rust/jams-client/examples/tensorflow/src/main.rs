@@ -1,5 +1,5 @@
-use std::fs;
 use jams_client::http::{ApiClient, Client};
+use std::fs;
 
 const URL: &str = "https://jams-http.onrender.com";
 
@@ -15,7 +15,9 @@ async fn main() -> anyhow::Result<()> {
 
     // this will return a multiclass response for each input record. we can use argmax to get the index of the class
     println!("TENSORFLOW PREDICTIONS");
-    let preds = http_client.predict("my_awesome_penguin_model".to_string(), payload).await?;
+    let preds = http_client
+        .predict("my_awesome_penguin_model".to_string(), payload)
+        .await?;
     println!("penguin species labels: {:?}", apply_argmax(preds.to_vec()));
 
     Ok(())

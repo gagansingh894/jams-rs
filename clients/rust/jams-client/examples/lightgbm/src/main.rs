@@ -1,5 +1,5 @@
-use std::fs;
 use jams_client::http::{ApiClient, Client};
+use std::fs;
 
 const URL: &str = "https://jams-http.onrender.com";
 
@@ -15,9 +15,10 @@ async fn main() -> anyhow::Result<()> {
 
     // this is a regression model so output would be continous for each input record
     println!("LIGHTGBM PREDICTIONS");
-    let preds = http_client.predict("my_awesome_reg_model".to_string(), payload).await?;
+    let preds = http_client
+        .predict("my_awesome_reg_model".to_string(), payload)
+        .await?;
     println!("values: {:?}", preds.to_vec());
 
     Ok(())
 }
-

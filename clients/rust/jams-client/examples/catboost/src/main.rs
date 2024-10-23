@@ -1,21 +1,23 @@
-use std::fs;
 use jams_client::http::{ApiClient, Client};
+use std::fs;
 
 const URL: &str = "https://jams-http.onrender.com";
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
     let http_client = ApiClient::new(URL.to_string())?;
-    
+
     // health check
     http_client.health_check().await?;
 
     // read file
     let payload = fs::read_to_string("clients/rust/jams-client/examples/catboost/request.json")?;
-    
+
     // this is a binary classifier model and will return logits of each input record
     println!("CATBOOST PREDICTIONS");
-    let preds = http_client.predict("titanic_model".to_string(), payload).await?;
+    let preds = http_client
+        .predict("titanic_model".to_string(), payload)
+        .await?;
     let logits = preds.to_vec();
     println!("logits: {:?}", logits.clone());
     let probabilities = apply_sigmoid(logits.to_vec());
@@ -30,7 +32,6 @@ async fn main() -> anyhow::Result<()> {
 fn sigmoid(x: f64) -> f64 {
     1.0 / (1.0 + (-x).exp())
 }
-
 
 // Apply sigmoid to each element in a 2D vector
 fn apply_sigmoid(inputs: Vec<Vec<f64>>) -> Vec<Vec<f64>> {
