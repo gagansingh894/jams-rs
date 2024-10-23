@@ -28,28 +28,28 @@ services:
 #    command: ["sh", "scripts/wait-for-it.sh", "localstack:4566"]  # Correctly specify command as a string array
 #    working_dir: /
   # JAMS
-  jams-http:
-    image: gagansingh894/jams:latest
-    ports:
-      - "3000:3000"    # Expose application port
-    environment:
-      - USE_LOCALSTACK=true
-      - LOCALSTACK_HOSTNAME=localstack
-      - LOCALSTACK_PORT=4566
-      - AWS_ACCESS_KEY_ID=test
-      - AWS_SECRET_ACCESS_KEY=test
-      - S3_BUCKET_NAME=modelstore
-      - AWS_DEFAULT_REGION=eu-west-2
-      - USE_AZURITE=true
-      - STORAGE_ACCOUNT=devstoreaccount1
-      - STORAGE_ACCESS_KEY=Eby8vdM02xNOcqFlqUwJPLlmEtlCDXJ1OUzFT50uSRZ6IFsuFq2UVErCz4I6tq/K1SZFPTOtr/KBHBeksoGMGw== # Dummy Key
-      - AZURITE_HOSTNAME=azurite
-      - AZURITE_BLOB_PORT=10000
-#      - AZURE_STORAGE_CONTAINER_NAME=
-    depends_on:
-      - localstack
-#      - azurite
-    command: ["start", "http", "--with-s3-model-store=true"]
+#  jams-http:
+#    image: gagansingh894/jams:latest
+#    ports:
+#      - "3000:3000"    # Expose application port
+#    environment:
+#      - USE_LOCALSTACK=true
+#      - LOCALSTACK_HOSTNAME=localstack
+#      - LOCALSTACK_PORT=4566
+#      - AWS_ACCESS_KEY_ID=test
+#      - AWS_SECRET_ACCESS_KEY=test
+#      - S3_BUCKET_NAME=modelstore
+#      - AWS_DEFAULT_REGION=eu-west-2
+#      - USE_AZURITE=true
+#      - STORAGE_ACCOUNT=devstoreaccount1
+#      - STORAGE_ACCESS_KEY=Eby8vdM02xNOcqFlqUwJPLlmEtlCDXJ1OUzFT50uSRZ6IFsuFq2UVErCz4I6tq/K1SZFPTOtr/KBHBeksoGMGw== # Dummy Key
+#      - AZURITE_HOSTNAME=azurite
+#      - AZURITE_BLOB_PORT=10000
+##      - AZURE_STORAGE_CONTAINER_NAME=
+#    depends_on:
+#      - localstack
+##      - azurite
+#    command: ["start", "http", "--with-s3-model-store=true"]
 #  jams-grpc:
 #    image: gagansingh894/jams:latest
 #    ports:
