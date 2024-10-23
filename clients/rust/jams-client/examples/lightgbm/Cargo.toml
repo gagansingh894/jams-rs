@@ -1,0 +1,9 @@
+[package]
+name = "lightgbm"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+jams-client = { path = "../../../jams-client" }
+tokio = "1"
+anyhow = "1.0.91"

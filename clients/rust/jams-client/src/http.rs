@@ -1,4 +1,4 @@
-use crate::common::{GetModelsResponse, Predictions, get_url};
+use crate::common::{get_url, GetModelsResponse, Predictions};
 use async_trait::async_trait;
 use serde::{Deserialize, Serialize};
 
@@ -48,7 +48,10 @@ impl ApiClient {
             }
         };
 
-        Ok(ApiClient { client, base_url: get_url(base_url) })
+        Ok(ApiClient {
+            client,
+            base_url: get_url(base_url),
+        })
     }
 }
 
