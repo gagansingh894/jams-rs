@@ -9,6 +9,7 @@ use tonic::codegen::tokio_stream::wrappers::TcpListenerStream;
 use tonic::transport::Server;
 use opentelemetry::global;
 use opentelemetry_sdk::propagation::TraceContextPropagator;
+use tower_http::trace::TraceLayer;
 use tracing_subscriber::layer::SubscriberExt;
 
 /// Starts the gRPC server with the provided configuration.
@@ -94,6 +95,7 @@ pub async fn start(config: server::Config) -> anyhow::Result<()> {
     );
 
     Server::builder()
+        .layer(TraceLayer::new_for_grpc())
         .add_service(reflection_service)
         .add_service(ModelServerServer::new(jams_service))
         .serve_with_incoming_shutdown(TcpListenerStream::new(listener), shutdown_signal())
