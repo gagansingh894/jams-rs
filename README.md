@@ -23,38 +23,43 @@ It is primarily targeted for software and data professionals for deploying their
 
 ## Features
 - Modular Design 📦
-- (🚧) Configurable 🛠️
-- Supports PyTorch and Tensorflow Models via FFI Bindings 🤖
+- Config based deployment 🛠️
+- Supports PyTorch* and Tensorflow Models via FFI Bindings 🤖
 - Supports Tree Models - Catboost, LightGBM, (🚧) XGBoost via FFI Bindings 🌳
 - Supports multiple backends for model stores - local file system, AWS S3, Azure Blob 🗳️
 - Supports model store polling ⌛
-- (🚧) Supports Redis and DynamoDB for in memory feature stores 🗂️
-- HTTP & gRPC API 🚀
+- HTTP & gRPC API with ready to use clients in Python, Go, Rust, (🚧) TypeScript and (🚧) Java 🚀
 - CLI 💻  
 
 The project is divided into the following crates
 
 - jams-core ![](https://img.shields.io/crates/v/jams-core)
 - jams-serve ![](https://img.shields.io/crates/v/jams-serve)
+- jams-proto ![](https://img.shields.io/crates/v/jams-proto)
 - jams ![](https://img.shields.io/crates/v/jams)
 
-(🚧)`jams-core`
+`jams-core`
 is the core library
-which provides thin abstraction around common machine learning and deep learning models, model stores like AWS S3, Azure Blob Storage, Local Filesystem as well as databases like redis,
-dynamodb which can be used as real time feature stores.
+which provides thin abstraction around common machine learning and deep learning models and model stores like AWS S3, 
+Azure Blob Storage, Local Filesystem.
 You can think of each component as a LEGO block which can be used to build a system depending on the requirements
 
-(🚧)`jams-serve` is a http and gRPC API library for jams-core.
+`jams-proto` is provides the gRPC contract for jams-serve.
+
+`jams-serve` is a http and gRPC API library for jams-core.
 The API is highly configurable, allowing the user to select which components to use when setting up the model server.
 Please refer to examples for different types of setup.
 
-(🚧)`jams` is an easy-to-use CLI allowing user to make predictions by specifying model and an input string.
+`jams` is an easy-to-use CLI application for interaction with J.A.M.S - Just Another Model Server.
 
 
 (🚧) **J.A.M.S** also provides HTTP & gRPC client implementations in multiple languages. [See here](https://github.com/gagansingh894/jams-rs/tree/main/clients)
 
-⚠️ **DISCLAIMER: jams is currently unstable and may not run properly on ARM chips. Future releases will fix this.
-For now use docker image or Linux x86_64 architecture**
+⚠️ **DISCLAIMER: jams is reaching stable version but may not run properly on ARM chips. Future releases will fix this.
+For now use docker image or Linux x86_64 architecture. Only Pytorch 2.2.0 is supported for now due to dependencies on FFI bindings.
+Although you may be able to run models trained on version <= 2.2.0**
+
+
 
 ---
 
@@ -163,9 +168,9 @@ docker run --rm -p 4000:4000 gagansingh894/jams start grpc --with-azure-model-st
 docker run --rm -p 3000:3000 gagansingh894/jams start http --with-azure-model-store=true --azure-storage-container-name=<container_name> --poll-interval 3600
 ```
 
-Please refer to [OpenAPI Spec](https://github.com/gagansingh894/jams-rs/blob/main/openapi.yml) for API endpoints.
-
+Please refer to [OpenAPI Spec](https://github.com/gagansingh894/jams-rs/blob/main/openapi.yml) for API endpoints. 
 Alternatively, you can also refer to the [proto definition](https://github.com/gagansingh894/jams-rs/blob/main/internal/jams-proto/proto/api/v1/jams.proto).
+
 ---
 
 ## Local Setup
@@ -174,31 +179,52 @@ Alternatively, you can also refer to the [proto definition](https://github.com/g
 This project relies on a couple of shared libraries. To easily set up, please follow the steps below
 
 
-### Mac
+### Mac - Apple Silicon
 1. Install [Homebrew](https://brew.sh/) if not already installed
-2. Run the following command to install bazel, lightgbm, pytorch and tensorflow
+2. Install [Rust](https://www.rust-lang.org/tools/install) if not already installed. **The MSRV is 1.81.**
+3. Run the following command to install bazel, lightgbm, pytorch and tensorflow
 ```
-brew install lightgbm pytorch tensorflow
+brew install bazel lightgbm tensorflow
 ```
-3. Download catboost library(.dylib) directly from Github
+3. Download **Pytorch 2.2.0** from Pytorch website and set it to path
 ```
-wget -q https://github.com/catboost/catboost/releases/download/v1.2.5/libcatboostmodel-darwin-universal2-1.2.5.dylib -O /usr/local/lib/libcatboostmodel.dylib
-```
-4. Copy lightgbm to usr/local/lib
-```
-cp /opt/homebrew/Cellar/lightgbm/4.3.0/lib/lib_lightgbm.dylib /usr/local/lib
-```
-5. Add the following environment variables
-```
-export LIBTORCH=/opt/homebrew/Cellar/pytorch/2.2.0_4
-export LIGHTGBM_LIB_PATH=/opt/homebrew/Cellar/lightgbm/4.3.0/lib/
-export DYLD_LIBRARY_PATH=/usr/local/lib:$DYLD_LIBRARY_PATH
-```
+sudo sh -c '
+    echo "Downloading libtorch for macOS (ARM64)...";
+    wget https://download.pytorch.org/libtorch/cpu/libtorch-macos-arm64-2.2.0.zip -O /usr/local/lib/libtorch-macos-arm64-2.2.0.zip;
 
-**Remember to check version numbers in the path as homebrew downloads the latest stable version.**
+    echo "Unzipping libtorch into /usr/local/lib/libtorch2_2_0...";
+    mkdir -p /usr/local/lib/libtorch2_2_0;
+    unzip /usr/local/lib/libtorch-macos-arm64-2.2.0.zip -d /usr/local/lib/libtorch2_2_0;
 
-**Use brew info to get the exact path which you can use to set the environment variables**
+    echo "Cleaning up by deleting the zip file...";
+    rm /usr/local/lib/libtorch-macos-arm64-2.2.0.zip;
 
+    echo "Please add the following to your .bashrc/.zshrc and restart terminal...";
+    COMMON_LIBS_PATH=/usr/local/lib
+    LIBTORCH=$COMMON_LIBS_PATH/libtorch2_2_0/libtorch
+    LIBTORCH_INCLUDE=$COMMON_LIBS_PATH/libtorch2_2_0/libtorch
+    LIBTORCH_LIB=$COMMON_LIBS_PATH/libtorch2_2_0/libtorch
+    DYLD_LIBRARY_PATH=$COMMON_LIBS_PATH:$COMMON_LIBS_PATH/libtorch2_2_0/libtorch
+
+    echo "Libtorch installed in /usr/local/lib/libtorch2_2_0 and zip file deleted.";
+'
+```
+4. Download catboost library(.dylib) directly from Github
+```
+sudo wget -q https://github.com/catboost/catboost/releases/download/v1.2.5/libcatboostmodel-darwin-universal2-1.2.5.dylib -O /usr/local/lib/libcatboostmodel.dylib
+```
+5. Copy lightGBM library(.dylib) and libomp library to usr/local/lib
+```
+sudo cp /opt/homebrew/Cellar/lightgbm/$(brew list --versions lightgbm | awk '{print $2}')/lib/lib_lightgbm.dylib /usr/local/lib/ && sudo cp /opt/homebrew/Cellar/libomp/$(brew list --versions libomp | awk '{print $2}')/lib/libomp.dylib /usr/local/lib/
+```
+6. Add the following environment variables to .bashrc/.zshrc
+```
+export COMMON_LIBS_PATH=/usr/local/lib
+export LIBTORCH=$COMMON_LIBS_PATH/libtorch2_2_0/libtorch
+export LIBTORCH_INCLUDE=$COMMON_LIBS_PATH/libtorch2_2_0/libtorch
+export LIBTORCH_LIB=$COMMON_LIBS_PATH/libtorch2_2_0/libtorch
+export DYLD_LIBRARY_PATH=$COMMON_LIBS_PATH:$COMMON_LIBS_PATH/libtorch2_2_0/libtorch/lib
+```
 6. Run the following command to install **jams**
 ```
 cargo install jams
@@ -316,7 +342,7 @@ Use this command for making predictions via CLI for making predictions for the f
 - Catboost
 - LightGBM
 
-This command does not expect the model format to `.tar.gz`.
+This command does not expect the model format to be `.tar.gz`.
 
 Refer below for some examples of the **predict** command.
 

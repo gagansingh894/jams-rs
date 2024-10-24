@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"github.com/gagansingh894/jams-rs/clients/go/jams/types"
 	"net/http"
+	"strings"
 )
 
 //go:generate mockery --name Client --output=../mocks/http
@@ -26,9 +27,11 @@ type client struct {
 }
 
 func New(baseURL string) Client {
-	return &client{
-		baseURL: fmt.Sprintf("http://%s", baseURL),
+	if strings.HasPrefix(baseURL, "http://") || strings.HasPrefix(baseURL, "https://") {
+		return &client{baseURL: baseURL}
 	}
+
+	return &client{baseURL: fmt.Sprintf("http://%s", baseURL)}
 }
 
 func (c *client) HealthCheck(ctx context.Context) error {

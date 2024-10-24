@@ -1,0 +1,18 @@
+# Docker compose file for starting J.A.M.S locally. Might be unstable on ARM chips as dokcer image is x86_64 based
+services:
+  # LocalStack service for AWS emulation
+  localstack:
+    image: localstack/localstack
+    ports:
+      - "4566:4566"    # Main LocalStack port
+    environment:
+      - SERVICES=s3   # Specify the AWS services you want to enable
+      - DEBUG=1
+    volumes:
+      - "./init-scripts/init-aws.sh:/etc/localstack/init/ready.d/script.sh"  # Mount the init script
+  # Azurite service for Azure Storage emulation
+  azurite:
+    image: mcr.microsoft.com/azure-storage/azurite
+    ports:
+      - "10000:10000"  # Blob service
+  #   JAMS

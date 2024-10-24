@@ -127,9 +127,9 @@ dependencies = [
 
 [[package]]
 name = "anyhow"
-version = "1.0.89"
+version = "1.0.91"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "86fdf8605db99b54d3cd748a44c6d04df638eb5dafb219b135d0149bd0db01f6"
+checksum = "c042108f3ed77fd83760a5fd79b53be043192bb3b9dba91d8c574c0ada7850c8"
 
 [[package]]
 name = "async-channel"
@@ -900,6 +900,15 @@ dependencies = [
  "cc",
  "libc",
  "pkg-config",
+]
+
+[[package]]
+name = "catboost"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "jams-client",
+ "tokio",
 ]
 
 [[package]]
@@ -2028,7 +2037,7 @@ checksum = "49f1f14873335454500d59611f1cf4a4b0f786f9ac11f4312a78e4cf2566695b"
 
 [[package]]
 name = "jams"
-version = "0.1.20"
+version = "0.1.21"
 dependencies = [
  "anyhow",
  "clap",
@@ -2043,7 +2052,7 @@ dependencies = [
 
 [[package]]
 name = "jams-client"
-version = "0.1.0"
+version = "0.2.1"
 dependencies = [
  "anyhow",
  "async-trait",
@@ -2057,7 +2066,7 @@ dependencies = [
 
 [[package]]
 name = "jams-core"
-version = "0.2.7"
+version = "0.2.10"
 dependencies = [
  "anyhow",
  "async-trait",
@@ -2081,7 +2090,7 @@ dependencies = [
  "tar",
  "tch",
  "tempfile",
- "tensorflow",
+ "tensorflow 0.21.0",
  "tokio",
  "tracing",
  "uuid",
@@ -2100,7 +2109,7 @@ dependencies = [
 
 [[package]]
 name = "jams-serve"
-version = "0.1.25"
+version = "0.1.26"
 dependencies = [
  "anyhow",
  "axum 0.7.7",
@@ -2157,9 +2166,9 @@ checksum = "830d08ce1d1d941e6b30645f1a0eb5643013d835ce3779a5fc208261dbe10f55"
 
 [[package]]
 name = "lgbm"
-version = "0.0.3"
+version = "0.0.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "633b21c2a6f4284ab85a3a0a844b9cdc7e27f0f8c47d112c6395fb36388a68c4"
+checksum = "82669bca7afa1ae785ab5c530eaa618109eb520beb130b0c0a0c33883e90feb3"
 dependencies = [
  "derive-ex",
  "lgbm-sys",
@@ -2211,6 +2220,15 @@ dependencies = [
  "libc",
  "pkg-config",
  "vcpkg",
+]
+
+[[package]]
+name = "lightgbm"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "jams-client",
+ "tokio",
 ]
 
 [[package]]
@@ -2600,9 +2618,9 @@ dependencies = [
 
 [[package]]
 name = "parse-display"
-version = "0.9.1"
+version = "0.10.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "914a1c2265c98e2446911282c6ac86d8524f495792c38c5bd884f80499c7538a"
+checksum = "287d8d3ebdce117b8539f59411e4ed9ec226e0a4153c7f55495c6070d68e6f72"
 dependencies = [
  "parse-display-derive",
  "regex",
@@ -2611,9 +2629,9 @@ dependencies = [
 
 [[package]]
 name = "parse-display-derive"
-version = "0.9.1"
+version = "0.10.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "2ae7800a4c974efd12df917266338e79a7a74415173caf7e70aa0a0707345281"
+checksum = "7fc048687be30d79502dea2f623d052f3a074012c6eac41726b7ab17213616b1"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -2808,6 +2826,15 @@ name = "protobuf"
 version = "2.27.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "cf7e6d18738ecd0902d30d1ad232c9125985a3422929b16c65517b38adc14f96"
+
+[[package]]
+name = "pytorch"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "jams-client",
+ "tokio",
+]
 
 [[package]]
 name = "quick-xml"
@@ -3589,6 +3616,15 @@ dependencies = [
 
 [[package]]
 name = "tensorflow"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "jams-client",
+ "tokio",
+]
+
+[[package]]
+name = "tensorflow"
 version = "0.21.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "70a5aa784c60e18bcca7f79fde117bd7209a30247d3242e9127a7d9496e66272"
@@ -3733,9 +3769,9 @@ checksum = "1f3ccbac311fea05f86f61904b462b55fb3df8837a366dfc601a0161d0532f20"
 
 [[package]]
 name = "tokio"
-version = "1.40.0"
+version = "1.41.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e2b070231665d27ad9ec9b8df639893f46727666c6767db40317fbe920a5d998"
+checksum = "145f3413504347a2be84393cc8a7d2fb4d863b375909ea59f2158261aa258bbb"
 dependencies = [
  "backtrace",
  "bytes",

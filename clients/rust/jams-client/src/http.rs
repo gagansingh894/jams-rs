@@ -1,4 +1,4 @@
-use crate::common::{GetModelsResponse, Predictions};
+use crate::common::{get_url, GetModelsResponse, Predictions};
 use async_trait::async_trait;
 use serde::{Deserialize, Serialize};
 
@@ -47,9 +47,11 @@ impl ApiClient {
                 anyhow::bail!("failed to create reqwest client: {}", err)
             }
         };
-        let base_url = format!("http://{}", base_url);
 
-        Ok(ApiClient { client, base_url })
+        Ok(ApiClient {
+            client,
+            base_url: get_url(base_url),
+        })
     }
 }
 

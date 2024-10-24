@@ -4,8 +4,10 @@ This crate provides a CLI for interacting [**J.A.M.S - Just Another Model Server
 
 ![Alt text](https://github.com/gagansingh894/jams-rs/blob/main/jams/screenshot.png?raw=true)
 
-⚠️ **DISCLAIMER: jams is currently unstable and may not run properly on ARM chips. Future releases will fix this.
-For now use docker image or Linux x86_64 architecture**
+⚠️ **DISCLAIMER: jams is reaching stable version but may not run properly on ARM chips. Future releases will fix this.
+For now use docker image or Linux x86_64 architecture. Only Pytorch 2.2.0 is supported for now due to dependencies on FFI bindings.
+Although you may be able to run models trained on version <= 2.2.0**
+
 ---
 
 ## Features
@@ -14,7 +16,7 @@ For now use docker image or Linux x86_64 architecture**
 - Separate Rayon Threadpool for computing predictions
 - Multiple Model Frameworks Supported
   - Tensorflow
-  - Torch
+  - Torch*
   - Catboost
   - LightGBM  
 - Multiple Model Store Backends Supported with Polling 
@@ -24,13 +26,16 @@ For now use docker image or Linux x86_64 architecture**
 - Thin & Fast API Layer
   - HTTP via Axum
   - gRPC via Tonic
+- Ready to use clients
+  - Python
+  - Go
+  - Rust
+  - TypeScript 🚧
+  - JAVA 🚧
 
 ### The following features are in progress 🚧
 - Support XGBoost framework
-- Redis & DynamoDB as feature stores 
-- User defined Configurations via YAML file
 - ModelSpec - Single source of information about models. This will assist in input validations
-- Client Implementations in Python, Go, TypeScript, JAVA
 ---
 
 ## Docker Setup
@@ -148,31 +153,52 @@ Alternatively, you can also refer to the [proto definition](https://github.com/g
 This project relies on a couple of shared libraries. To easily set up, please follow the steps below
 
 
-### Mac
+### Mac - Apple Silicon
 1. Install [Homebrew](https://brew.sh/) if not already installed
-2. Run the following command to install bazel, lightgbm, pytorch and tensorflow
+2. Install [Rust](https://www.rust-lang.org/tools/install) if not already installed. **The MSRV is 1.81.**
+3. Run the following command to install bazel, lightgbm, pytorch and tensorflow
 ```
-brew install lightgbm pytorch tensorflow
+brew install bazel lightgbm tensorflow
 ```
-3. Download catboost library(.dylib) directly from Github
+3. Download **Pytorch 2.2.0** from Pytorch website and set it to path
 ```
-wget -q https://github.com/catboost/catboost/releases/download/v1.2.5/libcatboostmodel-darwin-universal2-1.2.5.dylib -O /usr/local/lib/libcatboostmodel.dylib
-```
-4. Copy lightgbm to usr/local/lib
-```
-cp /opt/homebrew/Cellar/lightgbm/4.3.0/lib/lib_lightgbm.dylib /usr/local/lib
-```
-5. Add the following environment variables
-```
-export LIBTORCH=/opt/homebrew/Cellar/pytorch/2.2.0_4
-export LIGHTGBM_LIB_PATH=/opt/homebrew/Cellar/lightgbm/4.3.0/lib/
-export DYLD_LIBRARY_PATH=/usr/local/lib:$DYLD_LIBRARY_PATH
-```
+sudo sh -c '
+    echo "Downloading libtorch for macOS (ARM64)...";
+    wget https://download.pytorch.org/libtorch/cpu/libtorch-macos-arm64-2.2.0.zip -O /usr/local/lib/libtorch-macos-arm64-2.2.0.zip;
 
-**Remember to check version numbers in the path as homebrew downloads the latest stable version.**
+    echo "Unzipping libtorch into /usr/local/lib/libtorch2_2_0...";
+    mkdir -p /usr/local/lib/libtorch2_2_0;
+    unzip /usr/local/lib/libtorch-macos-arm64-2.2.0.zip -d /usr/local/lib/libtorch2_2_0;
 
-**Use brew info to get the exact path which you can use to set the environment variables**
+    echo "Cleaning up by deleting the zip file...";
+    rm /usr/local/lib/libtorch-macos-arm64-2.2.0.zip;
 
+    echo "Please add the following to your .bashrc/.zshrc and restart terminal...";
+    COMMON_LIBS_PATH=/usr/local/lib
+    LIBTORCH=$COMMON_LIBS_PATH/libtorch2_2_0/libtorch
+    LIBTORCH_INCLUDE=$COMMON_LIBS_PATH/libtorch2_2_0/libtorch
+    LIBTORCH_LIB=$COMMON_LIBS_PATH/libtorch2_2_0/libtorch
+    DYLD_LIBRARY_PATH=$COMMON_LIBS_PATH:$COMMON_LIBS_PATH/libtorch2_2_0/libtorch
+
+    echo "Libtorch installed in /usr/local/lib/libtorch2_2_0 and zip file deleted.";
+'
+```
+4. Download catboost library(.dylib) directly from Github
+```
+sudo wget -q https://github.com/catboost/catboost/releases/download/v1.2.5/libcatboostmodel-darwin-universal2-1.2.5.dylib -O /usr/local/lib/libcatboostmodel.dylib
+```
+5. Copy lightGBM library(.dylib) and libomp library to usr/local/lib
+```
+sudo cp /opt/homebrew/Cellar/lightgbm/$(brew list --versions lightgbm | awk '{print $2}')/lib/lib_lightgbm.dylib /usr/local/lib/ && sudo cp /opt/homebrew/Cellar/libomp/$(brew list --versions libomp | awk '{print $2}')/lib/libomp.dylib /usr/local/lib/
+```
+6. Add the following environment variables to .bashrc/.zshrc
+```
+export COMMON_LIBS_PATH=/usr/local/lib
+export LIBTORCH=$COMMON_LIBS_PATH/libtorch2_2_0/libtorch
+export LIBTORCH_INCLUDE=$COMMON_LIBS_PATH/libtorch2_2_0/libtorch
+export LIBTORCH_LIB=$COMMON_LIBS_PATH/libtorch2_2_0/libtorch
+export DYLD_LIBRARY_PATH=$COMMON_LIBS_PATH:$COMMON_LIBS_PATH/libtorch2_2_0/libtorch/lib
+```
 6. Run the following command to install **jams**
 ```
 cargo install jams

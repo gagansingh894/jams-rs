@@ -160,27 +160,52 @@ impl Values {
     /// Converts the feature values to a vector of strings.
     ///
     /// # Returns
-    /// * `Vec<String>` - The converted values.
-    pub fn to_strings(&self) -> Vec<String> {
+    /// * `anyhow::Result<Vec<String>>` - The converted values.
+    pub fn to_strings(&self) -> anyhow::Result<Vec<String>> {
         self.iter()
-            .map(|v| v.as_string().unwrap().to_string())
+            .map(|v| {
+                Ok(match v.as_string() {
+                    None => {
+                        anyhow::bail!("Failed to convert Values to strings ❌")
+                    }
+                    Some(v) => v.to_string(),
+                })
+            })
             .collect()
     }
 
     /// Converts the feature values to a vector of integers.
     ///
     /// # Returns
-    /// * `Vec<i32>` - The converted values.
-    pub fn to_ints(&self) -> Vec<i32> {
-        self.iter().map(|v| v.as_int().unwrap()).collect()
+    /// * `anyhow::Result<Vec<i32>>` - The converted values.
+    pub fn to_ints(&self) -> anyhow::Result<Vec<i32>> {
+        self.iter()
+            .map(|v| {
+                Ok(match v.as_int() {
+                    None => {
+                        anyhow::bail!("Failed to convert Values to ints ❌")
+                    }
+                    Some(v) => v,
+                })
+            })
+            .collect()
     }
 
     /// Converts the feature values to a vector of floats.
     ///
     /// # Returns
-    /// * `Vec<f32>` - The converted values.
-    pub fn to_floats(&self) -> Vec<f32> {
-        self.iter().map(|v| v.as_float().unwrap()).collect()
+    /// * `anyhow::Result<Vec<f32>>` - The converted values.
+    pub fn to_floats(&self) -> anyhow::Result<Vec<f32>> {
+        self.iter()
+            .map(|v| {
+                Ok(match v.as_float() {
+                    None => {
+                        anyhow::bail!("Failed to convert Values to floats ❌")
+                    }
+                    Some(v) => v,
+                })
+            })
+            .collect()
     }
 }
 /// Enum representing a feature value, which can be a string, integer, or float.
@@ -241,7 +266,14 @@ fn parse_json_serde_value(json: serde_json::Value) -> anyhow::Result<HashMap<Fea
     // create an empty hashmap to store the features
     let mut model_input: HashMap<FeatureName, Values> = HashMap::new();
 
-    for (key, values) in json.as_object().unwrap() {
+    let json_object = match json.as_object() {
+        None => {
+            anyhow::bail!("Failed to convert JSON input to JSON map ❌")
+        }
+        Some(json_object) => json_object,
+    };
+
+    for (key, values) in json_object {
         let feature_name: FeatureName = key.to_string();
 
         // validate value is an array
@@ -397,7 +429,7 @@ mod tests {
 
         let values = Values::from_ints(vec.clone());
 
-        let values_vec = values.to_ints();
+        let values_vec = values.to_ints().unwrap();
 
         assert_eq!(vec, values_vec)
     }

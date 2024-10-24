@@ -2,4 +2,5 @@ FROM --platform=linux/amd64 gagansingh894/jams
 LABEL authors="gagandeepsingh"
 RUN mkdir -p /model_store
 COPY build/assets/model_store /model_store
+COPY build/run_config /run_config
 CMD ["start", "http", "--model-dir", "/model_store", "--poll-interval", "300"]
