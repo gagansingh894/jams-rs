@@ -5,13 +5,16 @@ on:
     branches: [ "main" ]
     paths-ignore:
       - 'clients/**'
+      - 'build/Dockerfile_builder'
       - '.github/workflows/client_python.yml'
       - '.github/workflows/client_go.yml'
       - '.github/workflows/client_rust.yml'
+      - '.github/workflows/jams_builder.yml'
   pull_request:
     branches: [ "main" ]
     paths-ignore:
       - 'clients/**'
+      - '.github/workflows/build.yml'
       - '.github/workflows/client_python.yml'
       - '.github/workflows/client_go.yml'
       - '.github/workflows/client_rust.yml'
@@ -25,7 +28,7 @@ jobs:
     runs-on: ubuntu-latest
 
     container:
-      image: rust:1.81
+      image: gagansingh894/jams_builder:latest
       options: --user root
       env:
         LIGHTGBM_LIB_DIR: /usr/local/lib
@@ -62,30 +65,8 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Setup Environment
-        run: bash build/setup_environment_linux_x86_64.sh
-
-      - name: Cache Cargo Registry
-        uses: actions/cache@v3
-        with:
-          path: ~/.cargo/registry
-          key: ${{ runner.os }}-cargo-registry-${{ hashFiles('**/Cargo.lock') }}
-          restore-keys: |
-            ${{ runner.os }}-cargo-registry-
-
-      - name: Cache Cargo Target Directory
-        uses: actions/cache@v3
-        with:
-          path: target
-          key: ${{ runner.os }}-cargo-target-${{ hashFiles('**/Cargo.lock') }}
-          restore-keys: |
-            ${{ runner.os }}-cargo-target-
-
       - name: Lint
         run: make lint
-
-      - name: Install cargo-nextest
-        run: cargo install cargo-nextest
 
       - name: Run tests
         run: make nextest
@@ -96,7 +77,7 @@ jobs:
     needs: build
 
     container:
-      image: rust:1.81
+      image: gagansingh894/jams_builder:latest
       options: --user root
       env:
         LIGHTGBM_LIB_DIR: /usr/local/lib
@@ -132,31 +113,6 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-
-      - name: Setup Environment
-        run: bash build/setup_environment_linux_x86_64.sh
-
-      - name: Cache Cargo Registry
-        uses: actions/cache@v3
-        with:
-          path: ~/.cargo/registry
-          key: ${{ runner.os }}-cargo-registry-${{ hashFiles('**/Cargo.lock') }}
-          restore-keys: |
-            ${{ runner.os }}-cargo-registry-
-
-      - name: Cache Cargo Target Directory
-        uses: actions/cache@v3
-        with:
-          path: target
-          key: ${{ runner.os }}-cargo-target-${{ hashFiles('**/Cargo.lock') }}
-          restore-keys: |
-            ${{ runner.os }}-cargo-target-
-
-      - name: Install cargo-nextest
-        run: cargo install cargo-nextest
-
-      - name: Install cargo-llvm-cov
-        uses: taiki-e/install-action@cargo-llvm-cov
 
       - name: Generate code coverage
         run: cargo llvm-cov nextest -p jams-core -p jams-serve --retries 2 --all-features --lcov --output-path lcov.info
