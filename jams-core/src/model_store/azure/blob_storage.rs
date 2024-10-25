@@ -73,6 +73,9 @@ impl AzureBlobStorageModelStore {
 
         // Check if Azure blob storage is empty, if yes then return models dashmap as empty
         if container_client.is_empty(None).await? {
+            log::warn!(
+                        "No models found in the Azure model storage container hence no models will be loaded ⚠️"
+                    );
             let models: DashMap<ModelName, Arc<Model>> = DashMap::new();
             Ok(Self {
                 models: Arc::new(models),

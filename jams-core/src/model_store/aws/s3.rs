@@ -65,6 +65,7 @@ impl S3ModelStore {
 
         // Check if S3 is empty, if yes then return models dashmap as empty
         if client.is_empty(Some(bucket_name.clone())).await? {
+            log::warn!("No models found in the S3 bucket hence no models will be loaded ⚠️");
             let models: DashMap<ModelName, Arc<Model>> = DashMap::new();
             Ok(Self {
                 models: Arc::new(models),
