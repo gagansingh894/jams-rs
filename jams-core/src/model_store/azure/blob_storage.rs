@@ -443,6 +443,7 @@ fn use_azurite() -> bool {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::model_store::azure::blob_storage::AzureBlobStorageModelStore;
     use azure_core::tokio::fs::FileStreamBuilder;
     use azure_storage_blobs::prelude::PublicAccess;
     use rand::Rng;

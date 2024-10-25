@@ -456,6 +456,7 @@ fn use_localstack() -> bool {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::model_store::aws::s3::S3ModelStore;
     use aws_sdk_s3::primitives::ByteStream;
     use aws_sdk_s3::types::{
         BucketLocationConstraint, CreateBucketConfiguration, Delete, ObjectIdentifier,
