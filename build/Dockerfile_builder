@@ -1,0 +1,36 @@
+FROM --platform=linux/amd64 rust:1.81 as builder
+LABEL authors="gagandeepsingh"
+
+# Install necessary dependencies
+RUN apt-get update && \
+    apt-get install -y \
+        clang \
+        curl \
+        build-essential \
+        pkg-config \
+        libssl-dev \
+        unzip \
+        wget \
+        && \
+    rm -rf /var/lib/apt/lists/*
+
+# Clone the repo
+RUN git clone https://github.com/gagansingh894/jams-rs.git
+WORKDIR /jams-rs
+
+# Install build dependencies
+RUN build/setup_environment_linux_x86_64.sh
+
+# Install dependecies for test coverage
+RUN cargo install cargo-nextest --locked
+RUN cargo install cargo-llvm-cov
+
+# Set environment variable
+ENV COMMON_LIBS_PATH=/usr/local/lib
+ENV LIGHTGBM_LIB_DIR=$COMMON_LIBS_PATH
+ENV LIBTORCH=$COMMON_LIBS_PATH/libtorch
+ENV LIBTORCH_INCLUDE=$COMMON_LIBS_PATH/libtorch
+ENV LIBTORCH_LIB=$COMMON_LIBS_PATH/libtorch
+ENV LD_LIBRARY_PATH=$COMMON_LIBS_PATH:$COMMON_LIBS_PATH/libtorch/lib
+ENV LIBRARY_PATH=$LIBRARY_PATH:$COMMON_LIBS_PATH/libtensorflow
+ENV LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$COMMON_LIBS_PATH/libtensorflow/lib
