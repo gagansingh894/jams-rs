@@ -1,9 +1,9 @@
-use crate::model_store::common::{
-    cleanup, save_and_upack_tarball, DOWNLOADED_MODELS_DIRECTORY_NAME_PREFIX,
-};
+use crate::model_store::aws::common::download_objects;
+use crate::model_store::common::{cleanup, DOWNLOADED_MODELS_DIRECTORY_NAME_PREFIX};
+use crate::model_store::fetcher::Fetcher;
 use crate::model_store::storage::{
-    append_model_format, extract_framework_from_path, load_models, load_predictor, Metadata, Model,
-    ModelName, Storage,
+    append_model_format, extract_framework_from_path, load_predictor, Metadata, Model, ModelName,
+    Storage,
 };
 use async_trait::async_trait;
 use aws_config::meta::region::ProvideRegion;
@@ -63,24 +63,38 @@ impl S3ModelStore {
         );
         std::fs::create_dir(model_store_dir.clone())?;
 
-        // Fetch the models from S3
-        let models = match fetch_models(&client, bucket_name.clone(), model_store_dir.clone()).await
-        {
-            Ok(models) => {
-                log::info!("Successfully fetched valid models from S3 ✅");
-                models
-            }
-            Err(e) => {
-                anyhow::bail!("Failed to fetch models ❌ - {}", e.to_string());
-            }
-        };
+        // Check if S3 is empty, if yes then return models dashmap as empty
+        if client.is_empty(Some(bucket_name.clone())).await? {
+            let models: DashMap<ModelName, Arc<Model>> = DashMap::new();
+            Ok(Self {
+                models: Arc::new(models),
+                client,
+                bucket_name,
+                model_store_dir,
+            })
+        } else {
+            // Fetch the models from S3
 
-        Ok(Self {
-            models: Arc::new(models),
-            client,
-            bucket_name,
-            model_store_dir,
-        })
+            let models = match client
+                .fetch_models(Some(bucket_name.clone()), model_store_dir.clone())
+                .await
+            {
+                Ok(models) => {
+                    log::info!("Successfully fetched valid models from S3 ✅");
+                    models
+                }
+                Err(e) => {
+                    anyhow::bail!("Failed to fetch models ❌ - {}", e.to_string());
+                }
+            };
+
+            Ok(Self {
+                models: Arc::new(models),
+                client,
+                bucket_name,
+                model_store_dir,
+            })
+        }
     }
 }
 
@@ -412,12 +426,10 @@ impl Storage for S3ModelStore {
         tokio::time::sleep(interval).await;
 
         log::info!("Polling model store ⌛");
-        let models = match fetch_models(
-            &self.client,
-            self.bucket_name.clone(),
-            self.model_store_dir.clone(),
-        )
-        .await
+        let models = match self
+            .client
+            .fetch_models(Some(self.bucket_name.clone()), self.model_store_dir.clone())
+            .await
         {
             Ok(models) => {
                 log::info!("Successfully fetched valid models from S3 ✅");
@@ -434,210 +446,6 @@ impl Storage for S3ModelStore {
 
         Ok(())
     }
-}
-
-/// Fetches models from an S3 bucket, downloads them to a local directory, and loads them into memory.
-///
-/// This function first retrieves object keys from the S3 bucket, downloads corresponding objects,
-/// saves and unpacks them into the specified local directory, and finally loads the models into memory.
-///
-/// # Arguments
-///
-/// * `client` - An `s3::Client` instance for interacting with AWS S3.
-/// * `bucket_name` - The name of the S3 bucket from which to fetch models.
-/// * `model_store_dir` - The local directory where downloaded models will be stored and loaded from.
-///
-/// # Returns
-///
-/// * `Result<DashMap<ModelName, Arc<Model>>>` - A `DashMap` containing loaded models mapped by their names,
-///   or an error if fetching or loading models fails.
-///
-/// # Errors
-///
-/// This function will return an error if:
-/// * The object keys cannot be retrieved from the S3 bucket.
-/// * Objects cannot be downloaded from S3.
-/// * Downloaded tarballs cannot be unpacked.
-/// * Models cannot be loaded from the local directory.
-///
-#[tracing::instrument(skip(client))]
-async fn fetch_models(
-    client: &s3::Client,
-    bucket_name: String,
-    model_store_dir: String,
-) -> anyhow::Result<DashMap<ModelName, Arc<Model>>> {
-    let keys = get_keys(client, bucket_name.clone()).await?;
-
-    match download_objects(client, bucket_name, keys, model_store_dir.as_str()).await {
-        Ok(_) => {
-            log::info!("Downloaded objects from s3 ✅")
-        }
-        Err(_) => {
-            log::warn!("Failed to download objects from s3 ⚠️")
-        }
-    }
-
-    let models = load_models(model_store_dir).await?;
-
-    Ok(models)
-}
-
-/// Retrieves object keys from an S3 bucket.
-///
-/// This function uses an `s3::Client` instance to list object keys from the specified S3 bucket.
-///
-/// # Arguments
-///
-/// * `client` - An `s3::Client` instance for interacting with AWS S3.
-/// * `bucket_name` - The name of the S3 bucket from which to retrieve object keys.
-///
-/// # Returns
-///
-/// * `Result<Vec<String>>` - A vector containing object keys retrieved from the S3 bucket,
-///   or an error if object keys cannot be retrieved.
-///
-/// # Errors
-///
-/// This function will return an error if:
-/// * Object keys cannot be listed from the S3 bucket.
-///
-#[tracing::instrument(skip(client))]
-async fn get_keys(client: &s3::Client, bucket_name: String) -> anyhow::Result<Vec<String>> {
-    let mut keys: Vec<String> = Vec::new();
-
-    let mut response = client
-        .list_objects_v2()
-        .bucket(bucket_name.clone())
-        .max_keys(10)
-        .into_paginator()
-        .send();
-
-    while let Some(result) = response.next().await {
-        match result {
-            Ok(output) => match output.contents {
-                None => {
-                    log::warn!(
-                        "No models found in the S3 bucket hence no models will be loaded ⚠️"
-                    );
-                }
-                Some(objects) => {
-                    for object in objects {
-                        match object.key {
-                            None => {
-                                log::warn!("Object key is empty ⚠️");
-                            }
-                            Some(key) => {
-                                keys.push(key);
-                            }
-                        }
-                    }
-                }
-            },
-            Err(e) => {
-                anyhow::bail!(
-                    "Failed to list objects in the {} bucket: {}",
-                    bucket_name,
-                    e.into_service_error()
-                )
-            }
-        }
-    }
-    Ok(keys)
-}
-
-/// Downloads objects from an S3 bucket and saves them to a local directory.
-///
-/// This function downloads objects with specified keys from the S3 bucket using an `s3::Client` instance,
-/// saves them to a temporary directory, and unpacks them into the specified output directory.
-///
-/// # Arguments
-///
-/// * `client` - An `s3::Client` instance for interacting with AWS S3.
-/// * `bucket_name` - The name of the S3 bucket from which to download objects.
-/// * `object_keys` - A vector of object keys to download from the S3 bucket.
-/// * `out_dir` - The local directory where downloaded objects will be unpacked.
-///
-/// # Returns
-///
-/// * `Result<()>` - An empty result indicating success or an error.
-///
-/// # Errors
-///
-/// This function will return an error if:
-/// * Objects cannot be downloaded from the S3 bucket.
-/// * Downloaded tarballs cannot be saved or unpacked.
-///
-#[tracing::instrument(skip(client, object_keys, out_dir))]
-async fn download_objects(
-    client: &s3::Client,
-    bucket_name: String,
-    object_keys: Vec<String>,
-    out_dir: &str,
-) -> anyhow::Result<()> {
-    // Create a tempdir to hold downloaded models
-    // This will be deleted when the program exits
-    let dir = match tempfile::Builder::new().prefix("models").tempdir() {
-        Ok(dir) => dir,
-        Err(e) => {
-            anyhow::bail!("Failed to create temporary directory ❌: {}", e.to_string());
-        }
-    };
-    let temp_path = match dir.path().to_str() {
-        None => {
-            anyhow::bail!("failed to convert path to str ❌")
-        }
-        Some(path) => path,
-    };
-
-    for object_key in object_keys {
-        let response = client
-            .get_object()
-            .bucket(bucket_name.clone())
-            .key(object_key.clone())
-            .send()
-            .await;
-
-        match response {
-            Ok(output) => {
-                match output.body.collect().await {
-                    Ok(data) => {
-                        match save_and_upack_tarball(
-                            temp_path,
-                            object_key.clone(),
-                            data.into_bytes(),
-                            out_dir,
-                        ) {
-                            Ok(_) => {
-                                // Do nothing
-                            }
-                            Err(e) => {
-                                log::warn!(
-                                    "Failed to save artefact {} ⚠️: {}",
-                                    object_key,
-                                    e.to_string()
-                                )
-                            }
-                        }
-                    }
-                    Err(e) => {
-                        log::warn!(
-                            "Failed to download artefact {} ⚠️: {}",
-                            object_key,
-                            e.to_string()
-                        )
-                    }
-                }
-            }
-            Err(e) => {
-                anyhow::bail!(
-                    "Failed to get object key: {} from S3 ⚠️: {}",
-                    object_key,
-                    e.into_service_error()
-                )
-            }
-        }
-    }
-    Ok(())
 }
 
 fn use_localstack() -> bool {

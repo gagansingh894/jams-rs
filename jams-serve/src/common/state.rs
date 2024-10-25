@@ -1,8 +1,8 @@
 use crate::common::server;
 use jams_core::manager::{Manager, ManagerBuilder};
-use jams_core::model_store::azure_blob_storage::AzureBlobStorageModelStore;
-use jams_core::model_store::local::LocalModelStore;
-use jams_core::model_store::s3::S3ModelStore;
+use jams_core::model_store::aws::s3::S3ModelStore;
+use jams_core::model_store::azure::blob_storage::AzureBlobStorageModelStore;
+use jams_core::model_store::local::filesystem::LocalModelStore;
 use rayon::{ThreadPool, ThreadPoolBuilder};
 use std::env;
 use std::sync::Arc;

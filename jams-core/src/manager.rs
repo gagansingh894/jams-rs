@@ -208,7 +208,7 @@ impl ManagerBuilder {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::model_store::local::LocalModelStore;
+    use crate::model_store::local::filesystem::LocalModelStore;
 
     #[tokio::test]
     async fn successfully_create_manager_with_local_model_store() {
