@@ -58,12 +58,9 @@ impl Fetcher for ContainerClient {
         artefacts_dir_name: Option<String>,
         output_dir: String,
     ) -> anyhow::Result<DashMap<ModelName, Arc<Model>>> {
-        match artefacts_dir_name {
-            None => {
+        if artefacts_dir_name.is_some() {
                 anyhow::bail!("Unexpected parameter 'artefacts_dir_name' provided ❌")
-            }
-            Some(name) => name,
-        };
+         }
 
         let max_results = NonZeroU32::new(10).unwrap();
 
