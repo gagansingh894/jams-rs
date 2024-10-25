@@ -1,20 +1,17 @@
-use crate::model_store::common::{
-    cleanup, save_and_upack_tarball, DOWNLOADED_MODELS_DIRECTORY_NAME_PREFIX,
-};
+use crate::model_store::azure::common::download_blob;
+use crate::model_store::common::{cleanup, DOWNLOADED_MODELS_DIRECTORY_NAME_PREFIX};
+use crate::model_store::fetcher::Fetcher;
 use crate::model_store::storage::{
-    append_model_format, extract_framework_from_path, load_models, load_predictor, Metadata, Model,
-    ModelName, Storage,
+    append_model_format, extract_framework_from_path, load_predictor, Metadata, Model, ModelName,
+    Storage,
 };
 use async_trait::async_trait;
 use azure_storage::{CloudLocation, StorageCredentials};
 use azure_storage_blobs::prelude::{BlobServiceClient, ContainerClient};
-use bytes::Bytes;
 use chrono::Utc;
 use dashmap::mapref::one::Ref;
 use dashmap::DashMap;
-use futures::StreamExt;
 use std::env;
-use std::num::NonZeroU32;
 use std::sync::Arc;
 use std::time::Duration;
 use uuid::Uuid;
@@ -74,22 +71,38 @@ impl AzureBlobStorageModelStore {
         );
         std::fs::create_dir(model_store_dir.clone())?;
 
-        // Fetch the models from Azure Blob Storage
-        let models = match fetch_models(&container_client, model_store_dir.clone()).await {
-            Ok(models) => {
-                log::info!("Successfully fetched valid models from Azure Blob Storage ✅");
-                models
-            }
-            Err(e) => {
-                anyhow::bail!("Failed to fetch models ❌ - {}", e.to_string());
-            }
-        };
+        // Check if Azure blob storage is empty, if yes then return models dashmap as empty
+        if container_client.is_empty(None).await? {
+            log::warn!(
+                        "No models found in the Azure model storage container hence no models will be loaded ⚠️"
+                    );
+            let models: DashMap<ModelName, Arc<Model>> = DashMap::new();
+            Ok(Self {
+                models: Arc::new(models),
+                container_client,
+                model_store_dir,
+            })
+        } else {
+            // Fetch the models from Azure Blob Storage
+            let models = match container_client
+                .fetch_models(None, model_store_dir.clone())
+                .await
+            {
+                Ok(models) => {
+                    log::info!("Successfully fetched valid models from Azure Blob Storage ✅");
+                    models
+                }
+                Err(e) => {
+                    anyhow::bail!("Failed to fetch models ❌ - {}", e.to_string());
+                }
+            };
 
-        Ok(Self {
-            models: Arc::new(models),
-            container_client,
-            model_store_dir,
-        })
+            Ok(Self {
+                models: Arc::new(models),
+                container_client,
+                model_store_dir,
+            })
+        }
     }
 }
 
@@ -404,157 +417,23 @@ impl Storage for AzureBlobStorageModelStore {
         tokio::time::sleep(interval).await;
 
         log::info!("Polling model store ⌛");
-        let models = match fetch_models(&self.container_client, self.model_store_dir.clone()).await
-        {
-            Ok(models) => {
-                log::info!("Successfully fetched valid models from Azure Blob Storage ✅");
-                models
-            }
-            Err(e) => {
-                anyhow::bail!("Failed to fetch models ❌ - {}", e.to_string());
-            }
-        };
-
-        for (model_name, model) in models {
-            self.models.insert(model_name, model);
-        }
+        // let models = match self.fetch_models(None, self.model_store_dir.clone()).await
+        // {
+        //     Ok(models) => {
+        //         log::info!("Successfully fetched valid models from Azure Blob Storage ✅");
+        //         models
+        //     }
+        //     Err(e) => {
+        //         anyhow::bail!("Failed to fetch models ❌ - {}", e.to_string());
+        //     }
+        // };
+        //
+        // for (model_name, model) in models {
+        //     self.models.insert(model_name, model);
+        // }
 
         Ok(())
     }
-}
-
-/// Asynchronously fetches models from an Azure Blob Storage container, unpacks them, and loads them into a `DashMap`.
-///
-/// # Arguments
-///
-/// * `client` - A reference to an Azure Blob Storage `ContainerClient`.
-/// * `model_store_dir` - A `String` specifying the directory where the models will be stored.
-///
-/// # Returns
-///
-/// A `Result` containing a `DashMap` where the keys are `ModelName`s and the values are `Arc<Model>`s, or an `anyhow::Error` if the operation fails.
-///
-/// # Errors
-///
-/// This function will return an error if:
-/// * A temporary directory cannot be created.
-/// * The temporary directory path cannot be converted to a string.
-/// * Listing blobs in the container fails.
-/// * Downloading a blob fails.
-/// * Converting downloaded bytes to a file fails.
-/// * Saving and unpacking the tarball fails.
-/// * Loading the models from the directory fails.
-async fn fetch_models(
-    client: &ContainerClient,
-    model_store_dir: String,
-) -> anyhow::Result<DashMap<ModelName, Arc<Model>>> {
-    let max_results = NonZeroU32::new(10).unwrap();
-
-    // List the blobs in the container
-    let mut stream = client.list_blobs().max_results(max_results).into_stream();
-    // For each blob, create a blob client and download the blob
-    while let Some(result) = stream.next().await {
-        match result {
-            Ok(result) => {
-                for blob in result.blobs.blobs() {
-                    // Download blob to model_store_dir
-                    match download_blob(client, blob.clone().name, model_store_dir.clone()).await {
-                        Ok(blob) => blob,
-                        Err(e) => {
-                            anyhow::bail!("Failed to download blob ❌: {}", e)
-                        }
-                    };
-                }
-            }
-            Err(e) => {
-                anyhow::bail!("Failed to collect data to bytes: {}", e)
-            }
-        }
-    }
-
-    let models = load_models(model_store_dir).await?;
-
-    Ok(models)
-}
-
-/// Asynchronously downloads a blob from Azure Blob Storage, saves it to a temporary path, and unpacks it.
-///
-/// This function performs the following steps:
-/// 1. Creates a `BlobClient` for the specified blob.
-/// 2. Streams the blob data in chunks and collects it into a complete byte vector.
-/// 3. Saves the collected data to a temporary path and unpacks it into the specified model storage directory.
-///
-/// # Arguments
-///
-/// * `client` - A reference to an Azure Blob Storage `ContainerClient`.
-/// * `blob_name` - A `String` specifying the name of the blob to be downloaded.
-/// * `temp_path` - A `String` specifying the temporary directory path where the blob will be saved.
-/// * `model_store_dir` - A `String` specifying the directory where the unpacked model will be stored.
-///
-/// # Returns
-///
-/// A `Result` which is `Ok(())` if the operation is successful, or an `anyhow::Error` if the operation fails.
-///
-/// # Errors
-///
-/// This function will return an error if:
-/// * Streaming or collecting the blob data fails.
-/// * Saving and unpacking the blob data fails.
-async fn download_blob(
-    client: &ContainerClient,
-    blob_name: String,
-    model_store_dir: String,
-) -> anyhow::Result<()> {
-    let temp_path = match tempfile::Builder::new().prefix("models").tempdir() {
-        Ok(dir) => match dir.path().to_str() {
-            None => {
-                anyhow::bail!("Failed to convert TempDir to String ❌")
-            }
-            Some(p) => p.to_string(),
-        },
-        Err(e) => {
-            anyhow::bail!("Failed to create temp directory: {}", e)
-        }
-    };
-    let temp_save_path = format!("{}/{}", temp_path, blob_name.clone());
-
-    let blob_client = client.blob_client(blob_name.clone());
-    let mut blob_stream = blob_client.get().into_stream();
-    let mut complete_response: Vec<u8> = vec![];
-    while let Some(value) = blob_stream.next().await {
-        let data = match value {
-            Ok(response) => match response.data.collect().await {
-                Ok(data) => data.to_vec(),
-                Err(e) => {
-                    anyhow::bail!("Failed to convert bytes: {}", e)
-                }
-            },
-            Err(e) => {
-                anyhow::bail!("Failed to collect data to bytes: {}", e)
-            }
-        };
-        complete_response.extend(&data);
-    }
-
-    match save_and_upack_tarball(
-        temp_save_path.as_str(),
-        blob_name.clone(),
-        Bytes::copy_from_slice(&complete_response[..]),
-        model_store_dir.as_str(),
-    ) {
-        Ok(_) => {
-            // Do nothing
-        }
-        Err(e) => {
-            log::warn!(
-                "Failed to save artefact {} ⚠️: {}",
-                blob_name,
-                e.to_string()
-            )
-        }
-    }
-
-    Ok(())
 }
 
 fn use_azurite() -> bool {
@@ -564,6 +443,7 @@ fn use_azurite() -> bool {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::model_store::azure::blob_storage::AzureBlobStorageModelStore;
     use azure_core::tokio::fs::FileStreamBuilder;
     use azure_storage_blobs::prelude::PublicAccess;
     use rand::Rng;

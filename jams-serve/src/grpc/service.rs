@@ -151,7 +151,7 @@ mod tests {
     use chrono::Utc;
     use jams_core::manager::ManagerBuilder;
     use jams_core::model::frameworks::TENSORFLOW;
-    use jams_core::model_store::local::LocalModelStore;
+    use jams_core::model_store::local::filesystem::LocalModelStore;
     use jams_core::model_store::storage::Metadata;
     use rayon::ThreadPoolBuilder;
 

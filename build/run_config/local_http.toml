@@ -12,7 +12,7 @@ model_store = "local"                           # Indicates the type of model st
                                                 # - "aws": Use AWS S3 for model storage.
                                                 # - "azure": Use Azure Blob Storage.
 
-model_dir = "<absolute path>"                   # Specifies the directory path where models are stored locally.
+model_dir = "/model_store"                      # Specifies the directory path where models are stored locally.
                                                 # If `model_store` is set to "local", this directory is used
                                                 # to store or load models.
 
@@ -24,7 +24,7 @@ s3_bucket_name = "jamsmodelstore"               # Indicates the name of the S3 b
                                                 # when `model_store` is set to "aws".
                                                 # This should be a valid bucket name in AWS S3.
 
-poll_interval = 600                             # Defines the time interval (in seconds) for polling the model store
+poll_interval = 300                             # Defines the time interval (in seconds) for polling the model store
                                                 # to check for updates.
                                                 # Example: 600 means the application will poll every 10 minutes.
 

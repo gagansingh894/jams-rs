@@ -383,6 +383,7 @@ async fn fetch_models(
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::model_store::local::filesystem::LocalModelStore;
     use std::time::Duration;
 
     #[tokio::test]

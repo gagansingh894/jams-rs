@@ -1,5 +1,6 @@
-pub mod azure_blob_storage;
+pub mod aws;
+pub mod azure;
 pub mod common;
+mod fetcher;
 pub mod local;
-pub mod s3;
 pub mod storage;

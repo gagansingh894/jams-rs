@@ -1,13 +1,13 @@
 [package]
 name = "jams"
 description = "jams is an easy-to-use CLI application for interaction with J.A.M.S - Just Another Model Server"
-version = "0.1.21"
+version = "0.1.22"
 edition = "2021"
 homepage = "https://github.com/gagansingh894/jams-rs"
 repository = "https://github.com/gagansingh894/jams-rs/tree/main/jams"
 license = "Apache-2.0"
 exclude = ["./examples"]
-keywords = ["machine-learning", "deep-learning"]
+keywords = ["machine-learning", "deep-learning", "mlops"]
 
 [[bin]]
 name = "jams"
