@@ -42,6 +42,7 @@ pub fn save_and_upack_tarball(
         match std::fs::create_dir_all(parent) {
             Ok(_) => {}
             Err(e) => {
+                tracing::error!("Failed to create directory ⚠️: {}", e.to_string());
                 anyhow::bail!("Failed to create directory ⚠️: {}", e.to_string())
             }
         }
@@ -50,9 +51,14 @@ pub fn save_and_upack_tarball(
     match File::create(&file_path) {
         Ok(mut file) => match file.write_all(&data) {
             Ok(_) => {
-                log::info!("Saved file to {:?}", file_path);
+                tracing::info!("Saved file to {:?}", file_path);
             }
             Err(e) => {
+                tracing::error!(
+                    "Failed to save file to {:?} ⚠️: {}",
+                    file_path,
+                    e.to_string()
+                );
                 anyhow::bail!(
                     "Failed to save file to {:?} ⚠️: {}",
                     file_path,
@@ -61,6 +67,11 @@ pub fn save_and_upack_tarball(
             }
         },
         Err(e) => {
+            tracing::error!(
+                "Failed to create file {:?} ⚠️: {}",
+                file_path,
+                e.to_string()
+            );
             anyhow::bail!(
                 "Failed to create file {:?} ⚠️: {}",
                 file_path,
@@ -71,6 +82,7 @@ pub fn save_and_upack_tarball(
 
     let tarball_path = match file_path.to_str() {
         None => {
+            tracing::error!("failed to convert file path to str ❌");
             anyhow::bail!("failed to convert file path to str ❌")
         }
         Some(path) => path,
@@ -79,6 +91,7 @@ pub fn save_and_upack_tarball(
     match unpack_tarball(tarball_path, out_dir) {
         Ok(_) => Ok(()),
         Err(e) => {
+            tracing::error!("Failed to unpack ⚠️: {}", e.to_string());
             anyhow::bail!("Failed to unpack ⚠️: {}", e.to_string())
         }
     }
@@ -113,7 +126,7 @@ pub fn unpack_tarball(tarball_path: &str, out_dir: &str) -> anyhow::Result<()> {
 
             match archive.unpack(out_dir) {
                 Ok(_) => {
-                    log::info!(
+                    tracing::info!(
                         "Unpacked tarball: {:?} at location: {}",
                         tarball_path,
                         out_dir
@@ -121,6 +134,12 @@ pub fn unpack_tarball(tarball_path: &str, out_dir: &str) -> anyhow::Result<()> {
                     Ok(())
                 }
                 Err(e) => {
+                    tracing::error!(
+                        "Failed to unpack tarball ⚠️: {:?} at location: {} - {}",
+                        tarball_path,
+                        out_dir,
+                        e.to_string()
+                    );
                     anyhow::bail!(
                         "Failed to unpack tarball ⚠️: {:?} at location: {} - {}",
                         tarball_path,
@@ -131,6 +150,7 @@ pub fn unpack_tarball(tarball_path: &str, out_dir: &str) -> anyhow::Result<()> {
             }
         }
         Err(e) => {
+            tracing::error!("Failed to open tarball ⚠️: {}", e.to_string());
             anyhow::bail!("Failed to open tarball ⚠️: {}", e.to_string())
         }
     }
@@ -140,10 +160,10 @@ pub fn unpack_tarball(tarball_path: &str, out_dir: &str) -> anyhow::Result<()> {
 pub fn cleanup(dir: String) {
     match remove_dir_all(dir) {
         Ok(_) => {
-            log::info!("Cleaning up temporary location for model store on disk 🧹")
+            tracing::info!("Cleaning up temporary location for model store on disk 🧹")
         }
         Err(_) => {
-            log::error!("Failed to clean up temporary location for model store on disk");
+            tracing::error!("Failed to clean up temporary location for model store on disk");
         }
     }
 }

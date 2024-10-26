@@ -1,6 +1,6 @@
 [config]
-protocol = "http"
-port = 3000
+protocol = "grpc"
+port = 4000
 model_store = "minio"
 s3_bucket_name = "jamsmodelstore"
 poll_interval = 30 # in seconds

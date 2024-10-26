@@ -1,3 +1,4 @@
+use crate::common::instrument;
 use crate::common::server;
 use crate::common::shutdown::shutdown_signal;
 use crate::common::state::build_app_state_from_config;
@@ -42,12 +43,8 @@ pub async fn start(config: server::Config) -> anyhow::Result<()> {
         log_level = tracing::Level::TRACE
     }
 
-    // initialize tracing
-    tracing_subscriber::fmt()
-        .with_line_number(true)
-        .with_max_level(log_level)
-        .pretty()
-        .init();
+    // logs to stdout, if service is running it will send traces to jaegar
+    instrument::jaeger::init("jams_grpc".to_string(), log_level)?;
 
     // setup shared state
     let shared_state = match build_app_state_from_config(config).await {

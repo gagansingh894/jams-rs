@@ -66,7 +66,7 @@ pub async fn build_app_state_from_config(config: server::Config) -> anyhow::Resu
         .build()
         .expect("Failed to build rayon threadpool ❌");
 
-    log::info!(
+    tracing::info!(
         "Rayon threadpool started with {} workers ⚙️",
         worker_pool_threads
     );

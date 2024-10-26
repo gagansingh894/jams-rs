@@ -34,11 +34,13 @@ pub async fn download_blob(
     let temp_path = match tempfile::Builder::new().prefix("models").tempdir() {
         Ok(dir) => match dir.path().to_str() {
             None => {
+                tracing::error!("Failed to convert TempDir to String ❌");
                 anyhow::bail!("Failed to convert TempDir to String ❌")
             }
             Some(p) => p.to_string(),
         },
         Err(e) => {
+            tracing::error!("Failed to create temp directory: {}", e);
             anyhow::bail!("Failed to create temp directory: {}", e)
         }
     };
@@ -52,10 +54,12 @@ pub async fn download_blob(
             Ok(response) => match response.data.collect().await {
                 Ok(data) => data.to_vec(),
                 Err(e) => {
+                    tracing::error!("Failed to convert bytes: {}", e);
                     anyhow::bail!("Failed to convert bytes: {}", e)
                 }
             },
             Err(e) => {
+                tracing::error!("Failed to collect data to bytes: {}", e);
                 anyhow::bail!("Failed to collect data to bytes: {}", e)
             }
         };
@@ -72,7 +76,7 @@ pub async fn download_blob(
             // Do nothing
         }
         Err(e) => {
-            log::warn!(
+            tracing::warn!(
                 "Failed to save artefact {} ⚠️: {}",
                 blob_name,
                 e.to_string()

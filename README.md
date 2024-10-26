@@ -72,7 +72,7 @@ Ensure that you have `docker compose` installed on your system. Please follow in
 
 **Note: If you are on Apple Silicon, please disable `Use Rosetta for x86_64/amd64 emulation on Apple Silicon` option under settings**
 
-To quickly get started running with `J.A.M.S`, please run the followin
+To quickly get started running with `J.A.M.S`, please run the following
 
 1. Execute bash script
 
@@ -80,7 +80,7 @@ The script creates a jams-playground directory with a subdirectory models, and t
 
 ```
 sudo bash -c 'mkdir -p jams-playground/models && \
-wget -q -O jams-playground/docker-compose-http-grpc-minio.yml https://raw.githubusercontent.com/gagansingh894/jams-rs/main/build/docker-compose-http-grpc-minio.yml && \
+wget -q -O jams-playground/docker-compose-playground.yml https://raw.githubusercontent.com/gagansingh894/jams-rs/main/build/docker-compose-playground.yml && \
 wget -q -O jams-playground/models/catboost-titanic_model.tar.gz https://github.com/gagansingh894/jams-rs/raw/main/jams-serve/tests/model_store/catboost-titanic_model.tar.gz && \
 wget -q -O jams-playground/models/lightgbm-my_awesome_reg_model.tar.gz https://github.com/gagansingh894/jams-rs/raw/main/jams-serve/tests/model_store/lightgbm-my_awesome_reg_model.tar.gz && \
 wget -q -O jams-playground/models/pytorch-my_awesome_californiahousing_model.tar.gz https://github.com/gagansingh894/jams-rs/raw/main/jams-serve/tests/model_store/pytorch-my_awesome_californiahousing_model.tar.gz && \
@@ -88,12 +88,14 @@ wget -q -O jams-playground/models/tensorflow-my_awesome_penguin_model.tar.gz htt
 ```
 2. Run docker compose
 ```
-docker compose -f jams-playground/docker-compose-http-grpc-minio.yml up
+docker compose -f jams-playground/docker-compose-playground.yml up
 ```
 
 If everything worked fine, this should start a `minio` server with some preloaded models as model store, `J.A.M.S http` and `J.A.M.S grpc` server for
 making predictions. You can add new models by uploading them directly to `minio` via UI (http://0.0.0.0:9001). The models
 should be of supported types and follow the naming convention  `<model_framework>-model_name.tar.gz`. 
+
+In addition to this, it will also start jaeger service for observability. The UI can be accessed at http://0.0.0.0:16686
 
 Use the curl commands to make predictions 
 

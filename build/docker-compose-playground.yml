@@ -1,20 +1,32 @@
 # Docker compose file for starting J.A.M.S locally. Might be unstable on ARM chips as dokcer image is x86_64 based
 services:
-  # LocalStack service for AWS emulation
-  localstack:
-    image: localstack/localstack
+  #  MinIO
+  minio:
+    image: minio/minio:latest
     ports:
-      - "4566:4566"    # Main LocalStack port
+      - 9000:9000  # MinIO S3 API port
+      - 9001:9001  # MinIO S3 UI port
     environment:
-      - SERVICES=s3   # Specify the AWS services you want to enable
-      - DEBUG=1
+      MINIO_ROOT_USER: minioadmin  # Default access key for MinIO
+      MINIO_ROOT_PASSWORD: minioadmin  # Default secret key for MinIO
+    command:
+      - server
+      - /temp
+      - --console-address
+      - ":9001"
+  createbucket:
+    image: minio/mc
     volumes:
-      - "./init-scripts/init-aws.sh:/etc/localstack/init/ready.d/script.sh"  # Mount the init script
-    healthcheck:
-      test: ["CMD", "awslocal", "s3", "ls"]
-      interval: 10s
-      timeout: 5s
-      retries: 2
+      - ./models:/models  # Ensure this points to the correct models directory on the host
+    depends_on:
+      - minio
+    entrypoint: >
+      /bin/sh -c "
+      sleep 2 && mc alias set myminio http://minio:9000 minioadmin minioadmin && 
+      mc mb myminio/jamsmodelstore && 
+      mc cp /models/* myminio/jamsmodelstore/;
+      exit 0;
+      "
   jaeger:
     image: jaegertracing/all-in-one:1.47
     container_name: jaeger
@@ -32,34 +44,43 @@ services:
       - "14268:14268"    # Jaeger gRPC HTTP internal service communication port
       - "14269:14269"    # Jaeger gRPC HTTP internal service communication port (encrypted)
       - "9411:9411"      # Zipkin collector port
-#   JAMS
+  #  MinIO
+  #   JAMS
   jams-http:
     image: gagansingh894/jams:latest
     ports:
       - "3000:3000"    # Expose application port
     environment:
-      - USE_LOCALSTACK=true
-      - LOCALSTACK_HOSTNAME=localstack
-      - LOCALSTACK_PORT=4566
       - AWS_ACCESS_KEY_ID=test
       - AWS_SECRET_ACCESS_KEY=test
-      - S3_BUCKET_NAME=jamsmodelstore
       - AWS_DEFAULT_REGION=eu-west-2
+      - MINIO_ROOT_USER=minioadmin  # Default access key for MinIO
+      - MINIO_ROOT_PASSWORD=minioadmin  # Default secret key for MinIO
+      - S3_BUCKET_NAME=jamsmodelstore
+      - MINIO_URL=http://minio:9000
+      - OTLP_EXPORTER_URL=http://jaegar:4317
     depends_on:
-      - localstack
-    command: ["start", "http", "--model-store=aws"]
+      - minio
+      - createbucket
+      - jaeger
+    command: ["start", "http", "--model-store=minio"]
+    restart: on-failure
   jams-grpc:
     image: gagansingh894/jams:latest
     ports:
       - "4000:4000"    # Expose application port
     environment:
-      - USE_LOCALSTACK=true
-      - LOCALSTACK_HOSTNAME=localstack
-      - LOCALSTACK_PORT=4566
       - AWS_ACCESS_KEY_ID=test
       - AWS_SECRET_ACCESS_KEY=test
       - AWS_DEFAULT_REGION=eu-west-2
+      - MINIO_ROOT_USER=minioadmin  # Default access key for MinIO
+      - MINIO_ROOT_PASSWORD=minioadmin  # Default secret key for MinIO
       - S3_BUCKET_NAME=jamsmodelstore
+      - MINIO_URL=http://minio:9000
+      - OTLP_EXPORTER_URL=http://jaegar:4317
     depends_on:
-      - localstack
-    command: ["start", "grpc", "model-store=aws"]
+      - minio
+      - createbucket
+      - jaeger
+    command: ["start", "grpc", "--model-store=minio"]
+    restart: on-failure

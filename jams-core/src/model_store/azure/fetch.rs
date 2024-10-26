@@ -15,6 +15,7 @@ impl Fetcher for ContainerClient {
     ///
     async fn is_empty(&self, artefacts_dir_name: Option<String>) -> anyhow::Result<bool> {
         if artefacts_dir_name.is_some() {
+            tracing::error!("Unexpected parameter 'artefacts_dir_name' provided ❌");
             anyhow::bail!("Unexpected parameter 'artefacts_dir_name' provided ❌")
         }
         let max_results = NonZeroU32::new(1).unwrap();
@@ -22,11 +23,13 @@ impl Fetcher for ContainerClient {
 
         match stream.next().await {
             None => {
+                tracing::error!("Failed to iterate stream ❌.");
                 anyhow::bail!("Failed to iterate stream ❌.")
             }
             Some(resp) => match resp {
                 Ok(result) => Ok(result.blobs.items.is_empty()),
                 Err(e) => {
+                    tracing::error!("Failed to collect data to bytes: {}", e);
                     anyhow::bail!("Failed to collect data to bytes: {}", e)
                 }
             },
@@ -59,6 +62,7 @@ impl Fetcher for ContainerClient {
         output_dir: String,
     ) -> anyhow::Result<DashMap<ModelName, Arc<Model>>> {
         if artefacts_dir_name.is_some() {
+            tracing::error!("Unexpected parameter 'artefacts_dir_name' provided ❌");
             anyhow::bail!("Unexpected parameter 'artefacts_dir_name' provided ❌")
         }
 
@@ -75,12 +79,14 @@ impl Fetcher for ContainerClient {
                         match download_blob(self, blob.clone().name, output_dir.clone()).await {
                             Ok(blob) => blob,
                             Err(e) => {
+                                tracing::error!("Failed to download blob ❌: {}", e);
                                 anyhow::bail!("Failed to download blob ❌: {}", e)
                             }
                         };
                     }
                 }
                 Err(e) => {
+                    tracing::error!("Failed to collect data to bytes: {}", e);
                     anyhow::bail!("Failed to collect data to bytes: {}", e)
                 }
             }

@@ -2,8 +2,7 @@ use crate::model_store::azure::common::download_blob;
 use crate::model_store::common::{cleanup, DOWNLOADED_MODELS_DIRECTORY_NAME_PREFIX};
 use crate::model_store::fetcher::Fetcher;
 use crate::model_store::storage::{
-    append_model_format, extract_framework, load_predictor, Metadata, Model, ModelName,
-    Storage,
+    append_model_format, extract_framework, load_predictor, Metadata, Model, ModelName, Storage,
 };
 use async_trait::async_trait;
 use azure_storage::{CloudLocation, StorageCredentials};
@@ -53,12 +52,14 @@ impl AzureBlobStorageModelStore {
     pub async fn new(storage_container_name: String) -> anyhow::Result<Self> {
         // Ensure model_dir_uri is not empty, return error if empty
         if storage_container_name.is_empty() {
+            tracing::error!("Azure storage container name must be specified ❌");
             anyhow::bail!("Azure storage container name must be specified ❌")
         }
         // Create Azure Blob Service client
         let container_client = match build_azure_storage_client(use_azurite()) {
             Ok(blob_service_client) => blob_service_client.container_client(storage_container_name),
             Err(e) => {
+                tracing::error!("Failed to create Azure Blob Service client: {}", e);
                 anyhow::bail!("Failed to create Azure Blob Service client: {}", e)
             }
         };
@@ -73,7 +74,7 @@ impl AzureBlobStorageModelStore {
 
         // Check if Azure blob storage is empty, if yes then return models dashmap as empty
         if container_client.is_empty(None).await? {
-            log::warn!(
+            tracing::warn!(
                         "No models found in the Azure model storage container hence no models will be loaded ⚠️"
                     );
             let models: DashMap<ModelName, Arc<Model>> = DashMap::new();
@@ -89,10 +90,11 @@ impl AzureBlobStorageModelStore {
                 .await
             {
                 Ok(models) => {
-                    log::info!("Successfully fetched valid models from Azure Blob Storage ✅");
+                    tracing::info!("Successfully fetched valid models from Azure Blob Storage ✅");
                     models
                 }
                 Err(e) => {
+                    tracing::error!("Failed to fetch models ❌ - {}", e.to_string());
                     anyhow::bail!("Failed to fetch models ❌ - {}", e.to_string());
                 }
             };
@@ -142,12 +144,14 @@ fn build_azure_storage_client(use_azurite: bool) -> anyhow::Result<BlobServiceCl
     let account = match std::env::var("STORAGE_ACCOUNT") {
         Ok(account) => account,
         Err(_) => {
+            tracing::error!("Azure STORAGE_ACCOUNT env variable not set ❌");
             anyhow::bail!("Azure STORAGE_ACCOUNT env variable not set ❌")
         }
     };
     let access_key = match std::env::var("STORAGE_ACCESS_KEY") {
         Ok(ak) => ak,
         Err(_) => {
+            tracing::error!("Azure STORAGE_ACCESS_KEY env variable not set ❌");
             anyhow::bail!("Azure STORAGE_ACCESS_KEY env variable not set ❌")
         }
     };
@@ -200,9 +204,13 @@ impl Storage for AzureBlobStorageModelStore {
         .await
         {
             Ok(_) => {
-                log::info!("Downloaded blob from azure storage ✅");
+                tracing::info!("Downloaded blob from azure storage ✅");
             }
             Err(e) => {
+                tracing::error!(
+                    "Failed to download blob from azure storage ❌️: {}",
+                    e.to_string()
+                );
                 anyhow::bail!(
                     "Failed to download blob from azure storage ❌️: {}",
                     e.to_string()
@@ -220,6 +228,7 @@ impl Storage for AzureBlobStorageModelStore {
         // Extract model framework
         let model_framework = match extract_framework(model_name.clone()) {
             None => {
+                tracing::error!("Failed to extract framework from path");
                 anyhow::bail!("Failed to extract framework from path");
             }
             Some(model_framework) => model_framework,
@@ -238,6 +247,7 @@ impl Storage for AzureBlobStorageModelStore {
                 let sanitized_model_name =
                     match model_name.strip_prefix(format!("{}-", model_framework).as_str()) {
                         None => {
+                            tracing::error!("Failed to sanitize model name");
                             anyhow::bail!("Failed to sanitize model name");
                         }
                         Some(name) => name.to_string(),
@@ -255,6 +265,7 @@ impl Storage for AzureBlobStorageModelStore {
                 Ok(())
             }
             Err(e) => {
+                tracing::error!("Failed to add new model: {e}");
                 anyhow::bail!("Failed to add new model: {e}")
             }
         }
@@ -286,6 +297,10 @@ impl Storage for AzureBlobStorageModelStore {
     async fn update_model(&self, model_name: ModelName) -> anyhow::Result<()> {
         match self.models.remove(model_name.as_str()) {
             None => {
+                tracing::error!(
+                    "Failed to update as the specified model {} does not exist",
+                    model_name
+                );
                 anyhow::bail!(
                     "Failed to update as the specified model {} does not exist",
                     model_name
@@ -306,7 +321,7 @@ impl Storage for AzureBlobStorageModelStore {
                 .await
                 {
                     Ok(_) => {
-                        log::info!("Downloaded blob from azure storage ✅");
+                        tracing::info!("Downloaded blob from azure storage ✅");
 
                         match load_predictor(model_framework, model_path).await {
                             Ok(predictor) => {
@@ -322,6 +337,11 @@ impl Storage for AzureBlobStorageModelStore {
                                 Ok(())
                             }
                             Err(e) => {
+                                tracing::error!(
+                                    "Failed to update the specified model {}: {}",
+                                    model_name,
+                                    e
+                                );
                                 anyhow::bail!(
                                     "Failed to update the specified model {}: {}",
                                     model_name,
@@ -331,6 +351,7 @@ impl Storage for AzureBlobStorageModelStore {
                         }
                     }
                     Err(e) => {
+                        tracing::error!("Failed to download blob ❌: {}", e);
                         anyhow::bail!("Failed to download blob ❌: {}", e)
                     }
                 }
@@ -387,6 +408,10 @@ impl Storage for AzureBlobStorageModelStore {
     fn delete_model(&self, model_name: ModelName) -> anyhow::Result<()> {
         match self.models.remove(&model_name) {
             None => {
+                tracing::error!(
+                    "Failed to delete model as the specified model {} does not exist",
+                    model_name
+                );
                 anyhow::bail!(
                     "Failed to delete model as the specified model {} does not exist",
                     model_name
@@ -416,11 +441,11 @@ impl Storage for AzureBlobStorageModelStore {
         // poll every n time interval
         tokio::time::sleep(interval).await;
 
-        log::info!("Polling model store ⌛");
+        tracing::info!("Polling model store ⌛");
         // let models = match self.fetch_models(None, self.model_store_dir.clone()).await
         // {
         //     Ok(models) => {
-        //         log::info!("Successfully fetched valid models from Azure Blob Storage ✅");
+        //         tracing::info!("Successfully fetched valid models from Azure Blob Storage ✅");
         //         models
         //     }
         //     Err(e) => {

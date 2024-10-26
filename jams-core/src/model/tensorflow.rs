@@ -36,6 +36,7 @@ impl TensorflowModelInput {
     ) -> anyhow::Result<Self> {
         let signature_def_num_values = signature_def.inputs().len();
         if signature_def_num_values == 0 {
+            tracing::error!("Model graph has no inputs");
             anyhow::bail!("Model graph has no inputs");
         } else if signature_def_num_values == 1 {
             parse_sequential(input, signature_def, graph)
@@ -72,6 +73,7 @@ fn parse_sequential(
         // Get the value type
         let first = match values.0.first() {
             None => {
+                tracing::error!("The values vector is empty");
                 anyhow::bail!("The values vector is empty")
             }
             Some(v) => v,
@@ -133,6 +135,7 @@ fn parse_sequential(
                 string_tensors.push((input_op, tensor));
             }
             _ => {
+                tracing::error!("Type not supported");
                 anyhow::bail!("Type not supported")
             }
         }
@@ -168,6 +171,7 @@ fn parse_functional(
         let input_info = match signature_def.get_input(input.0) {
             Ok(input_info) => input_info,
             Err(_) => {
+                tracing::error!("Specified tensor with name {} not found", input.0);
                 anyhow::bail!("Specified tensor with name {} not found", input.0)
             }
         };
@@ -175,6 +179,7 @@ fn parse_functional(
         let input_op = match graph.operation_by_name_required(input_name) {
             Ok(op) => op,
             Err(_) => {
+                tracing::error!("Failed to get input operation {}", input_name);
                 anyhow::bail!("Failed to get input operation {}", input_name)
             }
         };
@@ -182,6 +187,7 @@ fn parse_functional(
             .strip_prefix(format!("{}_", DEFAULT_SERVING_SIGNATURE_DEF_KEY).as_str())
         {
             None => {
+                tracing::error!("Failed to strip prefix");
                 anyhow::bail!("Failed to strip prefix")
             }
             Some(v) => v.to_owned(),
@@ -191,6 +197,7 @@ fn parse_functional(
             DataType::Int32 => {
                 match model_inputs.get(&model_input_feature_name) {
                     None => {
+                        tracing::error!("Failed to retrieve {} values", model_input_feature_name);
                         anyhow::bail!("Failed to retrieve {} values", model_input_feature_name)
                     }
                     Some(values) => {
@@ -201,6 +208,7 @@ fn parse_functional(
                                 int_tensors.push((input_op, tensor));
                             }
                             Err(_) => {
+                                tracing::error!("Failed to populate tensor with int32 values");
                                 anyhow::bail!("Failed to populate tensor with int32 values")
                             }
                         };
@@ -210,6 +218,7 @@ fn parse_functional(
             DataType::Float => {
                 match model_inputs.get(&model_input_feature_name) {
                     None => {
+                        tracing::error!("Failed to retrieve {} values", model_input_feature_name);
                         anyhow::bail!("Failed to retrieve {} values", model_input_feature_name)
                     }
                     Some(values) => {
@@ -220,6 +229,7 @@ fn parse_functional(
                                 float_tensors.push((input_op, tensor));
                             }
                             Err(_) => {
+                                tracing::error!("Failed to populate tensor with float32 values");
                                 anyhow::bail!("Failed to populate tensor with float32 values")
                             }
                         };
@@ -229,6 +239,7 @@ fn parse_functional(
             DataType::String => {
                 match model_inputs.get(&model_input_feature_name) {
                     None => {
+                        tracing::error!("Failed to retrieve {} values", model_input_feature_name);
                         anyhow::bail!("Failed to retrieve {} values", model_input_feature_name)
                     }
                     Some(values) => {
@@ -239,6 +250,7 @@ fn parse_functional(
                                 string_tensors.push((input_op, tensor));
                             }
                             Err(_) => {
+                                tracing::error!("Failed to populate tensor with string values");
                                 anyhow::bail!("Failed to populate tensor with string values")
                             }
                         };
@@ -246,6 +258,7 @@ fn parse_functional(
                 };
             }
             _ => {
+                tracing::error!("Type not supported");
                 anyhow::bail!("Type not supported")
             }
         }
@@ -271,6 +284,7 @@ fn get_shape<T>(vector: &[Vec<T>]) -> anyhow::Result<(usize, usize)> {
         true => Ok((0, 0)),
         false => match vector.first() {
             None => {
+                tracing::error!("The values vector is empty");
                 anyhow::bail!("The values vector is empty")
             }
             Some(inner_vec) => Ok((vector.len(), inner_vec.len())),
@@ -311,6 +325,7 @@ impl Tensorflow {
         ) {
             Ok(b) => b,
             Err(_) => {
+                tracing::error!("Failed to load TensorFlow model from dir: {}", model_dir);
                 anyhow::bail!("Failed to load TensorFlow model from dir: {}", model_dir);
             }
         };
@@ -321,6 +336,10 @@ impl Tensorflow {
         {
             Ok(s) => s.to_owned(),
             Err(_) => {
+                tracing::error!(
+                    "Failed to get model signature for {}",
+                    DEFAULT_SERVING_SIGNATURE_DEF_KEY
+                );
                 anyhow::bail!(
                     "Failed to get model signature for {}",
                     DEFAULT_SERVING_SIGNATURE_DEF_KEY
@@ -336,11 +355,13 @@ impl Tensorflow {
         // TODO: multi output model support if possible, for now we only fetch the first index
         let output_operation = match outputs_tensor_names.first() {
             None => {
+                tracing::error!("Output Tensor is empty. At least 1 value is required");
                 anyhow::bail!("Output Tensor is empty. At least 1 value is required")
             }
             Some(name) => match graph.operation_by_name_required(name) {
                 Ok(op) => op,
                 Err(_) => {
+                    tracing::error!("Failed to fetch tensor output operation: {}", name);
                     anyhow::bail!("Failed to fetch tensor output operation: {}", name)
                 }
             },
@@ -404,6 +425,7 @@ impl Predictor for Tensorflow {
         match self.bundle.session.run(&mut run_args) {
             Ok(_) => {}
             Err(_) => {
+                tracing::error!("Failed to execute TensorFlow graph");
                 anyhow::bail!("Failed to execute TensorFlow graph")
             }
         };

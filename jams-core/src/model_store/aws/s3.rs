@@ -2,8 +2,7 @@ use crate::model_store::aws::common::download_objects;
 use crate::model_store::common::{cleanup, DOWNLOADED_MODELS_DIRECTORY_NAME_PREFIX};
 use crate::model_store::fetcher::Fetcher;
 use crate::model_store::storage::{
-    append_model_format, extract_framework, load_predictor, Metadata, Model, ModelName,
-    Storage,
+    append_model_format, extract_framework, load_predictor, Metadata, Model, ModelName, Storage,
 };
 use async_trait::async_trait;
 use aws_config::meta::region::ProvideRegion;
@@ -46,6 +45,7 @@ impl S3ModelStore {
     pub async fn new(bucket_name: String, use_minio: Option<bool>) -> anyhow::Result<Self> {
         // Ensure model_dir_uri is not empty, return error if empty
         if bucket_name.is_empty() {
+            tracing::error!("S3 bucket name must be specified ❌");
             anyhow::bail!("S3 bucket name must be specified ❌")
         }
 
@@ -53,21 +53,23 @@ impl S3ModelStore {
         let client = if use_minio.is_some() {
             match build_minio_client().await {
                 Ok(client) => {
-                    log::info!("Using MinIO as model store ℹ️");
+                    tracing::info!("Using MinIO as model store ℹ️");
                     client
                 }
                 Err(e) => {
-                    anyhow::bail!("Failed to build MinIO client ❌: {}", e.to_string());
+                    tracing::error!("Failed to build MinIO client ❌: {}", e.to_string());
+                    anyhow::bail!("Failed to build MinIO client ❌");
                 }
             }
         } else {
             match build_s3_client(use_localstack()).await {
                 Ok(client) => {
-                    log::info!("Using AWS S3 as model store ℹ️");
+                    tracing::info!("Using AWS S3 as model store ℹ️");
                     client
                 }
                 Err(e) => {
-                    anyhow::bail!("Failed to build S3 client ❌: {}", e.to_string());
+                    tracing::error!("Failed to build S3 client ❌: {}", e.to_string());
+                    anyhow::bail!("Failed to build S3 client ❌");
                 }
             }
         };
@@ -97,11 +99,12 @@ impl S3ModelStore {
                 .await
             {
                 Ok(models) => {
-                    log::info!("Successfully fetched valid models from S3 ✅");
+                    tracing::info!("Successfully fetched valid models from S3 ✅");
                     models
                 }
                 Err(e) => {
-                    anyhow::bail!("Failed to fetch models ❌ - {}", e.to_string());
+                    tracing::error!("Failed to fetch models ❌ - {}", e.to_string());
+                    anyhow::bail!("Failed to fetch models ❌");
                 }
             };
 
@@ -133,6 +136,7 @@ async fn build_s3_client(use_localstack: bool) -> anyhow::Result<s3::Client> {
     let aws_config = aws_config::defaults(BehaviorVersion::latest()).load().await;
     let region = match aws_config.region() {
         None => {
+            tracing::error!("Failed to get AWS region from config ❌");
             anyhow::bail!("Failed to get AWS region from config ❌")
         }
         Some(value) => {
@@ -143,6 +147,7 @@ async fn build_s3_client(use_localstack: bool) -> anyhow::Result<s3::Client> {
 
     let credentials = match aws_config.credentials_provider() {
         None => {
+            tracing::error!("failed to get credentials provider ❌");
             anyhow::bail!("failed to get credentials provider ❌")
         }
         Some(credentials) => credentials,
@@ -191,10 +196,11 @@ async fn build_minio_client() -> anyhow::Result<s3::Client> {
     match client.list_buckets().send().await {
         Ok(_) => Ok(client),
         Err(e) => {
-            anyhow::bail!(
+            tracing::error!(
                 "Failed to connect to MinIO model store: {} ❌",
                 e.to_string()
-            )
+            );
+            anyhow::bail!("Failed to connect to MinIO model store ❌",)
         }
     }
 }
@@ -259,9 +265,10 @@ impl Storage for S3ModelStore {
         .await
         {
             Ok(_) => {
-                log::info!("Downloaded object from s3 ✅");
+                tracing::info!("Downloaded object from s3 ✅");
             }
             Err(e) => {
+                tracing::error!("Failed to download object from s3 ❌: {}", e.to_string());
                 anyhow::bail!("Failed to download object from s3 ❌: {}", e.to_string());
             }
         };
@@ -276,6 +283,7 @@ impl Storage for S3ModelStore {
         // Extract model framework
         let model_framework = match extract_framework(model_name.clone()) {
             None => {
+                tracing::error!("Failed to extract framework from path");
                 anyhow::bail!("Failed to extract framework from path");
             }
             Some(model_framework) => model_framework,
@@ -294,6 +302,7 @@ impl Storage for S3ModelStore {
                 let sanitized_model_name =
                     match model_name.strip_prefix(format!("{}-", model_framework).as_str()) {
                         None => {
+                            tracing::error!("Failed to sanitize model name");
                             anyhow::bail!("Failed to sanitize model name");
                         }
                         Some(name) => name.to_string(),
@@ -311,6 +320,7 @@ impl Storage for S3ModelStore {
                 Ok(())
             }
             Err(e) => {
+                tracing::error!("Failed to add new model: {e}");
                 anyhow::bail!("Failed to add new model: {e}")
             }
         }
@@ -340,13 +350,18 @@ impl Storage for S3ModelStore {
     async fn update_model(&self, model_name: ModelName) -> anyhow::Result<()> {
         // ensure the framework prefix is not passed in the model name
         if extract_framework(model_name.clone()).is_some() {
+            tracing::error!("Ensure that framework is not being passed in the model name ❌. Expected <model_name> not <framework>-<model name>");
             anyhow::bail!("Ensure that framework is not being passed in the model name ❌. Expected <model_name> not <framework>-<model name>")
         }
-        
+
         // By calling remove on the hashmap, the object is returned on success/
         // We use the returned object, in this case the model to extract the framework and model path
         match self.models.remove(model_name.as_str()) {
             None => {
+                tracing::error!(
+                    "Failed to update as the specified model {} does not exist",
+                    model_name
+                );
                 anyhow::bail!(
                     "Failed to update as the specified model {} does not exist",
                     model_name
@@ -369,7 +384,7 @@ impl Storage for S3ModelStore {
                 .await
                 {
                     Ok(_) => {
-                        log::info!("Downloaded object from s3 ✅");
+                        tracing::info!("Downloaded object from s3 ✅");
 
                         match load_predictor(model_framework, model_path).await {
                             Ok(predictor) => {
@@ -385,6 +400,12 @@ impl Storage for S3ModelStore {
                                 Ok(())
                             }
                             Err(e) => {
+                                tracing::error!(
+                                    "Failed to update the specified model {}: {}",
+                                    model_name,
+                                    e
+                                );
+
                                 anyhow::bail!(
                                     "Failed to update the specified model {}: {}",
                                     model_name,
@@ -393,7 +414,8 @@ impl Storage for S3ModelStore {
                             }
                         }
                     }
-                    Err(_) => {
+                    Err(e) => {
+                        tracing::error!("Failed to download object from s3 ❌: {}", e.to_string());
                         anyhow::bail!("Failed to download object from s3 ❌");
                     }
                 }
@@ -453,6 +475,10 @@ impl Storage for S3ModelStore {
     fn delete_model(&self, model_name: ModelName) -> anyhow::Result<()> {
         match self.models.remove(&model_name) {
             None => {
+                tracing::error!(
+                    "Failed to delete model as the specified model {} does not exist",
+                    model_name
+                );
                 anyhow::bail!(
                     "Failed to delete model as the specified model {} does not exist",
                     model_name
@@ -483,17 +509,18 @@ impl Storage for S3ModelStore {
         // poll every n time interval
         tokio::time::sleep(interval).await;
 
-        log::info!("Polling model store ⌛");
+        tracing::info!("Polling model store ⌛");
         let models = match self
             .client
             .fetch_models(Some(self.bucket_name.clone()), self.model_store_dir.clone())
             .await
         {
             Ok(models) => {
-                log::info!("Successfully fetched valid models from S3 ✅");
+                tracing::info!("Successfully fetched valid models from S3 ✅");
                 models
             }
             Err(e) => {
+                tracing::error!("Failed to fetch models ❌ - {}", e.to_string());
                 anyhow::bail!("Failed to fetch models ❌ - {}", e.to_string());
             }
         };
