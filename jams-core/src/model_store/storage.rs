@@ -173,7 +173,7 @@ pub async fn load_models(model_dir: String) -> anyhow::Result<DashMap<ModelName,
                                 now.to_rfc3339(),
                             );
                             models.insert(sanitised_model_name, Arc::new(model));
-                            log::info!("Successfully loaded model from path: {} ✅", file_path);
+                            tracing::info!("Successfully loaded model from path: {} ✅", file_path);
                         }
                     }
                 } else if file_name.contains(TORCH) {
@@ -202,7 +202,7 @@ pub async fn load_models(model_dir: String) -> anyhow::Result<DashMap<ModelName,
                                         now.to_rfc3339(),
                                     );
                                     models.insert(sanitised_model_name, Arc::new(model));
-                                    log::info!(
+                                    tracing::info!(
                                         "Successfully loaded model from path: {} ✅",
                                         file_path
                                     );
@@ -221,7 +221,7 @@ pub async fn load_models(model_dir: String) -> anyhow::Result<DashMap<ModelName,
                                 now.to_rfc2822(),
                             );
                             models.insert(sanitised_model_name, Arc::new(model));
-                            log::info!("Successfully loaded model from path: {} ✅", file_path);
+                            tracing::info!("Successfully loaded model from path: {} ✅", file_path);
                         }
                     }
                 } else if file_name.contains(CATBOOST) {
@@ -246,7 +246,7 @@ pub async fn load_models(model_dir: String) -> anyhow::Result<DashMap<ModelName,
                                 now.to_rfc2822(),
                             );
                             models.insert(sanitised_model_name, Arc::new(model));
-                            log::info!("Successfully loaded model from path: {} ✅", file_path);
+                            tracing::info!("Successfully loaded model from path: {} ✅", file_path);
                         }
                     }
                 } else if file_name.contains(LIGHTGBM) {
@@ -271,11 +271,11 @@ pub async fn load_models(model_dir: String) -> anyhow::Result<DashMap<ModelName,
                                 now.to_rfc2822(),
                             );
                             models.insert(sanitised_model_name, Arc::new(model));
-                            log::info!("Successfully loaded model from path: {} ✅", file_path);
+                            tracing::info!("Successfully loaded model from path: {} ✅", file_path);
                         }
                     }
                 } else {
-                    log::warn!(
+                    tracing::warn!(
                         "Unexpected model framework encountered in file ⚠️. \n File: {} \n",
                         file_name
                     );
@@ -291,7 +291,7 @@ pub async fn load_models(model_dir: String) -> anyhow::Result<DashMap<ModelName,
         }
     }
 
-    log::info!("Successfully loaded models from directory ✅");
+    tracing::info!("Successfully loaded models from directory ✅");
     Ok(models)
 }
 

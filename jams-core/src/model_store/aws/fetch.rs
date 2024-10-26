@@ -50,10 +50,10 @@ impl Fetcher for aws_sdk_s3::client::Client {
 
         match download_objects(self, s3_bucket_name, keys, output_dir.as_str()).await {
             Ok(_) => {
-                log::info!("Downloaded objects from s3 ✅")
+                tracing::info!("Downloaded objects from s3 ✅")
             }
             Err(e) => {
-                log::warn!("Failed to download objects from s3: {e}. ⚠️")
+                tracing::warn!("Failed to download objects from s3: {e}. ⚠️")
             }
         }
 
@@ -97,7 +97,7 @@ async fn get_keys(client: &s3::Client, bucket_name: String) -> anyhow::Result<Ve
         match result {
             Ok(output) => match output.contents {
                 None => {
-                    log::warn!(
+                    tracing::warn!(
                         "No models found in the S3 bucket hence no models will be loaded ⚠️"
                     );
                 }
@@ -105,7 +105,7 @@ async fn get_keys(client: &s3::Client, bucket_name: String) -> anyhow::Result<Ve
                     for object in objects {
                         match object.key {
                             None => {
-                                log::warn!("Object key is empty ⚠️");
+                                tracing::warn!("Object key is empty ⚠️");
                             }
                             Some(key) => {
                                 keys.push(key);
@@ -160,10 +160,10 @@ async fn fetch_models(
 
     match download_objects(client, bucket_name, keys, model_store_dir.as_str()).await {
         Ok(_) => {
-            log::info!("Downloaded objects from s3 ✅")
+            tracing::info!("Downloaded objects from s3 ✅")
         }
         Err(_) => {
-            log::warn!("Failed to download objects from s3 ⚠️")
+            tracing::warn!("Failed to download objects from s3 ⚠️")
         }
     }
 

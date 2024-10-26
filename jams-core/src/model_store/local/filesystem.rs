@@ -299,7 +299,7 @@ impl Storage for LocalModelStore {
         // poll every n time interval
         tokio::time::sleep(interval).await;
 
-        log::info!("Polling model store ⌛");
+        tracing::info!("Polling model store ⌛");
         let models = match fetch_models(
             self.local_model_store_dir.clone(),
             self.temp_model_dir.clone(),
@@ -307,7 +307,7 @@ impl Storage for LocalModelStore {
         .await
         {
             Ok(models) => {
-                log::info!("Successfully fetched valid models from S3 ✅");
+                tracing::info!("Successfully fetched valid models from S3 ✅");
                 models
             }
             Err(e) => {

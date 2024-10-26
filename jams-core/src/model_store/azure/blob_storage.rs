@@ -72,7 +72,7 @@ impl AzureBlobStorageModelStore {
 
         // Check if Azure blob storage is empty, if yes then return models dashmap as empty
         if container_client.is_empty(None).await? {
-            log::warn!(
+            tracing::warn!(
                         "No models found in the Azure model storage container hence no models will be loaded ⚠️"
                     );
             let models: DashMap<ModelName, Arc<Model>> = DashMap::new();
@@ -88,7 +88,7 @@ impl AzureBlobStorageModelStore {
                 .await
             {
                 Ok(models) => {
-                    log::info!("Successfully fetched valid models from Azure Blob Storage ✅");
+                    tracing::info!("Successfully fetched valid models from Azure Blob Storage ✅");
                     models
                 }
                 Err(e) => {
@@ -199,7 +199,7 @@ impl Storage for AzureBlobStorageModelStore {
         .await
         {
             Ok(_) => {
-                log::info!("Downloaded blob from azure storage ✅");
+                tracing::info!("Downloaded blob from azure storage ✅");
             }
             Err(e) => {
                 anyhow::bail!(
@@ -305,7 +305,7 @@ impl Storage for AzureBlobStorageModelStore {
                 .await
                 {
                     Ok(_) => {
-                        log::info!("Downloaded blob from azure storage ✅");
+                        tracing::info!("Downloaded blob from azure storage ✅");
 
                         match load_predictor(model_framework, model_path).await {
                             Ok(predictor) => {
@@ -415,11 +415,11 @@ impl Storage for AzureBlobStorageModelStore {
         // poll every n time interval
         tokio::time::sleep(interval).await;
 
-        log::info!("Polling model store ⌛");
+        tracing::info!("Polling model store ⌛");
         // let models = match self.fetch_models(None, self.model_store_dir.clone()).await
         // {
         //     Ok(models) => {
-        //         log::info!("Successfully fetched valid models from Azure Blob Storage ✅");
+        //         tracing::info!("Successfully fetched valid models from Azure Blob Storage ✅");
         //         models
         //     }
         //     Err(e) => {

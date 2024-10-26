@@ -52,7 +52,7 @@ impl S3ModelStore {
         let client = if use_minio.is_some() {
             match build_minio_client().await {
                 Ok(client) => {
-                    log::info!("Using MinIO as model store ℹ️");
+                    tracing::info!("Using MinIO as model store ℹ️");
                     client
                 }
                 Err(e) => {
@@ -62,7 +62,7 @@ impl S3ModelStore {
         } else {
             match build_s3_client(use_localstack()).await {
                 Ok(client) => {
-                    log::info!("Using AWS S3 as model store ℹ️");
+                    tracing::info!("Using AWS S3 as model store ℹ️");
                     client
                 }
                 Err(e) => {
@@ -96,7 +96,7 @@ impl S3ModelStore {
                 .await
             {
                 Ok(models) => {
-                    log::info!("Successfully fetched valid models from S3 ✅");
+                    tracing::info!("Successfully fetched valid models from S3 ✅");
                     models
                 }
                 Err(e) => {
@@ -258,7 +258,7 @@ impl Storage for S3ModelStore {
         .await
         {
             Ok(_) => {
-                log::info!("Downloaded object from s3 ✅");
+                tracing::info!("Downloaded object from s3 ✅");
             }
             Err(e) => {
                 anyhow::bail!("Failed to download object from s3 ❌: {}", e.to_string());
@@ -368,7 +368,7 @@ impl Storage for S3ModelStore {
                 .await
                 {
                     Ok(_) => {
-                        log::info!("Downloaded object from s3 ✅");
+                        tracing::info!("Downloaded object from s3 ✅");
 
                         match load_predictor(model_framework, model_path).await {
                             Ok(predictor) => {
@@ -482,14 +482,14 @@ impl Storage for S3ModelStore {
         // poll every n time interval
         tokio::time::sleep(interval).await;
 
-        log::info!("Polling model store ⌛");
+        tracing::info!("Polling model store ⌛");
         let models = match self
             .client
             .fetch_models(Some(self.bucket_name.clone()), self.model_store_dir.clone())
             .await
         {
             Ok(models) => {
-                log::info!("Successfully fetched valid models from S3 ✅");
+                tracing::info!("Successfully fetched valid models from S3 ✅");
                 models
             }
             Err(e) => {

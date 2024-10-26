@@ -72,7 +72,7 @@ pub async fn download_blob(
             // Do nothing
         }
         Err(e) => {
-            log::warn!(
+            tracing::warn!(
                 "Failed to save artefact {} ⚠️: {}",
                 blob_name,
                 e.to_string()

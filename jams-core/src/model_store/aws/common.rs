@@ -68,7 +68,7 @@ pub async fn download_objects(
                                 // Do nothing
                             }
                             Err(e) => {
-                                log::warn!(
+                                tracing::warn!(
                                     "Failed to save artefact {} ⚠️: {}",
                                     object_key,
                                     e.to_string()
@@ -77,7 +77,7 @@ pub async fn download_objects(
                         }
                     }
                     Err(e) => {
-                        log::warn!(
+                        tracing::warn!(
                             "Failed to download artefact {} ⚠️: {}",
                             object_key,
                             e.to_string()
