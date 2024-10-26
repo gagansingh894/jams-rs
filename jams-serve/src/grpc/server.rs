@@ -1,7 +1,7 @@
 use crate::common::server;
 use crate::common::shutdown::shutdown_signal;
 use crate::common::state::build_app_state_from_config;
-use crate::common::opentelemetry::init_otlp_trace;
+use crate::common::opentelemetry::jaeger::init_otlp_trace;
 use crate::grpc::service::JamsService;
 use jams_proto::jams_v1::model_server_server::ModelServerServer;
 use jams_proto::jams_v1::FILE_DESCRIPTOR_SET;
