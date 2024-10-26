@@ -63,7 +63,7 @@ jobs:
           - 10000:10000
 
       minio:
-        image: minio/minio:latest
+        image: minio/minio:edge-cicd
         ports:
           - 9000:9000  # MinIO S3 API port
         env:
