@@ -16,6 +16,7 @@ use tokio::sync::oneshot::Sender;
 ///
 /// The function asynchronously sends the prediction result through the provided
 /// channel (`tx`) based on the result of the prediction operation using the shared `Manager`.
+#[tracing::instrument(skip(manager, input, tx))]
 pub fn predict_and_send(
     manager: Arc<Manager>,
     model_name: String,

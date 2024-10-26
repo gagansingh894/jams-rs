@@ -1,13 +1,13 @@
 [package]
 name = "jams-serve"
-version = "0.1.26"
+version = "0.1.28"
 edition = "2021"
 description = "jams-serve provides a http and gRPC API for jams-core."
 homepage = "https://github.com/gagansingh894/jams-rs"
 repository = "https://github.com/gagansingh894/jams-rs/tree/main/jams-serve"
 license = "Apache-2.0"
 exclude = ["./assets"]
-keywords = ["machine-learning", "deep-learning"]
+keywords = ["machine-learning", "deep-learning", "mlops"]
 
 
 [lib]

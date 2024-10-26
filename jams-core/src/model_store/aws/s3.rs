@@ -1,14 +1,15 @@
-use crate::model_store::common::{
-    cleanup, save_and_upack_tarball, DOWNLOADED_MODELS_DIRECTORY_NAME_PREFIX,
-};
+use crate::model_store::aws::common::download_objects;
+use crate::model_store::common::{cleanup, DOWNLOADED_MODELS_DIRECTORY_NAME_PREFIX};
+use crate::model_store::fetcher::Fetcher;
 use crate::model_store::storage::{
-    append_model_format, extract_framework_from_path, load_models, load_predictor, Metadata, Model,
-    ModelName, Storage,
+    append_model_format, extract_framework_from_path, load_predictor, Metadata, Model, ModelName,
+    Storage,
 };
 use async_trait::async_trait;
 use aws_config::meta::region::ProvideRegion;
 use aws_config::BehaviorVersion;
 use aws_sdk_s3 as s3;
+use aws_sdk_s3::config::{Credentials, Region};
 use chrono::Utc;
 use dashmap::mapref::one::Ref;
 use dashmap::DashMap;
@@ -42,18 +43,35 @@ impl S3ModelStore {
     /// # Returns
     ///
     /// A result containing the newly created `S3ModelStore` or an error if the initialization fails.
-    pub async fn new(bucket_name: String) -> anyhow::Result<Self> {
+    pub async fn new(bucket_name: String, use_minio: Option<bool>) -> anyhow::Result<Self> {
         // Ensure model_dir_uri is not empty, return error if empty
         if bucket_name.is_empty() {
             anyhow::bail!("S3 bucket name must be specified ❌")
         }
-        // Create an S3 client with the loaded configuration
-        let client = match build_s3_client(use_localstack()).await {
-            Ok(client) => client,
-            Err(e) => {
-                anyhow::bail!("Failed to build S3 client ❌: {}", e.to_string())
+
+        // Check if minio is to be used instead of the standard AWS client.
+        let client = if use_minio.is_some() {
+            match build_minio_client().await {
+                Ok(client) => {
+                    log::info!("Using MinIO as model store ℹ️");
+                    client
+                }
+                Err(e) => {
+                    anyhow::bail!("Failed to build MinIO client ❌: {}", e.to_string());
+                }
+            }
+        } else {
+            match build_s3_client(use_localstack()).await {
+                Ok(client) => {
+                    log::info!("Using AWS S3 as model store ℹ️");
+                    client
+                }
+                Err(e) => {
+                    anyhow::bail!("Failed to build S3 client ❌: {}", e.to_string());
+                }
             }
         };
+
         // Directory, which stores the models downloaded from S3
         let model_store_dir = format!(
             "{}/{}_{}",
@@ -63,24 +81,37 @@ impl S3ModelStore {
         );
         std::fs::create_dir(model_store_dir.clone())?;
 
-        // Fetch the models from S3
-        let models = match fetch_models(&client, bucket_name.clone(), model_store_dir.clone()).await
-        {
-            Ok(models) => {
-                log::info!("Successfully fetched valid models from S3 ✅");
-                models
-            }
-            Err(e) => {
-                anyhow::bail!("Failed to fetch models ❌ - {}", e.to_string());
-            }
-        };
+        // Check if S3 is empty, if yes then return models dashmap as empty
+        if client.is_empty(Some(bucket_name.clone())).await? {
+            let models: DashMap<ModelName, Arc<Model>> = DashMap::new();
+            Ok(Self {
+                models: Arc::new(models),
+                client,
+                bucket_name,
+                model_store_dir,
+            })
+        } else {
+            // Fetch the models from S3
+            let models = match client
+                .fetch_models(Some(bucket_name.clone()), model_store_dir.clone())
+                .await
+            {
+                Ok(models) => {
+                    log::info!("Successfully fetched valid models from S3 ✅");
+                    models
+                }
+                Err(e) => {
+                    anyhow::bail!("Failed to fetch models ❌ - {}", e.to_string());
+                }
+            };
 
-        Ok(Self {
-            models: Arc::new(models),
-            client,
-            bucket_name,
-            model_store_dir,
-        })
+            Ok(Self {
+                models: Arc::new(models),
+                client,
+                bucket_name,
+                model_store_dir,
+            })
+        }
     }
 }
 
@@ -130,6 +161,42 @@ async fn build_s3_client(use_localstack: bool) -> anyhow::Result<s3::Client> {
     let s3_config = s3_config.build();
     // Create an S3 client with the loaded configuration
     Ok(s3::Client::from_conf(s3_config))
+}
+
+async fn build_minio_client() -> anyhow::Result<s3::Client> {
+    let key_id = env::var("MINIO_ACCESS_KEY_ID").unwrap_or("minioadmin".to_string());
+    let secret_key = env::var("MINIO_ACCESS_KEY_ID").unwrap_or("minioadmin".to_string());
+    let url = env::var("MINIO_URL").unwrap_or("http://0.0.0.0:9000".to_string());
+    let region = env::var("AWS_REGION").unwrap_or("eu-west-2".to_string());
+
+    let cred = Credentials::new(
+        key_id,
+        secret_key,
+        None,
+        None,
+        "minio-loaded-from-custom-env",
+    );
+
+    let s3_config = aws_sdk_s3::config::Builder::new()
+        .endpoint_url(url)
+        .credentials_provider(cred)
+        .behavior_version_latest()
+        .region(Region::new(region))
+        .force_path_style(true) // apply bucketname as path param instead of pre-domain
+        .build();
+
+    let client = aws_sdk_s3::Client::from_conf(s3_config);
+
+    // healthcheck
+    match client.list_buckets().send().await {
+        Ok(_) => Ok(client),
+        Err(e) => {
+            anyhow::bail!(
+                "Failed to connect to MinIO model store: {} ❌",
+                e.to_string()
+            )
+        }
+    }
 }
 
 /// Implements the `Drop` trait for `S3ModelStore`.
@@ -412,12 +479,10 @@ impl Storage for S3ModelStore {
         tokio::time::sleep(interval).await;
 
         log::info!("Polling model store ⌛");
-        let models = match fetch_models(
-            &self.client,
-            self.bucket_name.clone(),
-            self.model_store_dir.clone(),
-        )
-        .await
+        let models = match self
+            .client
+            .fetch_models(Some(self.bucket_name.clone()), self.model_store_dir.clone())
+            .await
         {
             Ok(models) => {
                 log::info!("Successfully fetched valid models from S3 ✅");
@@ -436,210 +501,6 @@ impl Storage for S3ModelStore {
     }
 }
 
-/// Fetches models from an S3 bucket, downloads them to a local directory, and loads them into memory.
-///
-/// This function first retrieves object keys from the S3 bucket, downloads corresponding objects,
-/// saves and unpacks them into the specified local directory, and finally loads the models into memory.
-///
-/// # Arguments
-///
-/// * `client` - An `s3::Client` instance for interacting with AWS S3.
-/// * `bucket_name` - The name of the S3 bucket from which to fetch models.
-/// * `model_store_dir` - The local directory where downloaded models will be stored and loaded from.
-///
-/// # Returns
-///
-/// * `Result<DashMap<ModelName, Arc<Model>>>` - A `DashMap` containing loaded models mapped by their names,
-///   or an error if fetching or loading models fails.
-///
-/// # Errors
-///
-/// This function will return an error if:
-/// * The object keys cannot be retrieved from the S3 bucket.
-/// * Objects cannot be downloaded from S3.
-/// * Downloaded tarballs cannot be unpacked.
-/// * Models cannot be loaded from the local directory.
-///
-#[tracing::instrument(skip(client))]
-async fn fetch_models(
-    client: &s3::Client,
-    bucket_name: String,
-    model_store_dir: String,
-) -> anyhow::Result<DashMap<ModelName, Arc<Model>>> {
-    let keys = get_keys(client, bucket_name.clone()).await?;
-
-    match download_objects(client, bucket_name, keys, model_store_dir.as_str()).await {
-        Ok(_) => {
-            log::info!("Downloaded objects from s3 ✅")
-        }
-        Err(_) => {
-            log::warn!("Failed to download objects from s3 ⚠️")
-        }
-    }
-
-    let models = load_models(model_store_dir).await?;
-
-    Ok(models)
-}
-
-/// Retrieves object keys from an S3 bucket.
-///
-/// This function uses an `s3::Client` instance to list object keys from the specified S3 bucket.
-///
-/// # Arguments
-///
-/// * `client` - An `s3::Client` instance for interacting with AWS S3.
-/// * `bucket_name` - The name of the S3 bucket from which to retrieve object keys.
-///
-/// # Returns
-///
-/// * `Result<Vec<String>>` - A vector containing object keys retrieved from the S3 bucket,
-///   or an error if object keys cannot be retrieved.
-///
-/// # Errors
-///
-/// This function will return an error if:
-/// * Object keys cannot be listed from the S3 bucket.
-///
-#[tracing::instrument(skip(client))]
-async fn get_keys(client: &s3::Client, bucket_name: String) -> anyhow::Result<Vec<String>> {
-    let mut keys: Vec<String> = Vec::new();
-
-    let mut response = client
-        .list_objects_v2()
-        .bucket(bucket_name.clone())
-        .max_keys(10)
-        .into_paginator()
-        .send();
-
-    while let Some(result) = response.next().await {
-        match result {
-            Ok(output) => match output.contents {
-                None => {
-                    log::warn!(
-                        "No models found in the S3 bucket hence no models will be loaded ⚠️"
-                    );
-                }
-                Some(objects) => {
-                    for object in objects {
-                        match object.key {
-                            None => {
-                                log::warn!("Object key is empty ⚠️");
-                            }
-                            Some(key) => {
-                                keys.push(key);
-                            }
-                        }
-                    }
-                }
-            },
-            Err(e) => {
-                anyhow::bail!(
-                    "Failed to list objects in the {} bucket: {}",
-                    bucket_name,
-                    e.into_service_error()
-                )
-            }
-        }
-    }
-    Ok(keys)
-}
-
-/// Downloads objects from an S3 bucket and saves them to a local directory.
-///
-/// This function downloads objects with specified keys from the S3 bucket using an `s3::Client` instance,
-/// saves them to a temporary directory, and unpacks them into the specified output directory.
-///
-/// # Arguments
-///
-/// * `client` - An `s3::Client` instance for interacting with AWS S3.
-/// * `bucket_name` - The name of the S3 bucket from which to download objects.
-/// * `object_keys` - A vector of object keys to download from the S3 bucket.
-/// * `out_dir` - The local directory where downloaded objects will be unpacked.
-///
-/// # Returns
-///
-/// * `Result<()>` - An empty result indicating success or an error.
-///
-/// # Errors
-///
-/// This function will return an error if:
-/// * Objects cannot be downloaded from the S3 bucket.
-/// * Downloaded tarballs cannot be saved or unpacked.
-///
-#[tracing::instrument(skip(client, object_keys, out_dir))]
-async fn download_objects(
-    client: &s3::Client,
-    bucket_name: String,
-    object_keys: Vec<String>,
-    out_dir: &str,
-) -> anyhow::Result<()> {
-    // Create a tempdir to hold downloaded models
-    // This will be deleted when the program exits
-    let dir = match tempfile::Builder::new().prefix("models").tempdir() {
-        Ok(dir) => dir,
-        Err(e) => {
-            anyhow::bail!("Failed to create temporary directory ❌: {}", e.to_string());
-        }
-    };
-    let temp_path = match dir.path().to_str() {
-        None => {
-            anyhow::bail!("failed to convert path to str ❌")
-        }
-        Some(path) => path,
-    };
-
-    for object_key in object_keys {
-        let response = client
-            .get_object()
-            .bucket(bucket_name.clone())
-            .key(object_key.clone())
-            .send()
-            .await;
-
-        match response {
-            Ok(output) => {
-                match output.body.collect().await {
-                    Ok(data) => {
-                        match save_and_upack_tarball(
-                            temp_path,
-                            object_key.clone(),
-                            data.into_bytes(),
-                            out_dir,
-                        ) {
-                            Ok(_) => {
-                                // Do nothing
-                            }
-                            Err(e) => {
-                                log::warn!(
-                                    "Failed to save artefact {} ⚠️: {}",
-                                    object_key,
-                                    e.to_string()
-                                )
-                            }
-                        }
-                    }
-                    Err(e) => {
-                        log::warn!(
-                            "Failed to download artefact {} ⚠️: {}",
-                            object_key,
-                            e.to_string()
-                        )
-                    }
-                }
-            }
-            Err(e) => {
-                anyhow::bail!(
-                    "Failed to get object key: {} from S3 ⚠️: {}",
-                    object_key,
-                    e.into_service_error()
-                )
-            }
-        }
-    }
-    Ok(())
-}
-
 fn use_localstack() -> bool {
     std::env::var("USE_LOCALSTACK").unwrap_or_default() == "true"
 }
@@ -647,6 +508,7 @@ fn use_localstack() -> bool {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::model_store::aws::s3::S3ModelStore;
     use aws_sdk_s3::primitives::ByteStream;
     use aws_sdk_s3::types::{
         BucketLocationConstraint, CreateBucketConfiguration, Delete, ObjectIdentifier,
@@ -753,7 +615,32 @@ mod tests {
         create_test_bucket(client.clone(), bucket_name.clone()).await;
 
         // create s3 model store without models
-        let model_store = S3ModelStore::new(bucket_name.clone()).await;
+        let model_store = S3ModelStore::new(bucket_name.clone(), None).await;
+
+        // assert
+        assert!(model_store.is_ok());
+        let model_store = model_store.unwrap();
+        assert_eq!(model_store.models.len(), 0);
+
+        // add model - upload model to s3 then call add model
+        upload_models_for_test(client.clone(), bucket_name).await;
+
+        let resp = model_store
+            .add_model("catboost-titanic_model".to_string())
+            .await;
+        assert!(resp.is_ok());
+        assert_eq!(model_store.models.len(), 1);
+    }
+
+    #[tokio::test]
+    async fn successfully_create_minio_model_store_without_models_and_then_add_one() {
+        // setup
+        let client = build_minio_client().await.unwrap();
+        let bucket_name = generate_bucket_name();
+        create_test_bucket(client.clone(), bucket_name.clone()).await;
+
+        // create minio model store without models
+        let model_store = S3ModelStore::new(bucket_name.clone(), Some(true)).await;
 
         // assert
         assert!(model_store.is_ok());
@@ -778,7 +665,7 @@ mod tests {
         setup_test_dependencies(client.clone(), bucket_name.clone()).await;
 
         // load models
-        let model_store = S3ModelStore::new(bucket_name.clone()).await;
+        let model_store = S3ModelStore::new(bucket_name.clone(), None).await;
 
         // assert
         assert!(model_store.is_ok());
@@ -796,7 +683,7 @@ mod tests {
         setup_test_dependencies(client.clone(), bucket_name.clone()).await;
 
         // load models
-        let model_store = S3ModelStore::new(bucket_name.clone()).await.unwrap();
+        let model_store = S3ModelStore::new(bucket_name.clone(), None).await.unwrap();
         let model = model_store.get_model("my_awesome_reg_model".to_string());
 
         // assert
@@ -814,7 +701,7 @@ mod tests {
         setup_test_dependencies(client.clone(), bucket_name.clone()).await;
 
         // load models
-        let model_store = S3ModelStore::new(bucket_name.clone()).await.unwrap();
+        let model_store = S3ModelStore::new(bucket_name.clone(), None).await.unwrap();
         let model = model_store.get_model("model_which_does_not_exist".to_string());
 
         // assert
@@ -832,7 +719,7 @@ mod tests {
         setup_test_dependencies(client.clone(), bucket_name.clone()).await;
 
         // load models
-        let model_store = S3ModelStore::new(bucket_name.clone()).await.unwrap();
+        let model_store = S3ModelStore::new(bucket_name.clone(), None).await.unwrap();
         let models = model_store.get_models();
 
         // assert
@@ -851,7 +738,7 @@ mod tests {
         setup_test_dependencies(client.clone(), bucket_name.clone()).await;
 
         // load models
-        let model_store = S3ModelStore::new(bucket_name.clone()).await.unwrap();
+        let model_store = S3ModelStore::new(bucket_name.clone(), None).await.unwrap();
         let deletion = model_store.delete_model("my_awesome_penguin_model".to_string());
 
         // assert
@@ -869,7 +756,7 @@ mod tests {
         setup_test_dependencies(client.clone(), bucket_name.clone()).await;
 
         // load models
-        let model_store = S3ModelStore::new(bucket_name.clone()).await.unwrap();
+        let model_store = S3ModelStore::new(bucket_name.clone(), None).await.unwrap();
         let deletion = model_store.delete_model("model_which_does_not_exist".to_string());
 
         // assert
@@ -888,7 +775,7 @@ mod tests {
         let model_name = "my_awesome_reg_model".to_string();
 
         // load models
-        let model_store = S3ModelStore::new(bucket_name.clone()).await.unwrap();
+        let model_store = S3ModelStore::new(bucket_name.clone(), None).await.unwrap();
         tokio::time::sleep(Duration::from_secs_f32(1.25)).await;
 
         // retrieve timestamp from existing to model for assertion
@@ -923,7 +810,7 @@ mod tests {
         let incorrect_model_name = "my_awesome_reg_model_incorrect".to_string();
 
         // load models
-        let model_store = S3ModelStore::new(bucket_name.clone()).await.unwrap();
+        let model_store = S3ModelStore::new(bucket_name.clone(), None).await.unwrap();
 
         // update model with incorrect model name
         let update = model_store.update_model(incorrect_model_name).await;
@@ -943,7 +830,7 @@ mod tests {
         setup_test_dependencies(client.clone(), bucket_name.clone()).await;
 
         // load models
-        let model_store = S3ModelStore::new(bucket_name.clone()).await.unwrap();
+        let model_store = S3ModelStore::new(bucket_name.clone(), None).await.unwrap();
 
         // delete model to set up test
         model_store
@@ -979,7 +866,7 @@ mod tests {
         setup_test_dependencies(client.clone(), bucket_name.clone()).await;
 
         // load models
-        let model_store = S3ModelStore::new(bucket_name.clone()).await.unwrap();
+        let model_store = S3ModelStore::new(bucket_name.clone(), None).await.unwrap();
 
         // add model
         let add = model_store.add_model("wrong_model_name".to_string()).await;

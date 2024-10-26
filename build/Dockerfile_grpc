@@ -3,4 +3,4 @@ LABEL authors="gagandeepsingh"
 RUN mkdir -p /model_store
 COPY build/assets/model_store /model_store
 COPY build/run_config /run_config
-CMD ["start", "grpc", "--model-dir", "/model_store", "--poll-interval", "300"]
+CMD ["start", "-f", "/run_config/local_grpc.toml"]

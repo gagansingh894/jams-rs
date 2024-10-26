@@ -5,13 +5,16 @@ on:
     branches: [ "main" ]
     paths-ignore:
       - 'clients/**'
+      - 'build/Dockerfile_builder'
       - '.github/workflows/client_python.yml'
       - '.github/workflows/client_go.yml'
       - '.github/workflows/client_rust.yml'
+      - '.github/workflows/jams_builder.yml'
   pull_request:
     branches: [ "main" ]
     paths-ignore:
       - 'clients/**'
+      - '.github/workflows/build.yml'
       - '.github/workflows/client_python.yml'
       - '.github/workflows/client_go.yml'
       - '.github/workflows/client_rust.yml'
@@ -25,7 +28,7 @@ jobs:
     runs-on: ubuntu-latest
 
     container:
-      image: rust:1.81
+      image: gagansingh894/jams_builder:latest
       options: --user root
       env:
         LIGHTGBM_LIB_DIR: /usr/local/lib
@@ -39,6 +42,7 @@ jobs:
         AWS_SECRET_ACCESS_KEY: test
         AWS_DEFAULT_REGION: eu-west-2
         LOCALSTACK_HOSTNAME: localstack
+        MINIO_URL: http://minio:9000
         USE_AZURITE: true
         STORAGE_ACCOUNT: devstoreaccount1
         # https://learn.microsoft.com/en-us/azure/storage/common/storage-use-azurite?tabs=visual-studio%2Cblob-storage#well-known-storage-account-and-key
@@ -58,107 +62,22 @@ jobs:
         ports:
           - 10000:10000
 
+      minio:
+        image: minio/minio:edge-cicd
+        ports:
+          - 9000:9000  # MinIO S3 API port
+        env:
+          MINIO_ROOT_USER: minioadmin  # Default access key for MinIO
+          MINIO_ROOT_PASSWORD: minioadmin  # Default secret key for MinIO
+
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-
-      - name: Setup Environment
-        run: bash build/setup_environment_linux_x86_64.sh
-
-      - name: Cache Cargo Registry
-        uses: actions/cache@v3
-        with:
-          path: ~/.cargo/registry
-          key: ${{ runner.os }}-cargo-registry-${{ hashFiles('**/Cargo.lock') }}
-          restore-keys: |
-            ${{ runner.os }}-cargo-registry-
-
-      - name: Cache Cargo Target Directory
-        uses: actions/cache@v3
-        with:
-          path: target
-          key: ${{ runner.os }}-cargo-target-${{ hashFiles('**/Cargo.lock') }}
-          restore-keys: |
-            ${{ runner.os }}-cargo-target-
 
       - name: Lint
         run: make lint
 
-      - name: Install cargo-nextest
-        run: cargo install cargo-nextest
-
-      - name: Run tests
-        run: make nextest
-
-  coverage:
-    name: Code Coverage
-    runs-on: ubuntu-latest
-    needs: build
-
-    container:
-      image: rust:1.81
-      options: --user root
-      env:
-        LIGHTGBM_LIB_DIR: /usr/local/lib
-        LIBTORCH: /usr/local/lib/libtorch
-        LIBTORCH_INCLUDE: /usr/local/lib/libtorch
-        LIBTORCH_LIB: /usr/local/lib/libtorch
-        LD_LIBRARY_PATH: /usr/local/lib/libtorch/lib:/usr/local/lib
-        PROTOC: /usr/bin/protoc
-        USE_LOCALSTACK: true
-        AWS_ACCESS_KEY_ID: test
-        AWS_SECRET_ACCESS_KEY: test
-        AWS_DEFAULT_REGION: eu-west-2
-        LOCALSTACK_HOSTNAME: localstack
-        USE_AZURITE: true
-        STORAGE_ACCOUNT: devstoreaccount1
-        # https://learn.microsoft.com/en-us/azure/storage/common/storage-use-azurite?tabs=visual-studio%2Cblob-storage#well-known-storage-account-and-key
-        STORAGE_ACCESS_KEY: ${{ secrets.STORAGE_ACCESS_KEY }} # This is a dummy key but has a value which matches the form of actual key as per Azurite docs. Hence I have set it as GITHUB secrets.
-        AZURITE_HOSTNAME: azurite
-
-    services:
-      localstack:
-        image: localstack/localstack:latest
-        ports:
-          - 4566:4566  # Edge port for all services
-        env:
-          SERVICES: s3
-          DEBUG: 1
-      azurite:
-        image: mcr.microsoft.com/azure-storage/azurite
-        ports:
-          - 10000:10000
-
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Setup Environment
-        run: bash build/setup_environment_linux_x86_64.sh
-
-      - name: Cache Cargo Registry
-        uses: actions/cache@v3
-        with:
-          path: ~/.cargo/registry
-          key: ${{ runner.os }}-cargo-registry-${{ hashFiles('**/Cargo.lock') }}
-          restore-keys: |
-            ${{ runner.os }}-cargo-registry-
-
-      - name: Cache Cargo Target Directory
-        uses: actions/cache@v3
-        with:
-          path: target
-          key: ${{ runner.os }}-cargo-target-${{ hashFiles('**/Cargo.lock') }}
-          restore-keys: |
-            ${{ runner.os }}-cargo-target-
-
-      - name: Install cargo-nextest
-        run: cargo install cargo-nextest
-
-      - name: Install cargo-llvm-cov
-        uses: taiki-e/install-action@cargo-llvm-cov
-
-      - name: Generate code coverage
+      - name: Run tests with coverage
         run: cargo llvm-cov nextest -p jams-core -p jams-serve --retries 2 --all-features --lcov --output-path lcov.info
 
       - name: Upload coverage to Codecov
@@ -167,7 +86,6 @@ jobs:
           token: ${{ secrets.CODECOV_TOKEN }}
           files: lcov.info
           fail_ci_if_error: true
-
   release:
     name: Build and Publish Docker Image
     runs-on: ubuntu-latest

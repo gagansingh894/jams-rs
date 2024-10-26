@@ -92,13 +92,12 @@ mod tests {
     async fn successfully_starts_the_server() {
         // Arrange
         let config = common::server::Config {
+            model_store: "local".to_string(),
             model_dir: Some("tests/model_store".to_string()),
             port: Some(5000),
             use_debug_level: Some(false),
             num_workers: Some(1),
-            with_s3_model_store: Some(false),
             s3_bucket_name: Some("".to_string()),
-            with_azure_model_store: Some(false),
             azure_storage_container_name: Some("".to_string()),
             poll_interval: Some(0),
         };
@@ -115,13 +114,12 @@ mod tests {
     async fn server_fails_to_start_due_to_zero_workers_in_worker_pool() {
         // Arrange
         let config = common::server::Config {
+            model_store: "local".to_string(),
             model_dir: Some("".to_string()),
             port: Some(5000),
             use_debug_level: Some(false),
             num_workers: Some(0),
-            with_s3_model_store: Some(false),
             s3_bucket_name: Some("".to_string()),
-            with_azure_model_store: Some(false),
             azure_storage_container_name: Some("".to_string()),
             poll_interval: Some(0),
         };

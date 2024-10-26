@@ -7,7 +7,7 @@ use std::fs;
 #[derive(Parser, Debug)]
 #[clap(
     name = "J.A.M.S - Just Another Model Server",
-    version = "0.1.21",
+    version = "0.1.22",
     author = "Gagandeep Singh",
     about = "J.A.M.S aims to provide a fast, comprehensive and modular serving solution for tree based and deep learning models written in Rust 🦀"
 )]
@@ -65,7 +65,11 @@ pub enum PredictSubCommands {
 
 #[derive(Args, Debug, Clone)]
 pub struct StartCommandArgs {
-    /// Path to the directory containing models
+    /// Model Store to use for hosting models - aws, azure, minio, Local
+    #[clap(long)]
+    pub model_store: String,
+
+    /// Path to the directory containing models. Must contain models, To be specified when model_store = local
     #[clap(long)]
     pub model_dir: Option<String>,
 
@@ -82,19 +86,11 @@ pub struct StartCommandArgs {
     #[clap(long)]
     pub num_workers: Option<usize>,
 
-    /// Start with S3 model store rather than local model store.
-    #[clap(long)]
-    pub with_s3_model_store: Option<bool>,
-
-    /// Name of S3 bucket hosting models
+    /// Name of S3 bucket hosting models. To be specified when model_store = aws|minio
     #[clap(long)]
     pub s3_bucket_name: Option<String>,
 
-    /// Start with Azure model store rather than local model store.
-    #[clap(long)]
-    pub with_azure_model_store: Option<bool>,
-
-    /// Name of Azure Storage container hosting models
+    /// Name of Azure Storage container hosting models. To be specified when model_store = azure
     #[clap(long)]
     pub azure_storage_container_name: Option<String>,
 

@@ -15,4 +15,17 @@ services:
     image: mcr.microsoft.com/azure-storage/azurite
     ports:
       - "10000:10000"  # Blob service
-  #   JAMS
+  #  MinIO
+  minio:
+    image: minio/minio:latest
+    ports:
+      - 9000:9000  # MinIO S3 API port
+      - 9001:9001  # MinIO S3 UI port
+    environment:
+      MINIO_ROOT_USER: minioadmin  # Default access key for MinIO
+      MINIO_ROOT_PASSWORD: minioadmin  # Default secret key for MinIO
+    command:
+      - server
+      - /temp
+      - --console-address
+      - ":9001"

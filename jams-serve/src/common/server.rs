@@ -41,26 +41,19 @@ pub struct Config {
     /// This is an optional field. If not provided, the default number of worker threads is 2.
     pub num_workers: Option<usize>,
 
-    /// An optional boolean flag indicating whether to use S3 as the model store.
-    ///
-    /// - `Some(true)`: Use S3 for model storage.
-    /// - `Some(false)`: Do not use S3 for model storage.
-    /// - `None`: The configuration for using S3 is not specified.
-    pub with_s3_model_store: Option<bool>,
-
+    /// Model store to use.
+    /// The valid options are
+    /// - `local` - filesystem.Must pass model dir
+    /// - `aws` - aws s3
+    /// - `azure` - azure blob storage
+    /// - `minio` - minio
+    pub model_store: String,
     /// An optional string specifying the name of the S3 bucket to be used for model storage.
+    /// Applicable only for aws or minio
     ///
     /// - `Some(String)`: The name of the S3 bucket.
     /// - `None`: No S3 bucket name is specified.
     pub s3_bucket_name: Option<String>,
-
-    /// An optional boolean flag indicating whether to use Azure as the model store.
-    ///
-    /// - `Some(true)`: Use Azure for model storage.
-    /// - `Some(false)`: Do not use Azure for model storage.
-    /// - `None`: The configuration for using Azure is not specified.
-    pub with_azure_model_store: Option<bool>,
-
     /// An optional string specifying the name of the azure storage container to be used for model storage.
     ///
     /// - `Some(String)`: The name of the S3 bucket.

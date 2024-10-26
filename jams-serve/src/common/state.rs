@@ -1,11 +1,16 @@
 use crate::common::server;
 use jams_core::manager::{Manager, ManagerBuilder};
-use jams_core::model_store::azure_blob_storage::AzureBlobStorageModelStore;
-use jams_core::model_store::local::LocalModelStore;
-use jams_core::model_store::s3::S3ModelStore;
+use jams_core::model_store::aws::s3::S3ModelStore;
+use jams_core::model_store::azure::blob_storage::AzureBlobStorageModelStore;
+use jams_core::model_store::local::filesystem::LocalModelStore;
 use rayon::{ThreadPool, ThreadPoolBuilder};
 use std::env;
 use std::sync::Arc;
+
+type ModelStore = &'static str;
+const AWS: ModelStore = "aws";
+const AZURE: ModelStore = "azurite";
+const MINIO: ModelStore = "minio";
 
 /// AppState struct holds application state.
 pub struct AppState {
@@ -47,8 +52,8 @@ pub async fn build_app_state_from_config(config: server::Config) -> anyhow::Resu
     });
 
     let worker_pool_threads = config.num_workers.unwrap_or(2);
-    let with_s3_model_store = config.with_s3_model_store.unwrap_or(false);
-    let with_azure_model_store = config.with_azure_model_store.unwrap_or(false);
+    let model_store = config.model_store;
+
     // run without polling by default
     let interval = config.poll_interval.unwrap_or(0);
 
@@ -66,17 +71,12 @@ pub async fn build_app_state_from_config(config: server::Config) -> anyhow::Resu
         worker_pool_threads
     );
 
-    // initialize manager with madel store
-    if with_s3_model_store && with_azure_model_store {
-        anyhow::bail!("Use of more than 1 model store backend is not permitted. Please use one of the following - Local File System/AWS S3/ Azure Blob Storage")
-    }
-
-    let manager = if with_s3_model_store {
+    let manager = if model_store == AWS {
         let s3_bucket_name = config.s3_bucket_name.unwrap_or_else(|| {
             // search for environment variable
             env::var("S3_BUCKET_NAME").expect("S3 bucket name not specified ❌. Either set the S3_BUCKET_NAME env variable or provide the value using --s3-bucket-name flag ")
         });
-        let model_store = S3ModelStore::new(s3_bucket_name)
+        let model_store = S3ModelStore::new(s3_bucket_name, None)
             .await
             .expect("Failed to create S3 model store ❌");
         Arc::new(
@@ -85,7 +85,21 @@ pub async fn build_app_state_from_config(config: server::Config) -> anyhow::Resu
                 .build()
                 .expect("Failed to initialize manager ❌"),
         )
-    } else if with_azure_model_store {
+    } else if model_store == MINIO {
+        let s3_bucket_name = config.s3_bucket_name.unwrap_or_else(|| {
+            // search for environment variable
+            env::var("S3_BUCKET_NAME").expect("S3 bucket name not specified ❌. Either set the S3_BUCKET_NAME env variable or provide the value using --s3-bucket-name flag ")
+        });
+        let model_store = S3ModelStore::new(s3_bucket_name, Some(true))
+            .await
+            .expect("Failed to create S3 model store ❌");
+        Arc::new(
+            ManagerBuilder::new(Arc::new(model_store))
+                .with_polling(interval)
+                .build()
+                .expect("Failed to initialize manager ❌"),
+        )
+    } else if model_store == AZURE {
         let azure_storage_container_name = config.azure_storage_container_name.unwrap_or_else(|| {
             // search for environment variable
             env::var("AZURE_STORAGE_CONTAINER_NAME").expect("Azure Storage container name not specified ❌. Either set the AZURE_STORAGE_CONTAINER_NAME env variable or provide the value using --azure-container-name flag ")
