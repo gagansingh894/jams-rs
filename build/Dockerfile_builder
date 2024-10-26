@@ -16,7 +16,7 @@ RUN apt-get update && \
 
 # Install build dependencies
 RUN wget -q https://raw.githubusercontent.com/gagansingh894/jams-rs/refs/heads/main/build/setup_environment_linux_x86_64.sh && \
-    chmod +x setup_environment_linux_x86_64
+    chmod +x ./setup_environment_linux_x86_64
 
 # Install build dependencies
 RUN ./setup_environment_linux_x86_64.sh
