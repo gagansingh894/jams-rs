@@ -101,6 +101,7 @@ jobs:
         AWS_DEFAULT_REGION: eu-west-2
         LOCALSTACK_HOSTNAME: localstack
         USE_AZURITE: true
+        MINIO_URL: http://minio:9000
         STORAGE_ACCOUNT: devstoreaccount1
         # https://learn.microsoft.com/en-us/azure/storage/common/storage-use-azurite?tabs=visual-studio%2Cblob-storage#well-known-storage-account-and-key
         STORAGE_ACCESS_KEY: ${{ secrets.STORAGE_ACCESS_KEY }} # This is a dummy key but has a value which matches the form of actual key as per Azurite docs. Hence I have set it as GITHUB secrets.
