@@ -76,7 +76,7 @@ should be of supported types and follow the naming convention  `<model_framework
 Use the curl commands to make predictions
 
 ```
-curl --location '0.0.0.0:3001/api/predict' \
+curl --location '0.0.0.0:3000/api/predict' \
 --header 'Content-Type: application/json' \
 --header 'Accept: application/json' \
 --data '{
@@ -86,7 +86,7 @@ curl --location '0.0.0.0:3001/api/predict' \
 ```
 
 ```
-curl --location '0.0.0.0:3001/api/predict' \
+curl --location '0.0.0.0:3000/api/predict' \
 --header 'Content-Type: application/json' \
 --header 'Accept: application/json' \
 --data '{
