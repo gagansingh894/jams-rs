@@ -14,6 +14,19 @@ services:
       - /temp
       - --console-address
       - ":9001"
+  createbucket:
+    image: minio/mc
+    volumes:
+      - ./models:/models  # Ensure this points to the correct models directory on the host
+    depends_on:
+      - minio
+    entrypoint: >
+      /bin/sh -c "
+      sleep 5 && mc alias set myminio http://minio:9000 minioadmin minioadmin && 
+      mc mb myminio/jamsmodelstore && 
+      mc cp /models/* myminio/jamsmodelstore/;
+      exit 0;
+      "
   #   JAMS
   jams-http:
     image: gagansingh894/jams:latest
@@ -26,10 +39,10 @@ services:
       - MINIO_ROOT_USER=minioadmin  # Default access key for MinIO
       - MINIO_ROOT_PASSWORD=minioadmin  # Default secret key for MinIO
       - S3_BUCKET_NAME=jamsmodelstore
-
     depends_on:
-      - localstack
-    command: ["start", "http", "--with-s3-model-store=true"]
+      - minio
+      - createbucket
+    command: ["start", "http", "--model-store=minio"]
   jams-grpc:
     image: gagansingh894/jams:latest
     ports:
@@ -42,5 +55,6 @@ services:
       - MINIO_ROOT_PASSWORD=minioadmin  # Default secret key for MinIO
       - S3_BUCKET_NAME=jamsmodelstore
     depends_on:
-      - localstack
-    command: ["start", "grpc", "--with-s3-model-store=true"]
+      - minio
+      - createbucket
+    command: ["start", "grpc", "--model-store=minio"]

@@ -23,6 +23,7 @@ Although you may be able to run models trained on version <= 2.2.0**
   - Local File System
   - AWS S3
   - Azure Blob Storage
+  - MinIO
 - Thin & Fast API Layer
   - HTTP via Axum
   - gRPC via Tonic
@@ -39,13 +40,67 @@ Although you may be able to run models trained on version <= 2.2.0**
 ---
 
 ## Docker Setup
-J.A.M.S is also on [DockerHub](https://hub.docker.com/r/gagansingh894/jams).
+J.A.M.S is hosted on [DockerHub](https://hub.docker.com/r/gagansingh894/jams).
 
 `docker pull gagansingh894/jams`
 
-The easiest way to start J.A.M.S is by providing a config TOML file
+##### Docker Compose
 
-##### Config File
+Ensure that you have `docker compose` installed on your system. Please follow instructions [here](https://docs.docker.com/compose/install/)
+
+**Note: If you are on Apple Silicon, please disable `Use Rosetta for x86_64/amd64 emulation on Apple Silicon` option under settings**
+
+To quickly get started running with `J.A.M.S`, please run the following commands
+
+1. Execute bash script
+
+The script creates a jams-playground directory with a subdirectory models, and then downloads a Docker Compose configuration file and several machine learning model files from a GitHub repository into the respective directories. It runs with superuser privileges using sudo to ensure necessary permissions for directory creation and file downloads.
+
+```
+sudo bash -c 'mkdir -p jams-playground/models && \
+wget -q -O jams-playground/docker-compose-http-grpc-minio.yml https://raw.githubusercontent.com/gagansingh894/jams-rs/main/build/docker-compose-http-grpc-minio.yml && \
+wget -q -O jams-playground/models/catboost-titanic_model.tar.gz https://github.com/gagansingh894/jams-rs/raw/main/jams-serve/tests/model_store/catboost-titanic_model.tar.gz && \
+wget -q -O jams-playground/models/lightgbm-my_awesome_reg_model.tar.gz https://github.com/gagansingh894/jams-rs/raw/main/jams-serve/tests/model_store/lightgbm-my_awesome_reg_model.tar.gz && \
+wget -q -O jams-playground/models/pytorch-my_awesome_californiahousing_model.tar.gz https://github.com/gagansingh894/jams-rs/raw/main/jams-serve/tests/model_store/pytorch-my_awesome_californiahousing_model.tar.gz && \
+wget -q -O jams-playground/models/tensorflow-my_awesome_penguin_model.tar.gz https://github.com/gagansingh894/jams-rs/raw/main/jams-serve/tests/model_store/tensorflow-my_awesome_penguin_model.tar.gz'
+```
+2. Run docker compose
+```
+docker compose -f jams-playground/docker-compose-http-grpc-minio.yml up
+```
+
+If everything works fine, this should start a `minio` server with some preloaded models as model store, `J.A.M.S http` and `J.A.M.S grpc` server for
+making predictions. You can add new models by uploading them directly to `minio` via UI (http://0.0.0.0:9001). The models
+should be of supported types and follow the naming convention  `<model_framework>-model_name.tar.gz`.
+
+Use the curl commands to make predictions
+
+```
+curl --location '0.0.0.0:3001/api/predict' \
+--header 'Content-Type: application/json' \
+--header 'Accept: application/json' \
+--data '{
+  "model_name": "my_awesome_penguin_model",
+  "input": "{\"island\":[2.0,2.0,2.0,2.0,2.0],\"bill_length_mm\":[39.1,39.5,40.3,36.7,39.3],\"bill_depth_mm\":[18.7,17.4,18.0,19.3,20.6],\"flipper_length_mm\":[181.0,186.0,195.0,193.0,190.0],\"body_mass_g\":[3750.0,3800.0,3250.0,3450.0,3650.0],\"sex\":[1.0,0.0,0.0,0.0,1.0]}"
+}'
+```
+
+```
+curl --location '0.0.0.0:3001/api/predict' \
+--header 'Content-Type: application/json' \
+--header 'Accept: application/json' \
+--data '{
+  "model_name": "titanic_model",
+  "input": "{\"adult_male\":[\"True\",\"False\"],\"age\":[22.0,23.79929292929293],\"alone\":[\"True\",\"False\"],\"class\":[\"First\",\"Third\"],\"deck\":[\"Unknown\",\"Unknown\"],\"embark_town\":[\"Southampton\",\"Cherbourg\"],\"embarked\":[\"S\",\"C\"],\"fare\":[151.55,14.4542],\"parch\":[\"0\",\"0\"],\"pclass\":[\"1\",\"3\"],\"sex\":[\"male\",\"female\"],\"sibsp\":[\"0\",\"1\"],\"who\":[\"man\",\"woman\"]}"
+}'
+```
+
+Alternatively, you can use Postman or equivalent.
+
+
+### Config File
+
+The easiest way to start J.A.M.S is by providing a config TOML file
 ```
 [config]
 protocol = "http"                               # Specifies the protocol to be used by the server.
@@ -87,39 +142,42 @@ Then Run
 docker run --rm -v /your/path/to/model_store:/model_store -p 3000:3000 gagansingh894/jams start -f config.toml
 ```
 
-There are other ways to start J.A.M.S. 
-Please follow the following commands to start the server inside docker. 
+
+
+There are other ways to start J.A.M.S.
+Please follow the following commands to start the server inside docker.
 
 If you want to disable polling, then do not pass `--poll-interval`
 
 To run HTTP server, use
 ```
-docker run --rm -v /your/path/to/model_store:/model_store -p 3000:3000 gagansingh894/jams start http --poll-interval 3600
+docker run --rm -v /your/path/to/model_store:/model_store -p 3000:3000 gagansingh894/jams start http --model-dir local --poll-interval 3600
 ```
 
 To run gRPC server, use
 ```
-docker run --rm -v /your/path/to/model_store:/model_store -p 4000:4000 gagansingh894/jams start grpc --poll-interval 3600
+docker run --rm -v /your/path/to/model_store:/model_store -p 4000:4000 gagansingh894/jams start grpc --model-store=local --poll-interval 3600
 ```
 
-### To run with a S3 backend
+### To run with a S3/MinIo backend
 - Create a S3 bucket with some models in it. Please refer to the structure of model store [here](https://github.com/gagansingh894/jams-rs?tab=readme-ov-file#model-store).
 - Set the environment variables - `AWS_REGION`, `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`. Alternatively if you have multiple AWS profiles then just set the `AWS_PROFILE-<profile_name>`
   You also need to set the bucket name. This can either be set via `S3_BUCKET_NAME` env variable or passed via `--s3-bucket-name` flag
+- If using `minio`, you will need to set these environment variables in addition to the above = `MINIO_ACCESS_KEY_ID`, `MINIO_SECRET_ACCESS_KEY` and `MINIO_URL`. The default values are `minioadmin` and `http://0.0.0.0:9000` respectively
 - Run the command to start HTTP server with S3 model store. It assumes that bucket name is already set via `S3_BUCKET_NAME`
 
 ```
-docker run --rm -p 3000:3000 gagansingh894/jams start http --with-s3-model-store=true --poll-interval 3600
+docker run --rm -p 3000:3000 gagansingh894/jams start http --model-store=<aws|minio> --poll-interval 3600
 ```
 
 - For gRPC server, use
 ```
-docker run --rm -p 4000:4000 gagansingh894/jams start grpc --with-s3-model-store=true --poll-interval 3600
+docker run --rm -p 4000:4000 gagansingh894/jams start grpc --model-store=<aws|minio> --poll-interval 3600
 ```
 
 - If you want to pass bucket name, use
 ```
-docker run --rm -p 3000:3000 gagansingh894/jams start http --with-s3-model-store=true --s3-bucket-name=<bucket_name>
+docker run --rm -p 3000:3000 gagansingh894/jams start http --model-store=<aws|minio> --s3-bucket-name=<bucket_name>
 ```
 
 ### To run with a Azure Blob Storage backend
@@ -128,23 +186,23 @@ docker run --rm -p 3000:3000 gagansingh894/jams start http --with-s3-model-store
 - Run the command to start HTTP server with Azure model store. It assumes that container name is already set via `AZURE_STORAGE_CONTAINER_NAME`
 
 ```
-docker run --rm -p 3000:3000 gagansingh894/jams start http --with-azure-model-store=true --poll-interval 3600
+docker run --rm -p 3000:3000 gagansingh894/jams start http --model-store=azure --poll-interval 3600
 ```
 
 - For gRPC server, use
 ```
-docker run --rm -p 4000:4000 gagansingh894/jams start grpc --with-azure-model-store=true --poll-interval 3600
+docker run --rm -p 4000:4000 gagansingh894/jams start grpc --model-store=azure --poll-interval 3600
 ```
 
 - If you want to pass container name, use
 ```
-docker run --rm -p 3000:3000 gagansingh894/jams start http --with-azure-model-store=true --azure-storage-container-name=<container_name> --poll-interval 3600
+docker run --rm -p 3000:3000 gagansingh894/jams start http --model-store=azure --azure-storage-container-name=<container_name> --poll-interval 3600
 ```
 
 Please refer to [OpenAPI Spec](https://github.com/gagansingh894/jams-rs/blob/main/openapi.yml) for API endpoints.
-
 Alternatively, you can also refer to the [proto definition](https://github.com/gagansingh894/jams-rs/blob/main/internal/jams-proto/proto/api/v1/jams.proto).
 
+---
 ---
 
 ## Local Setup

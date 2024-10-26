@@ -36,7 +36,7 @@ services:
           - AZURE_STORAGE_CONTAINER_NAME=jamsmodelstore
     depends_on:
           - azurite
-    command: ["start", "http", "--with-azure-model-store=true"]
+    command: ["start", "http", "--model-store=azure"]
   jams-grpc:
     image: gagansingh894/jams:latest
     ports:
@@ -50,4 +50,4 @@ services:
           - AZURE_STORAGE_CONTAINER_NAME=jamsmodelstore
     depends_on:
           - azurite
-    command: ["start", "grpc", "--with-azure-model-store=true"]
+    command: ["start", "grpc", "--model-store=azure"]

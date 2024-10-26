@@ -7,7 +7,7 @@ use std::fs;
 #[derive(Parser, Debug)]
 #[clap(
     name = "J.A.M.S - Just Another Model Server",
-    version = "0.1.22",
+    version = "0.1.23",
     author = "Gagandeep Singh",
     about = "J.A.M.S aims to provide a fast, comprehensive and modular serving solution for tree based and deep learning models written in Rust 🦀"
 )]

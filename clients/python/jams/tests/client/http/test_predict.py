@@ -1,4 +1,5 @@
 import json
+import pytest
 
 from src.jamspy.client import http
 from src.jamspy.client.models import common
@@ -6,7 +7,8 @@ from src.jamspy.client.models import common
 from tests.client.helper import get_http_url
 
 
-def test_successfully_makes_predict_request() -> None:
+@pytest.mark.asyncio
+async def test_successfully_makes_predict_request() -> None:
     # Arrange
     base_url = get_http_url()
     http_client = http.Client(base_url)
@@ -33,7 +35,7 @@ def test_successfully_makes_predict_request() -> None:
             "alone": ["True", "False"],
         }
     )
-    resp = http_client.predict(model_name=model_name, model_input=model_input)
+    resp = await http_client.predict(model_name=model_name, model_input=model_input)
 
     # Assert
     # If the function errors out then we can assume the test has failed

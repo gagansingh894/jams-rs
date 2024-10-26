@@ -364,7 +364,7 @@ pub async fn load_predictor(
 /// * `Some(ModelFramework)` if a matching framework identifier is found in the model path.
 /// * `None` if no matching framework identifier is found.
 ///
-pub fn extract_framework_from_path(model_path: String) -> Option<ModelFramework> {
+pub fn extract_framework(model_path: String) -> Option<ModelFramework> {
     if model_path.contains(TENSORFLOW) {
         Some(TENSORFLOW)
     } else if model_path.contains(PYTORCH) {
@@ -517,7 +517,7 @@ mod tests {
     fn successfully_extract_framework_from_path_when_tensorflow_framework() {
         let path = "model/directory/tensorflow-my_model";
 
-        let result = extract_framework_from_path(path.to_string());
+        let result = extract_framework(path.to_string());
 
         // assert
         assert!(result.is_some());
@@ -528,7 +528,7 @@ mod tests {
     fn successfully_extract_framework_from_path_when_torch_framework() {
         let path = "model/directory/torch-my_model";
 
-        let result = extract_framework_from_path(path.to_string());
+        let result = extract_framework(path.to_string());
 
         // assert
         assert!(result.is_some());
@@ -539,7 +539,7 @@ mod tests {
     fn successfully_extract_framework_from_path_when_pytorch_framework() {
         let path = "model/directory/pytorch-my_model";
 
-        let result = extract_framework_from_path(path.to_string());
+        let result = extract_framework(path.to_string());
 
         // assert
         assert!(result.is_some());
@@ -550,7 +550,7 @@ mod tests {
     fn successfully_extract_framework_from_path_when_lightgbm_framework() {
         let path = "model/directory/lightgbm-my_model";
 
-        let result = extract_framework_from_path(path.to_string());
+        let result = extract_framework(path.to_string());
 
         // assert
         assert!(result.is_some());
@@ -561,7 +561,7 @@ mod tests {
     fn successfully_extract_framework_from_path_when_catboost_framework() {
         let path = "model/directory/catboost-my_model";
 
-        let result = extract_framework_from_path(path.to_string());
+        let result = extract_framework(path.to_string());
 
         // assert
         assert!(result.is_some());
@@ -572,7 +572,7 @@ mod tests {
     fn fails_to_extract_framework_from_path_when_unknown_framework() {
         let path = "model/directory/fbprophet-my_model";
 
-        let result = extract_framework_from_path(path.to_string());
+        let result = extract_framework(path.to_string());
 
         // assert
         assert!(result.is_none());
