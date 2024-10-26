@@ -172,6 +172,7 @@ impl Values {
             .map(|v| {
                 Ok(match v.as_string() {
                     None => {
+                        tracing::error!("Failed to convert Values to strings ❌");
                         anyhow::bail!("Failed to convert Values to strings ❌")
                     }
                     Some(v) => v.to_string(),
@@ -190,6 +191,7 @@ impl Values {
             .map(|v| {
                 Ok(match v.as_int() {
                     None => {
+                        tracing::error!("Failed to convert Values to ints ❌");
                         anyhow::bail!("Failed to convert Values to ints ❌")
                     }
                     Some(v) => v,
@@ -208,6 +210,7 @@ impl Values {
             .map(|v| {
                 Ok(match v.as_float() {
                     None => {
+                        tracing::error!("Failed to convert Values to floats ❌");
                         anyhow::bail!("Failed to convert Values to floats ❌")
                     }
                     Some(v) => v,
@@ -277,6 +280,7 @@ fn parse_json_serde_value(json: serde_json::Value) -> anyhow::Result<HashMap<Fea
 
     let json_object = match json.as_object() {
         None => {
+            tracing::error!("Failed to convert JSON input to JSON map ❌");
             anyhow::bail!("Failed to convert JSON input to JSON map ❌")
         }
         Some(json_object) => json_object,
@@ -288,6 +292,7 @@ fn parse_json_serde_value(json: serde_json::Value) -> anyhow::Result<HashMap<Fea
         // validate value is an array
         let vec = match values.as_array() {
             None => {
+                tracing::error!("Failed to cast serde json value to array.");
                 anyhow::bail!("Failed to cast serde json value to array.");
             }
             Some(vec) => vec,
@@ -295,6 +300,7 @@ fn parse_json_serde_value(json: serde_json::Value) -> anyhow::Result<HashMap<Fea
 
         let first = match vec.first() {
             None => {
+                tracing::error!("Failed to get the first element from the array");
                 anyhow::bail!("Failed to get the first element from the array");
             }
             Some(first) => first,
@@ -319,6 +325,7 @@ fn parse_json_serde_value(json: serde_json::Value) -> anyhow::Result<HashMap<Fea
                 .collect();
             model_input.insert(feature_name, Values(feature_values));
         } else {
+            tracing::error!("Unsupported format in input json");
             anyhow::bail!("Unsupported format in input json");
         }
     }

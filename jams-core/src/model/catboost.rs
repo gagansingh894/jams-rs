@@ -33,6 +33,7 @@ impl CatboostModelInput {
             // get the value type
             let first = match values.0.first() {
                 None => {
+                    tracing::error!("The values vector is empty");
                     anyhow::bail!("The values vector is empty")
                 }
                 Some(v) => v,
@@ -85,10 +86,12 @@ fn create_catboost_model_inputs(
             for (j, col) in row.iter_mut().enumerate() {
                 let val = match categorical_features.get(i) {
                     None => {
+                        tracing::error!("Incorrect input ❌");
                         anyhow::bail!("Incorrect input ❌");
                     }
                     Some(ith) => match ith.get(j) {
                         None => {
+                            tracing::error!("Incorrect input ❌");
                             anyhow::bail!("Incorrect input ❌");
                         }
                         Some(val) => val,
@@ -105,10 +108,12 @@ fn create_catboost_model_inputs(
             for (j, col) in row.iter_mut().enumerate() {
                 let val = match numeric_features.get(i) {
                     None => {
+                        tracing::error!("Incorrect input ❌");
                         anyhow::bail!("Incorrect input ❌");
                     }
                     Some(ith) => match ith.get(j) {
                         None => {
+                            tracing::error!("Incorrect input ❌");
                             anyhow::bail!("Incorrect input ❌");
                         }
                         Some(val) => val,
@@ -175,6 +180,7 @@ impl Catboost {
         let model = match catboost_rs::Model::load(path) {
             Ok(model) => model,
             Err(e) => {
+                tracing::error!("Failed to load Catboost model from file {}: {}", path, e);
                 anyhow::bail!("Failed to load Catboost model from file {}: {}", path, e)
             }
         };
@@ -203,10 +209,17 @@ impl Predictor for Catboost {
                 let predictions: Vec<Vec<f64>> = predictions.into_iter().map(|v| vec![v]).collect();
                 Ok(Output { predictions })
             }
-            Err(e) => anyhow::bail!(
-                "Failed to make predictions using Catboost model: {}",
-                e.to_string()
-            ),
+            Err(e) => {
+                tracing::error!(
+                    "Failed to make predictions using Catboost model: {}",
+                    e.to_string()
+                );
+
+                anyhow::bail!(
+                    "Failed to make predictions using Catboost model: {}",
+                    e.to_string()
+                )
+            }
         }
     }
 }

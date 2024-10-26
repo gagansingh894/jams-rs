@@ -139,6 +139,7 @@ pub async fn load_models(model_dir: String) -> anyhow::Result<DashMap<ModelName,
             while let Ok(Some(entry)) = dir.next_entry().await {
                 let file_path = match entry.path().to_str() {
                     None => {
+                        tracing::error!("Failed to convert PathBuf to str ❌");
                         anyhow::bail!("Failed to convert PathBuf to str ❌")
                     }
                     Some(file_path) => file_path.to_string(),
@@ -146,6 +147,7 @@ pub async fn load_models(model_dir: String) -> anyhow::Result<DashMap<ModelName,
                 let file_name = match entry.file_name().into_string() {
                     Ok(file_name) => file_name,
                     Err(_) => {
+                        tracing::error!("Failed to convert OsString to String ❌");
                         anyhow::bail!("Failed to convert OsString to String ❌")
                     }
                 };
@@ -154,6 +156,11 @@ pub async fn load_models(model_dir: String) -> anyhow::Result<DashMap<ModelName,
                     let prefix = format!("{}-", TENSORFLOW);
                     match file_name.to_string().strip_prefix(&prefix) {
                         None => {
+                            tracing::error!(
+                                "Failed to strip prefix {} from file name {}",
+                                prefix,
+                                file_name
+                            );
                             anyhow::bail!(
                                 "Failed to strip prefix {} from file name {}",
                                 prefix,
@@ -184,6 +191,11 @@ pub async fn load_models(model_dir: String) -> anyhow::Result<DashMap<ModelName,
                             let prefix = format!("{}-", PYTORCH);
                             match file_name.to_string().strip_prefix(&prefix) {
                                 None => {
+                                    tracing::error!(
+                                        "Failed to strip prefix {} from file name {}",
+                                        prefix,
+                                        file_name
+                                    );
                                     anyhow::bail!(
                                         "Failed to strip prefix {} from file name {}",
                                         prefix,
@@ -228,6 +240,11 @@ pub async fn load_models(model_dir: String) -> anyhow::Result<DashMap<ModelName,
                     let prefix = format!("{}-", CATBOOST);
                     match file_name.to_string().strip_prefix(&prefix) {
                         None => {
+                            tracing::error!(
+                                "Failed to strip prefix {} from file name {}",
+                                prefix,
+                                file_name
+                            );
                             anyhow::bail!(
                                 "Failed to strip prefix {} from file name {}",
                                 prefix,
@@ -253,6 +270,11 @@ pub async fn load_models(model_dir: String) -> anyhow::Result<DashMap<ModelName,
                     let prefix = format!("{}-", LIGHTGBM);
                     match file_name.to_string().strip_prefix(&prefix) {
                         None => {
+                            tracing::error!(
+                                "Failed to strip prefix {} from file name {}",
+                                prefix,
+                                file_name
+                            );
                             anyhow::bail!(
                                 "Failed to strip prefix {} from file name {}",
                                 prefix,
@@ -283,6 +305,11 @@ pub async fn load_models(model_dir: String) -> anyhow::Result<DashMap<ModelName,
             }
         }
         Err(e) => {
+            tracing::error!(
+                "Failed to read directory {} ❌: {}",
+                model_dir,
+                e.to_string()
+            );
             anyhow::bail!(
                 "Failed to read directory {} ❌: {}",
                 model_dir,
@@ -321,6 +348,7 @@ pub async fn load_predictor(
         match model::tensorflow::Tensorflow::load(model_path) {
             Ok(predictor) => Ok(Arc::new(predictor)),
             Err(e) => {
+                tracing::error!("Failed to load Tensorflow model: {}", e);
                 anyhow::bail!("Failed to load Tensorflow model: {}", e)
             }
         }
@@ -328,6 +356,7 @@ pub async fn load_predictor(
         match model::torch::Torch::load(model_path) {
             Ok(predictor) => Ok(Arc::new(predictor)),
             Err(e) => {
+                tracing::error!("Failed to load Torch model: {}", e);
                 anyhow::bail!("Failed to load Torch model: {}", e)
             }
         }
@@ -335,6 +364,7 @@ pub async fn load_predictor(
         match model::catboost::Catboost::load(model_path) {
             Ok(predictor) => Ok(Arc::new(predictor)),
             Err(e) => {
+                tracing::error!("Failed to load Catboost model: {}", e);
                 anyhow::bail!("Failed to load Catboost model: {}", e)
             }
         }
@@ -342,10 +372,12 @@ pub async fn load_predictor(
         match model::lightgbm::LightGBM::load(model_path) {
             Ok(predictor) => Ok(Arc::new(predictor)),
             Err(e) => {
+                tracing::error!("Failed to load LightGBM model: {}", e);
                 anyhow::bail!("Failed to load LightGBM model: {}", e)
             }
         }
     } else {
+        tracing::error!("unsupported model framework: {}", model_framework);
         anyhow::bail!("unsupported model framework: {}", model_framework)
     }
 }

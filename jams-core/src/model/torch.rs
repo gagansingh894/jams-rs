@@ -34,6 +34,7 @@ impl TorchModelInput {
                     // int and float are pushed to separate of type Vec<f32>
                     match first {
                         Value::String(_) => {
+                            tracing::error!("not supported string tensors");
                             anyhow::bail!("not supported string tensors")
                         }
                         Value::Int(_) => {
@@ -48,6 +49,7 @@ impl TorchModelInput {
                     }
                 }
                 None => {
+                    tracing::error!("failed to get first value ❌");
                     anyhow::bail!("failed to get first value ❌")
                 }
             }
@@ -81,6 +83,12 @@ impl Torch {
         let model = match CModule::load(path) {
             Ok(model) => model,
             Err(e) => {
+                tracing::error!(
+                    "Failed to load pytorch model from file {}: {}",
+                    path,
+                    e.to_string()
+                );
+
                 anyhow::bail!(
                     "Failed to load pytorch model from file {}: {}",
                     path,
@@ -110,10 +118,17 @@ impl Predictor for Torch {
                 let predictions: Vec<Vec<f64>> = predictions.try_into()?;
                 Ok(Output { predictions })
             }
-            Err(e) => anyhow::bail!(
-                "Failed to make predictions using Torch model: {}",
-                e.to_string()
-            ),
+            Err(e) => {
+                tracing::error!(
+                    "Failed to make predictions using Torch model: {}",
+                    e.to_string()
+                );
+
+                anyhow::bail!(
+                    "Failed to make predictions using Torch model: {}",
+                    e.to_string()
+                )
+            }
         }
     }
 }

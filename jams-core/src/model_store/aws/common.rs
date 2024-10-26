@@ -36,11 +36,13 @@ pub async fn download_objects(
     let dir = match tempfile::Builder::new().prefix("models").tempdir() {
         Ok(dir) => dir,
         Err(e) => {
+            tracing::error!("Failed to create temporary directory ❌: {}", e.to_string());
             anyhow::bail!("Failed to create temporary directory ❌: {}", e.to_string());
         }
     };
     let temp_path = match dir.path().to_str() {
         None => {
+            tracing::error!("failed to convert path to str ❌");
             anyhow::bail!("failed to convert path to str ❌")
         }
         Some(path) => path,
@@ -86,11 +88,12 @@ pub async fn download_objects(
                 }
             }
             Err(e) => {
-                anyhow::bail!(
+                tracing::error!(
                     "Failed to get object key: {} from S3 ⚠️: {}",
                     object_key,
                     e.into_service_error()
-                )
+                );
+                anyhow::bail!("Failed to get object key: {} from S3 ⚠️", object_key,)
             }
         }
     }

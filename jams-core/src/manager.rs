@@ -102,6 +102,7 @@ impl Manager {
         let model = self.model_store.get_model(model_name.clone());
         match model {
             None => {
+                tracing::error!("No model exists for model name: {}", &model_name);
                 anyhow::bail!("No model exists for model name: {}", &model_name);
             }
             Some(model) => {
@@ -112,6 +113,7 @@ impl Manager {
                         let output = match model.predictor.predict(input) {
                             Ok(output) => output,
                             Err(e) => {
+                                tracing::error!("Failed to make predictions: {}", e.to_string());
                                 anyhow::bail!("Failed to make predictions: {}", e.to_string());
                             }
                         };
@@ -120,11 +122,13 @@ impl Manager {
                         match serde_json::to_string(&output) {
                             Ok(json) => Ok(json),
                             Err(e) => {
+                                tracing::error!("Failed to parse predictions: {}", e.to_string());
                                 anyhow::bail!("Failed to parse predictions: {}", e.to_string());
                             }
                         }
                     }
                     Err(e) => {
+                        tracing::error!("Failed to parse input: {}", e.to_string());
                         anyhow::bail!("Failed to parse input: {}", e.to_string());
                     }
                 }

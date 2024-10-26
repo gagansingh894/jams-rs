@@ -16,6 +16,7 @@ impl Fetcher for aws_sdk_s3::client::Client {
     async fn is_empty(&self, artefacts_dir_name: Option<String>) -> anyhow::Result<bool> {
         let keys = match artefacts_dir_name {
             None => {
+                tracing::error!("S3 bucket name not provided ❌.");
                 anyhow::bail!("S3 bucket name not provided ❌.")
             }
             Some(s3_bucket_name) => get_keys(self, s3_bucket_name).await?,
@@ -41,6 +42,7 @@ impl Fetcher for aws_sdk_s3::client::Client {
     ) -> anyhow::Result<DashMap<ModelName, Arc<Model>>> {
         let s3_bucket_name = match artefacts_dir_name {
             None => {
+                tracing::error!("S3 bucket name not provided ❌.");
                 anyhow::bail!("S3 bucket name not provided ❌.")
             }
             Some(name) => name,
@@ -115,11 +117,12 @@ async fn get_keys(client: &s3::Client, bucket_name: String) -> anyhow::Result<Ve
                 }
             },
             Err(e) => {
-                anyhow::bail!(
+                tracing::error!(
                     "Failed to list objects in the {} bucket: {}",
                     bucket_name,
                     e.into_service_error()
-                )
+                );
+                anyhow::bail!("Failed to list objects in the {} bucket", bucket_name,)
             }
         }
     }

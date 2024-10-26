@@ -57,6 +57,7 @@ impl LocalModelStore {
         {
             Ok(models) => models,
             Err(e) => {
+                tracing::error!("Failed to load models - {} ❌", e.to_string());
                 anyhow::bail!("Failed to load models - {} ❌", e.to_string());
             }
         };
@@ -115,6 +116,7 @@ impl Storage for LocalModelStore {
         // Extract model framework
         let model_framework = match extract_framework(model_name.clone()) {
             None => {
+                tracing::error!("Failed to extract framework from path");
                 anyhow::bail!("Failed to extract framework from path");
             }
             Some(model_framework) => model_framework,
@@ -130,6 +132,7 @@ impl Storage for LocalModelStore {
                 let sanitized_model_name =
                     match model_name.strip_prefix(format!("{}-", model_framework).as_str()) {
                         None => {
+                            tracing::error!("Failed to sanitize model name");
                             anyhow::bail!("Failed to sanitize model name");
                         }
                         Some(name) => name.to_string(),
@@ -147,6 +150,7 @@ impl Storage for LocalModelStore {
                 Ok(())
             }
             Err(e) => {
+                tracing::error!("Failed to add new model: {e}");
                 anyhow::bail!("Failed to add new model: {e}")
             }
         }
@@ -173,6 +177,10 @@ impl Storage for LocalModelStore {
         // We use the returned object, in this case the model to extract the framework and model path
         match self.models.remove(model_name.as_str()) {
             None => {
+                tracing::error!(
+                    "Failed to update as the specified model {} does not exist",
+                    model_name
+                );
                 anyhow::bail!(
                     "Failed to update as the specified model {} does not exist",
                     model_name
@@ -202,6 +210,11 @@ impl Storage for LocalModelStore {
                             Ok(())
                         }
                         Err(e) => {
+                            tracing::error!(
+                                "Failed to update the specified model {}: {}",
+                                model_name,
+                                e
+                            );
                             anyhow::bail!(
                                 "Failed to update the specified model {}: {}",
                                 model_name,
@@ -210,6 +223,7 @@ impl Storage for LocalModelStore {
                         }
                     },
                     Err(e) => {
+                        tracing::error!("Failed to update model ❌: {}", e);
                         anyhow::bail!("Failed to update model ❌: {}", e);
                     }
                 }
@@ -269,6 +283,10 @@ impl Storage for LocalModelStore {
     fn delete_model(&self, model_name: ModelName) -> anyhow::Result<()> {
         match self.models.remove(&model_name) {
             None => {
+                tracing::error!(
+                    "Failed to delete model as the specified model {} does not exist",
+                    model_name
+                );
                 anyhow::bail!(
                     "Failed to delete model as the specified model {} does not exist",
                     model_name
@@ -311,6 +329,7 @@ impl Storage for LocalModelStore {
                 models
             }
             Err(e) => {
+                tracing::error!("Failed to fetch models ❌ - {}", e.to_string());
                 anyhow::bail!("Failed to fetch models ❌ - {}", e.to_string());
             }
         };
@@ -358,6 +377,7 @@ async fn fetch_models(
                         let path = entry.path();
                         let tarball_path = match path.to_str() {
                             None => {
+                                tracing::error!("failed to convert file path to str ❌");
                                 anyhow::bail!("failed to convert file path to str ❌")
                             }
                             Some(path) => path,
@@ -366,6 +386,7 @@ async fn fetch_models(
                     }
                 }
                 Err(e) => {
+                    tracing::error!("Failed to read directory: {}", e);
                     anyhow::bail!("Failed to read directory: {}", e)
                 }
             }
@@ -373,7 +394,8 @@ async fn fetch_models(
             match load_models(temp_model_dir.clone()).await {
                 Ok(models) => Ok(models),
                 Err(e) => {
-                    anyhow::bail!("Failed to fetch models - {}", e.to_string());
+                    tracing::error!("Failed to fetch models - {}", e.to_string());
+                    anyhow::bail!("Failed to fetch models - {}", e.to_string())
                 }
             }
         }

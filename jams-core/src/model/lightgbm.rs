@@ -43,6 +43,7 @@ impl LightGBMModelInput {
                     // int and float are pushed to separate of type Vec<f32>
                     match first {
                         Value::String(_) => {
+                            tracing::error!("string type as input feature is not supported");
                             anyhow::bail!("string type as input feature is not supported")
                         }
                         Value::Int(_) => {
@@ -57,12 +58,14 @@ impl LightGBMModelInput {
                     }
                 }
                 None => {
+                    tracing::error!("failed to get first value ❌");
                     anyhow::bail!("failed to get first value ❌")
                 }
             }
         }
 
         if numerical_features.is_empty() {
+            tracing::error!("input is empty");
             anyhow::bail!("input is empty")
         }
 
@@ -105,6 +108,7 @@ impl LightGBM {
         let model = match lgbm::Booster::from_file(path.as_ref()) {
             Ok(model) => model,
             Err(e) => {
+                tracing::error!("Failed to load LightGBM model from file {}: {}", path, e);
                 anyhow::bail!("Failed to load LightGBM model from file {}: {}", path, e);
             }
         };
@@ -136,7 +140,10 @@ impl Predictor for LightGBM {
                     predictions.values().iter().map(|v| vec![*v]).collect();
                 Ok(Output { predictions })
             }
-            Err(e) => anyhow::bail!("Failed to make predictions using LightGBM: {}", e),
+            Err(e) => {
+                tracing::error!("Failed to make predictions using LightGBM: {}", e);
+                anyhow::bail!("Failed to make predictions using LightGBM: {}", e)
+            }
         }
     }
 }
