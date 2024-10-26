@@ -5,7 +5,6 @@ use crate::http::service::{
 use axum::routing::{delete, get, post, put};
 use axum::Router;
 use std::sync::Arc;
-use tower_http::trace::TraceLayer;
 
 pub fn build_router(shared_state: Arc<AppState>) -> anyhow::Result<Router> {
     // API routes

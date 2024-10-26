@@ -1,6 +1,6 @@
-use crate::common::server;
 use crate::common::shutdown::shutdown_signal;
 use crate::common::state::build_app_state_from_config;
+use crate::common::{instrument, server};
 use crate::http::router::build_router;
 
 /// Starts the HTTP server with the provided configuration.
@@ -38,12 +38,17 @@ pub async fn start(config: server::Config) -> anyhow::Result<()> {
         log_level = tracing::Level::TRACE
     }
 
-    // initialize tracing
-    tracing_subscriber::fmt()
-        .with_line_number(true)
-        .with_max_level(log_level)
-        .pretty()
-        .init();
+    // try to setup tracing using jaegar
+    match instrument::jaeger::init() {
+        Ok(_) => {
+            log::info!("Connected to tracing exporter ℹ️");
+        }
+        Err(_) => {
+            log::warn!("Failed to start tracing with Jaegar. Falling back to simple tracing ⚠");
+            // on error fail back to simple
+            instrument::simple::init(log_level)
+        }
+    }
 
     // setup shared state
     let shared_state = match build_app_state_from_config(config).await {
