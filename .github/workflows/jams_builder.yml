@@ -32,4 +32,4 @@ jobs:
         run: docker build -t ${{ secrets.DOCKER_USERNAME }}/jams_builder:latest -f build/Dockerfile_builder .
 
       - name: Push Docker image
-        run: docker push ${{ secrets.DOCKER_USERNAME }}/jams_builder:latest:latest
+        run: docker push ${{ secrets.DOCKER_USERNAME }}/jams_builder:latest
