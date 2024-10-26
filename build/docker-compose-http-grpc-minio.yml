@@ -22,7 +22,7 @@ services:
       - minio
     entrypoint: >
       /bin/sh -c "
-      sleep 5 && mc alias set myminio http://minio:9000 minioadmin minioadmin && 
+      sleep 2 && mc alias set myminio http://minio:9000 minioadmin minioadmin && 
       mc mb myminio/jamsmodelstore && 
       mc cp /models/* myminio/jamsmodelstore/;
       exit 0;
@@ -44,6 +44,7 @@ services:
       - minio
       - createbucket
     command: ["start", "http", "--model-store=minio"]
+    restart: on-failure
   jams-grpc:
     image: gagansingh894/jams:latest
     ports:
@@ -60,3 +61,4 @@ services:
       - minio
       - createbucket
     command: ["start", "grpc", "--model-store=minio"]
+    restart: on-failure
