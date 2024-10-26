@@ -14,12 +14,12 @@ RUN apt-get update && \
         && \
     rm -rf /var/lib/apt/lists/*
 
-# Clone the repo
-RUN git clone https://github.com/gagansingh894/jams-rs.git
-WORKDIR /jams-rs
+# Install build dependencies
+RUN wget -q https://raw.githubusercontent.com/gagansingh894/jams-rs/refs/heads/main/build/setup_environment_linux_x86_64.sh && \
+    chmod +x ./setup_environment_linux_x86_64
 
 # Install build dependencies
-RUN build/setup_environment_linux_x86_64.sh
+RUN ./setup_environment_linux_x86_64.sh
 
 # Install dependecies for test coverage
 RUN cargo install cargo-nextest --locked
