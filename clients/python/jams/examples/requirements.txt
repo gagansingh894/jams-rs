@@ -1,2 +1,2 @@
-jamspy==0.2.0
+jamspy==0.3.0
 numpy==1.26.0

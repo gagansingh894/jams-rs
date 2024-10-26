@@ -1,6 +1,6 @@
 # ruff: noqa
 # type: ignore
-
+import asyncio
 import json
 
 import numpy as np
@@ -11,13 +11,12 @@ from jamspy.client import http
 # latency will be high compared to actual production grade setup
 URL = "https://jams-http.onrender.com"
 
-if __name__ == '__main__':
-
+async def catboost_example():
     http_client = http.Client(base_url=URL)
 
     # health check
     try:
-        http_client.health_check()
+        await http_client.health_check()
     except Exception as e:
         raise f'service is not running: {e}'
 
@@ -30,7 +29,7 @@ if __name__ == '__main__':
 
     # this is a binary classifier model and will return logits of each input record
     print('CATBOOST PREDICTIONS')
-    catboost_preds = http_client.predict('titanic_model', payload)
+    catboost_preds = await http_client.predict('titanic_model', payload)
     print(f'logits: {catboost_preds.values}')
     # calculate probabilities using sigmoid function
     sigmoid = lambda x: 1 / (1 + np.exp(-x))
@@ -40,3 +39,6 @@ if __name__ == '__main__':
     class_predictions = (probabilities >= 0.5).astype(int)
     print(f'class predictions: {class_predictions} \n')
 
+
+if __name__ == '__main__':
+    asyncio.run(catboost_example())
