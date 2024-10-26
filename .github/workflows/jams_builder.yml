@@ -1,6 +1,8 @@
 name: J.A.M.S Builder Image CI Pipeline
 
 on:
+  schedule:
+    - cron: "0 1 * * 1"  # Runs every Monday at 1 AM UTC
   push:
     branches: [ "main" ]
     paths:
