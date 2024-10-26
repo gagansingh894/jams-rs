@@ -1,0 +1,46 @@
+# Docker compose file for starting J.A.M.S locally. Might be unstable on ARM chips as dokcer image is x86_64 based
+services:
+  #  MinIO
+  minio:
+    image: minio/minio:latest
+    ports:
+      - 9000:9000  # MinIO S3 API port
+      - 9001:9001  # MinIO S3 UI port
+    environment:
+      MINIO_ROOT_USER: minioadmin  # Default access key for MinIO
+      MINIO_ROOT_PASSWORD: minioadmin  # Default secret key for MinIO
+    command:
+      - server
+      - /temp
+      - --console-address
+      - ":9001"
+  #   JAMS
+  jams-http:
+    image: gagansingh894/jams:latest
+    ports:
+      - "3000:3000"    # Expose application port
+    environment:
+      - AWS_ACCESS_KEY_ID=test
+      - AWS_SECRET_ACCESS_KEY=test
+      - AWS_DEFAULT_REGION=eu-west-2
+      - MINIO_ROOT_USER=minioadmin  # Default access key for MinIO
+      - MINIO_ROOT_PASSWORD=minioadmin  # Default secret key for MinIO
+      - S3_BUCKET_NAME=jamsmodelstore
+
+    depends_on:
+      - localstack
+    command: ["start", "http", "--with-s3-model-store=true"]
+  jams-grpc:
+    image: gagansingh894/jams:latest
+    ports:
+      - "4000:4000"    # Expose application port
+    environment:
+      - AWS_ACCESS_KEY_ID=test
+      - AWS_SECRET_ACCESS_KEY=test
+      - AWS_DEFAULT_REGION=eu-west-2
+      - MINIO_ROOT_USER=minioadmin  # Default access key for MinIO
+      - MINIO_ROOT_PASSWORD=minioadmin  # Default secret key for MinIO
+      - S3_BUCKET_NAME=jamsmodelstore
+    depends_on:
+      - localstack
+    command: ["start", "grpc", "--with-s3-model-store=true"]

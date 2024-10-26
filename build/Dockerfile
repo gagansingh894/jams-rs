@@ -55,5 +55,5 @@ EXPOSE 4000
 
 # Entrypoint
 # The user would need to expose the port
-ENTRYPOINT ["./jams"]
-CMD ["start", "http"]
+ENTRYPOINT ["bash"]
+CMD ["./jams", "start", "http"]
