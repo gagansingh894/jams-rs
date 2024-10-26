@@ -70,6 +70,12 @@ show_error_codes = true
 module = "src.jamspy.client.models.proto.*"
 disable_error_code = ["no-untyped-def", "type-arg", "import-untyped"]
 
+# Disable the 'import-untyped' error code
+[[tool.mypy.overrides]]
+module = ["src.jamspy.utils.bundler.*", "tests.utils.bundler.*"]
+disable_error_code = ["attr-defined", "name-defined", "unused-ignore"]
+
+
 [tool.pydantic-mypy]
 # Pydantic plugin options
 init_forbid_extra = true

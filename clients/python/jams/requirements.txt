@@ -8,9 +8,11 @@ mypy==1.11.1
 types-requests==2.32.0.20240914
 types-protobuf==5.28.0.20240924
 pytest==8.0.0
+pytest-asyncio==0.23.8
 nox==2024.4.15
 catboost==1.2.3
 lightgbm==4.0.0
 torch==2.2.0
 xgboost==2.0.3
 numpy==1.26.0
+httpx==0.26.0
