@@ -26,7 +26,7 @@ It is primarily targeted for software and data professionals for deploying their
 - Config based deployment 🛠️
 - Supports PyTorch* and Tensorflow Models via FFI Bindings 🤖
 - Supports Tree Models - Catboost, LightGBM, (🚧) XGBoost via FFI Bindings 🌳
-- Supports multiple backends for model stores - local file system, AWS S3, Azure Blob 🗳️
+- Supports multiple backends for model stores - local file system, AWS S3, Azure Blob,MinIO 🗳️
 - Supports model store polling ⌛
 - HTTP & gRPC API with ready to use clients in Python, Go, Rust, (🚧) TypeScript and (🚧) Java 🚀
 - CLI 💻  
@@ -121,32 +121,33 @@ If you want to disable polling, then do not pass `--poll-interval`
 
 To run HTTP server, use
 ```
-docker run --rm -v /your/path/to/model_store:/model_store -p 3000:3000 gagansingh894/jams start http --poll-interval 3600
+docker run --rm -v /your/path/to/model_store:/model_store -p 3000:3000 gagansingh894/jams start http --model-dir local --poll-interval 3600
 ```
 
 To run gRPC server, use
 ```
-docker run --rm -v /your/path/to/model_store:/model_store -p 4000:4000 gagansingh894/jams start grpc --poll-interval 3600
+docker run --rm -v /your/path/to/model_store:/model_store -p 4000:4000 gagansingh894/jams start grpc --model-store=local --poll-interval 3600
 ```
 
-### To run with a S3 backend
+### To run with a S3/MinIo backend
 - Create a S3 bucket with some models in it. Please refer to the structure of model store [here](https://github.com/gagansingh894/jams-rs?tab=readme-ov-file#model-store).
 - Set the environment variables - `AWS_REGION`, `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`. Alternatively if you have multiple AWS profiles then just set the `AWS_PROFILE-<profile_name>`
   You also need to set the bucket name. This can either be set via `S3_BUCKET_NAME` env variable or passed via `--s3-bucket-name` flag
+- If using `minio`, you will need to set these environment variables in addition to the above = `MINIO_ACCESS_KEY_ID`, `MINIO_SECRET_ACCESS_KEY` and `MINIO_URL`. The default values are `minioadmin` and `http://0.0.0.0:9000` respectively
 - Run the command to start HTTP server with S3 model store. It assumes that bucket name is already set via `S3_BUCKET_NAME`
 
 ```
-docker run --rm -p 3000:3000 gagansingh894/jams start http --with-s3-model-store=true --poll-interval 3600
+docker run --rm -p 3000:3000 gagansingh894/jams start http --model-store=<aws|minio> --poll-interval 3600
 ```
 
 - For gRPC server, use
 ```
-docker run --rm -p 4000:4000 gagansingh894/jams start grpc --with-s3-model-store=true --poll-interval 3600
+docker run --rm -p 4000:4000 gagansingh894/jams start grpc --model-store=<aws|minio> --poll-interval 3600
 ```
 
 - If you want to pass bucket name, use
 ```
-docker run --rm -p 3000:3000 gagansingh894/jams start http --with-s3-model-store=true --s3-bucket-name=<bucket_name>
+docker run --rm -p 3000:3000 gagansingh894/jams start http --model-store=<aws|minio> --s3-bucket-name=<bucket_name>
 ```
 
 ### To run with a Azure Blob Storage backend
@@ -155,17 +156,17 @@ docker run --rm -p 3000:3000 gagansingh894/jams start http --with-s3-model-store
 - Run the command to start HTTP server with Azure model store. It assumes that container name is already set via `AZURE_STORAGE_CONTAINER_NAME`
 
 ```
-docker run --rm -p 3000:3000 gagansingh894/jams start http --with-azure-model-store=true --poll-interval 3600
+docker run --rm -p 3000:3000 gagansingh894/jams start http --model-store=azure --poll-interval 3600
 ```
 
 - For gRPC server, use
 ```
-docker run --rm -p 4000:4000 gagansingh894/jams start grpc --with-azure-model-store=true --poll-interval 3600
+docker run --rm -p 4000:4000 gagansingh894/jams start grpc --model-store=azure --poll-interval 3600
 ```
 
 - If you want to pass container name, use
 ```
-docker run --rm -p 3000:3000 gagansingh894/jams start http --with-azure-model-store=true --azure-storage-container-name=<container_name> --poll-interval 3600
+docker run --rm -p 3000:3000 gagansingh894/jams start http --model-store=azure --azure-storage-container-name=<container_name> --poll-interval 3600
 ```
 
 Please refer to [OpenAPI Spec](https://github.com/gagansingh894/jams-rs/blob/main/openapi.yml) for API endpoints. 
