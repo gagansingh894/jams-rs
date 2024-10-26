@@ -30,3 +30,11 @@ lint: mypy ruff
 test:
 	@echo "Running tests..."
 	pytest tests
+
+build:
+	@echo "Building distribution"
+	python3 -m build
+
+publish:
+	@echo "Publishing to pip"
+	python3 -m twine upload --repository pypi dist/*
