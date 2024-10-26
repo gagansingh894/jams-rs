@@ -29,7 +29,7 @@ services:
 
     depends_on:
       - localstack
-    command: ["start", "http", "--with-s3-model-store=true"]
+    command: ["start", "http", "--model-store=minio"]
   jams-grpc:
     image: gagansingh894/jams:latest
     ports:
@@ -43,4 +43,4 @@ services:
       - S3_BUCKET_NAME=jamsmodelstore
     depends_on:
       - localstack
-    command: ["start", "grpc", "--with-s3-model-store=true"]
+    command: ["start", "grpc", "--model-store=minio"]
