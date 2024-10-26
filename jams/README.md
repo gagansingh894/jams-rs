@@ -52,15 +52,19 @@ Ensure that you have `docker compose` installed on your system. Please follow in
 
 To quickly get started running with `J.A.M.S`, please run the following commands
 
-1. Create a directory
+1. Execute bash script
+
+The script creates a jams-playground directory with a subdirectory models, and then downloads a Docker Compose configuration file and several machine learning model files from a GitHub repository into the respective directories. It runs with superuser privileges using sudo to ensure necessary permissions for directory creation and file downloads.
+
 ```
-sudo mkdir jams-playground
+sudo bash -c 'mkdir -p jams-playground/models && \
+wget -q -O jams-playground/docker-compose-http-grpc-minio.yml https://raw.githubusercontent.com/gagansingh894/jams-rs/main/build/docker-compose-http-grpc-minio.yml && \
+wget -q -O jams-playground/models/catboost-titanic_model.tar.gz https://github.com/gagansingh894/jams-rs/raw/main/jams-serve/tests/model_store/catboost-titanic_model.tar.gz && \
+wget -q -O jams-playground/models/lightgbm-my_awesome_reg_model.tar.gz https://github.com/gagansingh894/jams-rs/raw/main/jams-serve/tests/model_store/lightgbm-my_awesome_reg_model.tar.gz && \
+wget -q -O jams-playground/models/pytorch-my_awesome_californiahousing_model.tar.gz https://github.com/gagansingh894/jams-rs/raw/main/jams-serve/tests/model_store/pytorch-my_awesome_californiahousing_model.tar.gz && \
+wget -q -O jams-playground/models/tensorflow-my_awesome_penguin_model.tar.gz https://github.com/gagansingh894/jams-rs/raw/main/jams-serve/tests/model_store/tensorflow-my_awesome_penguin_model.tar.gz'
 ```
-2. Download the docker compose file for playground app
-```
-wget -q https://github.com/gagansingh894/jams-rs/blob/main/build/docker-compose-http-grpc-minio.yml jams-playground/docker-compose-http-grpc-minio.yml
-```
-3. Run command
+2. Run docker compose
 ```
 docker compose -f jams-playground/docker-compose-http-grpc-minio.yml up
 ```
