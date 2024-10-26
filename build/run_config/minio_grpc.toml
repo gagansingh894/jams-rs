@@ -1,0 +1,7 @@
+[config]
+protocol = "grpc"
+port = 4000
+model_store = "minio"
+s3_bucket_name = "jamsmodelstore"
+poll_interval = 600 # in seconds
+num_workers = 4
