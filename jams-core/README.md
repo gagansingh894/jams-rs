@@ -13,6 +13,7 @@ This library crate is part of a wider project called **J.A.M.S - Just Another Mo
     - Local File System
     - AWS S3
     - Azure Blob Storage
+    - MinIO
 - Model Store Polling
 
 ### The following features are in progress 🚧
