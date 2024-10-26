@@ -32,7 +32,7 @@ RUN apt-get update -y \
 # Copy the shared libraries
 COPY --from=builder /usr/local/lib/lib_lightgbm.so usr/local/lib
 COPY --from=builder /usr/local/lib/libcatboostmodel.so usr/local/lib
-COPY --from=builder /usr/local/lib/libtensorflow/*.so usr/local/lib/libtensorflow
+COPY --from=builder /usr/local/lib/libtensorflow usr/local/lib/libtensorflow
 COPY --from=builder /usr/local/lib/libtorch usr/local/lib/libtorch
 
 # Set environment variable - required for compilation
@@ -57,5 +57,5 @@ EXPOSE 4000
 
 # Entrypoint
 # The user would need to expose the port
-ENTRYPOINT ["bash"]
-CMD ["./jams", "start", "http"]
+ENTRYPOINT ["./jams"]
+CMD ["start", "http"]
