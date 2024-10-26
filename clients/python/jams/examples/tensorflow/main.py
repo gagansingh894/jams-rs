@@ -1,6 +1,6 @@
 # ruff: noqa
 # type: ignore
-
+import asyncio
 import json
 
 import numpy as np
@@ -11,13 +11,12 @@ from jamspy.client import http
 # latency will be high compared to actual production grade setup
 URL = "https://jams-http.onrender.com"
 
-
-if __name__ == '__main__':
+async def tensorflow_example():
     http_client = http.Client(base_url=URL)
 
     # health check
     try:
-        http_client.health_check()
+        await http_client.health_check()
     except Exception as e:
         raise f'service is not running: {e}'
 
@@ -30,6 +29,10 @@ if __name__ == '__main__':
 
     # this will return a multiclass response for each input record. we can use np.argmax to get the index of the class
     print('TENSORFLOW PREDICTIONS')
-    tf_preds = http_client.predict('my_awesome_penguin_model', payload)
+    tf_preds = await http_client.predict('my_awesome_penguin_model', payload)
     label = np.argmax(np.array(tf_preds.values), axis=1)
     print(f'penguin species label: {label} \n')
+
+
+if __name__ == '__main__':
+    asyncio.run(tensorflow_example())
