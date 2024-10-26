@@ -5,19 +5,15 @@ use crate::model_store::storage::{
     append_model_format, extract_framework_from_path, load_predictor, Metadata, Model, ModelName,
     Storage,
 };
-use anyhow::anyhow;
 use async_trait::async_trait;
 use aws_config::meta::region::ProvideRegion;
 use aws_config::BehaviorVersion;
 use aws_sdk_s3 as s3;
-use aws_sdk_s3::config::http::HttpResponse;
 use aws_sdk_s3::config::{Credentials, Region};
-use aws_sdk_s3::operation::list_buckets::{ListBucketsError, ListBucketsOutput};
 use chrono::Utc;
 use dashmap::mapref::one::Ref;
 use dashmap::DashMap;
 use std::env;
-use std::env::VarError;
 use std::sync::Arc;
 use std::time::Duration;
 use uuid::Uuid;
@@ -195,7 +191,10 @@ async fn build_minio_client() -> anyhow::Result<s3::Client> {
     match client.list_buckets().send().await {
         Ok(_) => Ok(client),
         Err(e) => {
-            anyhow::bail!("Failed to connect to MinIO model store ❌")
+            anyhow::bail!(
+                "Failed to connect to MinIO model store: {} ❌",
+                e.to_string()
+            )
         }
     }
 }
