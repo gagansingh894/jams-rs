@@ -299,6 +299,7 @@ impl Tensorflow {
     /// # Returns
     /// * `Ok(Tensorflow)` - If the model loading was successful.
     /// * `Err(anyhow::Error)` - If there was an error loading the model.
+    #[tracing::instrument]
     pub fn load(model_dir: &str) -> anyhow::Result<Self> {
         const MODEL_TAG: &str = "serve";
         let mut graph = Graph::new();

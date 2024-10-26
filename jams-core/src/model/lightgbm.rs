@@ -100,6 +100,7 @@ impl LightGBM {
     /// # Errors
     ///
     /// Returns an `Err` if there is an issue loading the LightGBM model from the file.
+    #[tracing::instrument]
     pub fn load(path: &str) -> anyhow::Result<Self> {
         let model = match lgbm::Booster::from_file(path.as_ref()) {
             Ok(model) => model,

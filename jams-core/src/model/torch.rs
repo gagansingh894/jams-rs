@@ -76,6 +76,7 @@ impl Torch {
     /// # Returns
     /// * `Ok(Torch)` - If the model was successfully loaded.
     /// * `Err(anyhow::Error)` - If there was an error during loading.
+    #[tracing::instrument(skip(path))]
     pub fn load(path: &str) -> anyhow::Result<Self> {
         let model = match CModule::load(path) {
             Ok(model) => model,

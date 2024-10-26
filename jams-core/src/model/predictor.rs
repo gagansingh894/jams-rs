@@ -55,6 +55,7 @@ impl ModelInput {
     /// * `Ok(ModelInput)` - If parsing was successful.
     /// * `Err(anyhow::Error)` - If there was an error during parsing.
     #[allow(clippy::should_implement_trait)]
+    #[tracing::instrument(skip(json))]
     pub fn from_str(json: &str) -> anyhow::Result<ModelInput> {
         let value: serde_json::Value = serde_json::from_str(json)?;
         let model_input = parse_json_serde_value(value)?;
@@ -69,6 +70,7 @@ impl ModelInput {
     /// # Returns
     /// * `Ok(ModelInput)` - If the conversion was successful.
     /// * `Err(anyhow::Error)` - If there was an error during the conversion.
+    #[tracing::instrument(skip(value))]
     pub fn from_serde_json(value: serde_json::Value) -> anyhow::Result<Self> {
         let model_input = parse_json_serde_value(value)?;
         Ok(Self(model_input))
@@ -128,6 +130,7 @@ impl Values {
     ///
     /// # Returns
     /// * `Values` - The created `Values` instance.
+    #[tracing::instrument(skip(strings))]
     pub fn from_strings(strings: Vec<String>) -> Self {
         let values = strings.into_iter().map(Value::String).collect();
         Values(values)
@@ -140,6 +143,7 @@ impl Values {
     ///
     /// # Returns
     /// * `Values` - The created `Values` instance.
+    #[tracing::instrument(skip(ints))]
     pub fn from_ints(ints: Vec<i32>) -> Self {
         let values = ints.into_iter().map(Value::Int).collect();
         Values(values)
@@ -152,6 +156,7 @@ impl Values {
     ///
     /// # Returns
     /// * `Values` - The created `Values` instance.
+    #[tracing::instrument(skip(floats))]
     pub fn from_floats(floats: Vec<f32>) -> Self {
         let values = floats.into_iter().map(Value::Float).collect();
         Values(values)
@@ -161,6 +166,7 @@ impl Values {
     ///
     /// # Returns
     /// * `anyhow::Result<Vec<String>>` - The converted values.
+    #[tracing::instrument(skip(self))]
     pub fn to_strings(&self) -> anyhow::Result<Vec<String>> {
         self.iter()
             .map(|v| {
@@ -178,6 +184,7 @@ impl Values {
     ///
     /// # Returns
     /// * `anyhow::Result<Vec<i32>>` - The converted values.
+    #[tracing::instrument(skip(self))]
     pub fn to_ints(&self) -> anyhow::Result<Vec<i32>> {
         self.iter()
             .map(|v| {
@@ -195,6 +202,7 @@ impl Values {
     ///
     /// # Returns
     /// * `anyhow::Result<Vec<f32>>` - The converted values.
+    #[tracing::instrument(skip(self))]
     pub fn to_floats(&self) -> anyhow::Result<Vec<f32>> {
         self.iter()
             .map(|v| {
@@ -262,6 +270,7 @@ impl Value {
 /// # Returns
 /// * `Ok(HashMap<FeatureName, Values>)` - If parsing was successful.
 /// * `Err(anyhow::Error)` - If there was an error during parsing.
+#[tracing::instrument(skip(json))]
 fn parse_json_serde_value(json: serde_json::Value) -> anyhow::Result<HashMap<FeatureName, Values>> {
     // create an empty hashmap to store the features
     let mut model_input: HashMap<FeatureName, Values> = HashMap::new();
