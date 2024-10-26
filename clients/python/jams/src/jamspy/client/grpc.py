@@ -5,51 +5,53 @@ from src.jamspy.client.models.proto import jams_pb2
 from src.jamspy.client.models.proto import jams_pb2_grpc
 from src.jamspy.client.models import common
 
-
 class Client:
-    def __init__(self, base_url: str):
-        self._channel = grpc.insecure_channel(base_url)
+    def __init__(self, base_url: str, timeout: float = 5):
+        timeout=self._timeout = timeout
+        self._channel = grpc.aio.insecure_channel(base_url)
         self._stub = jams_pb2_grpc.ModelServerStub(self._channel)  # type: ignore
 
-    def __del__(self) -> None:
-        self._channel.close()
+    async def close(self) -> None:
+        await self._channel.close()
 
-    def health_check(self) -> None:
+    async def health_check(self) -> None:
         try:
-            self._stub.HealthCheck(empty_pb2.Empty())
+            await self._stub.HealthCheck(empty_pb2.Empty(), timeout=self._timeout)
         except grpc.RpcError as e:
             raise e
 
-    def predict(self, model_name: str, model_input: str) -> common.Prediction:
+    async def predict(self, model_name: str, model_input: str) -> common.Prediction:
         try:
-            resp: jams_pb2.PredictResponse = self._stub.Predict(
-                jams_pb2.PredictRequest(model_name=model_name, input=model_input)
+            resp: jams_pb2.PredictResponse = await self._stub.Predict(
+                jams_pb2.PredictRequest(model_name=model_name, input=model_input),
+                timeout=self._timeout
             )
             return common.Prediction(resp.output)
         except grpc.RpcError as e:
             raise e
 
-    def add_model(self, model_name: str) -> None:
+    async def add_model(self, model_name: str) -> None:
         try:
-            self._stub.AddModel(jams_pb2.AddModelRequest(model_name=model_name))
+            await self._stub.AddModel(jams_pb2.AddModelRequest(model_name=model_name), timeout=self._timeout)
         except grpc.RpcError as e:
             raise e
 
-    def update_model(self, model_name: str) -> None:
+    async def update_model(self, model_name: str) -> None:
         try:
-            self._stub.UpdateModel(jams_pb2.UpdateModelRequest(model_name=model_name))
+            await self._stub.UpdateModel(jams_pb2.UpdateModelRequest(model_name=model_name), timeout=self._timeout)
         except grpc.RpcError as e:
             raise e
 
-    def delete_model(self, model_name: str) -> None:
+    async def delete_model(self, model_name: str) -> None:
         try:
-            self._stub.DeleteModel(jams_pb2.DeleteModelRequest(model_name=model_name))
+            await self._stub.DeleteModel(jams_pb2.DeleteModelRequest(model_name=model_name), timeout=self._timeout)
         except grpc.RpcError as e:
             raise e
 
-    def get_models(self) -> jams_pb2.GetModelsResponse:
+    async def get_models(self) -> jams_pb2.GetModelsResponse:
         try:
-            resp: jams_pb2.GetModelsResponse = self._stub.GetModels(empty_pb2.Empty())
+            resp: jams_pb2.GetModelsResponse = await self._stub.GetModels(empty_pb2.Empty(), timeout=self._timeout)
             return resp
         except grpc.RpcError as e:
             raise e
+
