@@ -2,7 +2,7 @@ use crate::model_store::aws::common::download_objects;
 use crate::model_store::common::{cleanup, DOWNLOADED_MODELS_DIRECTORY_NAME_PREFIX};
 use crate::model_store::fetcher::Fetcher;
 use crate::model_store::storage::{
-    append_model_format, extract_framework_from_path, load_predictor, Metadata, Model, ModelName,
+    append_model_format, extract_framework, load_predictor, Metadata, Model, ModelName,
     Storage,
 };
 use async_trait::async_trait;
@@ -165,7 +165,7 @@ async fn build_s3_client(use_localstack: bool) -> anyhow::Result<s3::Client> {
 
 async fn build_minio_client() -> anyhow::Result<s3::Client> {
     let key_id = env::var("MINIO_ACCESS_KEY_ID").unwrap_or("minioadmin".to_string());
-    let secret_key = env::var("MINIO_ACCESS_KEY_ID").unwrap_or("minioadmin".to_string());
+    let secret_key = env::var("MINIO_SECRET_ACCESS_KEY").unwrap_or("minioadmin".to_string());
     let url = env::var("MINIO_URL").unwrap_or("http://0.0.0.0:9000".to_string());
     let region = env::var("AWS_REGION").unwrap_or("eu-west-2".to_string());
 
@@ -274,7 +274,7 @@ impl Storage for S3ModelStore {
         // If lightgbm -> append '.txt'
 
         // Extract model framework
-        let model_framework = match extract_framework_from_path(model_name.clone()) {
+        let model_framework = match extract_framework(model_name.clone()) {
             None => {
                 anyhow::bail!("Failed to extract framework from path");
             }
@@ -338,6 +338,11 @@ impl Storage for S3ModelStore {
     /// * The model cannot be loaded into memory.
     #[tracing::instrument(skip(self))]
     async fn update_model(&self, model_name: ModelName) -> anyhow::Result<()> {
+        // ensure the framework prefix is not passed in the model name
+        if extract_framework(model_name.clone()).is_some() {
+            anyhow::bail!("Ensure that framework is not being passed in the model name ❌. Expected <model_name> not <framework>-<model name>")
+        }
+        
         // By calling remove on the hashmap, the object is returned on success/
         // We use the returned object, in this case the model to extract the framework and model path
         match self.models.remove(model_name.as_str()) {
