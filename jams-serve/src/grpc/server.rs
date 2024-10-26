@@ -43,17 +43,8 @@ pub async fn start(config: server::Config) -> anyhow::Result<()> {
         log_level = tracing::Level::TRACE
     }
 
-    // try to setup tracing using jaegar
-    match instrument::jaeger::init() {
-        Ok(_) => {
-            log::info!("Connected to tracing exporter ℹ️");
-        }
-        Err(_) => {
-            log::warn!("Failed to start tracing with Jaegar. Falling back to simple tracing ⚠");
-            // on error fail back to simple
-            instrument::simple::init(log_level)
-        }
-    }
+    // logs to stdout, if service is running it will send traces to jaegar
+    instrument::jaeger::init(log_level)?;
 
     // setup shared state
     let shared_state = match build_app_state_from_config(config).await {
