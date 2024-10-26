@@ -4,6 +4,7 @@ use jams_proto::jams_v1::model_server_client::ModelServerClient;
 use jams_proto::jams_v1::{
     AddModelRequest, DeleteModelRequest, PredictRequest, UpdateModelRequest,
 };
+use std::time;
 use tonic::transport::Channel;
 
 #[async_trait]
@@ -23,12 +24,36 @@ pub trait Client {
 pub struct ApiClient {
     client: ModelServerClient<Channel>,
     base_url: String,
+    timeout: time::Duration,
 }
 
 impl ApiClient {
-    async fn new(base_url: String) -> anyhow::Result<Self> {
-        let url = get_url(base_url);
-        let client = match ModelServerClient::connect(url.clone()).await {
+    pub fn builder() -> ApiClientBuilder {
+        ApiClientBuilder::default()
+    }
+}
+
+#[derive(Default)]
+pub struct ApiClientBuilder {
+    base_url: String,
+    timeout: time::Duration,
+}
+
+impl ApiClientBuilder {
+    pub fn new(base_url: String) -> ApiClientBuilder {
+        ApiClientBuilder {
+            base_url: get_url(base_url),
+            timeout: time::Duration::from_secs(5),
+        }
+    }
+
+    pub fn with_timeout(mut self, timeout: u64) -> ApiClientBuilder {
+        self.timeout = time::Duration::from_secs(timeout);
+        self
+    }
+
+    pub async fn build(self) -> anyhow::Result<ApiClient> {
+        let client = match ModelServerClient::connect(self.base_url.clone()).await {
             Ok(client) => client,
             Err(err) => {
                 anyhow::bail!("failed to create grpc client ❌: {}", err.to_string())
@@ -36,7 +61,8 @@ impl ApiClient {
         };
         Ok(ApiClient {
             client,
-            base_url: url.clone(),
+            base_url: self.base_url,
+            timeout: self.timeout,
         })
     }
 }
@@ -161,7 +187,11 @@ mod tests {
     #[tokio::test]
     async fn successfully_sends_health_check_request() {
         // Arrange
-        let mut client = ApiClient::new(get_url()).await.unwrap();
+        let mut client = ApiClientBuilder::new(get_url())
+            .with_timeout(2)
+            .build()
+            .await
+            .unwrap();
 
         // Act
         let resp = client.health_check().await;
@@ -173,7 +203,11 @@ mod tests {
     #[tokio::test]
     async fn successfully_sends_get_model_request() {
         // Arrange
-        let mut client = ApiClient::new(get_url()).await.unwrap();
+        let mut client = ApiClientBuilder::new(get_url())
+            .with_timeout(2)
+            .build()
+            .await
+            .unwrap();
 
         // Act
         let result = client.get_models().await;
@@ -188,7 +222,11 @@ mod tests {
     #[tokio::test]
     async fn successfully_sends_delete_model_request() {
         // Arrange
-        let mut client = ApiClient::new(get_url()).await.unwrap();
+        let mut client = ApiClientBuilder::new(get_url())
+            .with_timeout(2)
+            .build()
+            .await
+            .unwrap();
 
         // Act
         client
@@ -207,7 +245,11 @@ mod tests {
     #[tokio::test]
     async fn successfully_sends_add_model_request() {
         // Arrange
-        let mut client = ApiClient::new(get_url()).await.unwrap();
+        let mut client = ApiClientBuilder::new(get_url())
+            .with_timeout(2)
+            .build()
+            .await
+            .unwrap();
 
         // Act
         client
@@ -226,7 +268,11 @@ mod tests {
     #[tokio::test]
     async fn successfully_sends_update_model_request() {
         // Arrange
-        let mut client = ApiClient::new(get_url()).await.unwrap();
+        let mut client = ApiClientBuilder::new(get_url())
+            .with_timeout(2)
+            .build()
+            .await
+            .unwrap();
 
         // Act
         let resp = client.update_model("titanic_model".to_string()).await;
@@ -238,7 +284,11 @@ mod tests {
     #[tokio::test]
     async fn successfully_sends_predict_model_request() {
         // Arrange
-        let mut client = ApiClient::new(get_url()).await.unwrap();
+        let mut client = ApiClientBuilder::new(get_url())
+            .with_timeout(2)
+            .build()
+            .await
+            .unwrap();
 
         // Act
         let model_name = "titanic_model".to_string();

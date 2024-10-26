@@ -1,6 +1,7 @@
 use crate::common::{get_url, GetModelsResponse, Predictions};
 use async_trait::async_trait;
 use serde::{Deserialize, Serialize};
+use std::time;
 
 #[derive(Serialize)]
 struct PredictRequest {
@@ -37,20 +38,45 @@ pub trait Client {
 pub struct ApiClient {
     client: reqwest::Client,
     base_url: String,
+    timeout: time::Duration,
 }
 
 impl ApiClient {
-    pub fn new(base_url: String) -> anyhow::Result<Self> {
+    pub fn builder() -> ApiClientBuilder {
+        ApiClientBuilder::default()
+    }
+}
+
+#[derive(Default)]
+pub struct ApiClientBuilder {
+    base_url: String,
+    timeout: time::Duration,
+}
+
+impl ApiClientBuilder {
+    pub fn new(base_url: String) -> ApiClientBuilder {
+        ApiClientBuilder {
+            base_url: get_url(base_url),
+            timeout: time::Duration::from_secs(5),
+        }
+    }
+
+    pub fn with_timeout(mut self, timeout: u64) -> ApiClientBuilder {
+        self.timeout = time::Duration::from_secs(timeout);
+        self
+    }
+
+    pub fn build(self) -> anyhow::Result<ApiClient> {
         let client = match reqwest::Client::builder().build() {
             Ok(client) => client,
             Err(err) => {
                 anyhow::bail!("failed to create reqwest client: {}", err)
             }
         };
-
         Ok(ApiClient {
             client,
-            base_url: get_url(base_url),
+            base_url: self.base_url,
+            timeout: self.timeout,
         })
     }
 }
@@ -59,7 +85,7 @@ impl ApiClient {
 impl Client for ApiClient {
     async fn health_check(&self) -> anyhow::Result<()> {
         let url = format!("{}/{}", self.base_url, "healthcheck");
-        match self.client.get(url).send().await {
+        match self.client.get(url).timeout(self.timeout).send().await {
             Ok(resp) => match resp.status().is_success() {
                 true => Ok(()),
                 false => {
@@ -88,6 +114,7 @@ impl Client for ApiClient {
                 model_name,
                 input: model_input,
             })
+            .timeout(self.timeout)
             .send()
             .await
         {
@@ -123,6 +150,7 @@ impl Client for ApiClient {
             .client
             .post(url)
             .json(&AddModelRequest { model_name })
+            .timeout(self.timeout)
             .send()
             .await
         {
@@ -144,6 +172,7 @@ impl Client for ApiClient {
             .client
             .put(url)
             .json(&UpdateModelRequest { model_name })
+            .timeout(self.timeout)
             .send()
             .await
         {
@@ -167,7 +196,7 @@ impl Client for ApiClient {
             "{}/{}?model_name={}",
             self.base_url, "api/models", model_name
         );
-        match self.client.delete(url).send().await {
+        match self.client.delete(url).timeout(self.timeout).send().await {
             Ok(resp) => match resp.status().is_success() {
                 true => Ok(()),
                 false => {
@@ -185,7 +214,7 @@ impl Client for ApiClient {
 
     async fn get_models(&self) -> anyhow::Result<GetModelsResponse> {
         let url = format!("{}/{}", self.base_url, "api/models");
-        match self.client.get(url).send().await {
+        match self.client.get(url).timeout(self.timeout).send().await {
             Ok(resp) => match resp.status().is_success() {
                 true => Ok(resp.json::<GetModelsResponse>().await?),
                 false => {
@@ -211,7 +240,10 @@ mod tests {
     #[tokio::test]
     async fn successfully_sends_health_check_request() {
         // Arrange
-        let client = ApiClient::new(get_url()).unwrap();
+        let client = ApiClientBuilder::new(get_url())
+            .with_timeout(2)
+            .build()
+            .unwrap();
 
         // Act
         let resp = client.health_check().await;
@@ -223,7 +255,10 @@ mod tests {
     #[tokio::test]
     async fn successfully_sends_get_model_request() {
         // Arrange
-        let client = ApiClient::new(get_url()).unwrap();
+        let client = ApiClientBuilder::new(get_url())
+            .with_timeout(2)
+            .build()
+            .unwrap();
 
         // Act
         let result = client.get_models().await;
@@ -238,7 +273,10 @@ mod tests {
     #[tokio::test]
     async fn successfully_sends_delete_model_request() {
         // Arrange
-        let client = ApiClient::new(get_url()).unwrap();
+        let client = ApiClientBuilder::new(get_url())
+            .with_timeout(2)
+            .build()
+            .unwrap();
 
         // Act
         client
@@ -257,7 +295,10 @@ mod tests {
     #[tokio::test]
     async fn successfully_sends_add_model_request() {
         // Arrange
-        let client = ApiClient::new(get_url()).unwrap();
+        let client = ApiClientBuilder::new(get_url())
+            .with_timeout(2)
+            .build()
+            .unwrap();
 
         // Act
         client
@@ -276,7 +317,10 @@ mod tests {
     #[tokio::test]
     async fn successfully_sends_update_model_request() {
         // Arrange
-        let client = ApiClient::new(get_url()).unwrap();
+        let client = ApiClientBuilder::new(get_url())
+            .with_timeout(2)
+            .build()
+            .unwrap();
 
         // Act
         let resp = client.update_model("titanic_model".to_string()).await;
@@ -288,7 +332,10 @@ mod tests {
     #[tokio::test]
     async fn successfully_sends_predict_model_request() {
         // Arrange
-        let client = ApiClient::new(get_url()).unwrap();
+        let client = ApiClientBuilder::new(get_url())
+            .with_timeout(2)
+            .build()
+            .unwrap();
 
         // Act
         let model_name = "titanic_model".to_string();
