@@ -59,8 +59,6 @@ Please refer to examples for different types of setup.
 For now use docker image or Linux x86_64 architecture. Only Pytorch 2.2.0 is supported for now due to dependencies on FFI bindings.
 Although you may be able to run models trained on version <= 2.2.0**
 
-
-
 ---
 
 ## Docker Setup
@@ -68,9 +66,58 @@ J.A.M.S is hosted on [DockerHub](https://hub.docker.com/r/gagansingh894/jams).
 
 `docker pull gagansingh894/jams`
 
-The easiest way to start J.A.M.S is by providing a config TOML file
+##### Docker Compose
 
-##### Config File
+Ensure that you have `docker compose` installed on your system. Please follow instructions [here](https://docs.docker.com/compose/install/)
+
+**Note: If you are on Apple Silicon, please disable `Use Rosetta for x86_64/amd64 emulation on Apple Silicon` option under settings**
+
+To quickly get started running with `J.A.M.S`, please run the following commands
+
+1. Create a directory
+```
+sudo mkdir jams-playground
+```
+2. Download the docker compose file for playground app
+```
+wget -q https://github.com/gagansingh894/jams-rs/blob/main/build/docker-compose-http-grpc-minio.yml jams-playground/docker-compose-http-grpc-minio.yml
+```
+3. Run command
+```
+docker compose -f jams-playground/docker-compose-http-grpc-minio.yml up
+```
+
+If everything works fine, this should start a `minio` server with some preloaded models as model store, `J.A.M.S http` and `J.A.M.S grpc` server for
+making predictions. You can add new models by uploading them directly to `minio` via UI (http://0.0.0.0:9001). The models
+should be of supported types and follow the naming convention  `<model_framework>-model_name.tar.gz`. 
+
+Use the curl commands to make predictions 
+
+```
+curl --location '0.0.0.0:3001/api/predict' \
+--header 'Content-Type: application/json' \
+--header 'Accept: application/json' \
+--data '{
+  "model_name": "my_awesome_penguin_model",
+  "input": "{\"island\":[2.0,2.0,2.0,2.0,2.0],\"bill_length_mm\":[39.1,39.5,40.3,36.7,39.3],\"bill_depth_mm\":[18.7,17.4,18.0,19.3,20.6],\"flipper_length_mm\":[181.0,186.0,195.0,193.0,190.0],\"body_mass_g\":[3750.0,3800.0,3250.0,3450.0,3650.0],\"sex\":[1.0,0.0,0.0,0.0,1.0]}"
+}'
+```
+
+```
+curl --location '0.0.0.0:3001/api/predict' \
+--header 'Content-Type: application/json' \
+--header 'Accept: application/json' \
+--data '{
+  "model_name": "titanic_model",
+  "input": "{\"adult_male\":[\"True\",\"False\"],\"age\":[22.0,23.79929292929293],\"alone\":[\"True\",\"False\"],\"class\":[\"First\",\"Third\"],\"deck\":[\"Unknown\",\"Unknown\"],\"embark_town\":[\"Southampton\",\"Cherbourg\"],\"embarked\":[\"S\",\"C\"],\"fare\":[151.55,14.4542],\"parch\":[\"0\",\"0\"],\"pclass\":[\"1\",\"3\"],\"sex\":[\"male\",\"female\"],\"sibsp\":[\"0\",\"1\"],\"who\":[\"man\",\"woman\"]}"
+}'
+```
+
+Alternatively, you can use Postman or equivalent.
+
+### Config File
+
+The easiest way to start J.A.M.S is by providing a config TOML file
 ```
 [config]
 protocol = "http"                               # Specifies the protocol to be used by the server.
