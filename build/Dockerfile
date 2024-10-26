@@ -45,6 +45,8 @@ ENV LD_LIBRARY_PATH=$COMMON_LIBS_PATH:$COMMON_LIBS_PATH/libtorch/lib
 ENV LIBRARY_PATH=$LIBRARY_PATH:$COMMON_LIBS_PATH/libtensorflow
 ENV LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$COMMON_LIBS_PATH/libtensorflow/lib
 
+RUN ldconfig
+
 # Copy the binary
 COPY --from=builder /jams-rs/target/release/jams jams
 
