@@ -36,9 +36,9 @@ async fn main() -> anyhow::Result<()> {
 
                     let model_store = config_data.config.model_store;
                     if (model_store != LOCAL)
-                        || (model_store != AZURE)
-                        || (model_store != AWS)
-                        || (model_store != MINIO)
+                        && (model_store != AZURE)
+                        && (model_store != AWS)
+                        && (model_store != MINIO)
                     {
                         anyhow::bail!(
                             "Only following model stores are supported: {}, {}, {}, {}",
