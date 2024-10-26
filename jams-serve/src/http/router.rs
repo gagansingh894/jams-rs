@@ -20,8 +20,7 @@ pub fn build_router(shared_state: Arc<AppState>) -> anyhow::Result<Router> {
     Ok(Router::new()
         .route("/healthcheck", get(healthcheck))
         .nest("/api", api_routes)
-        .with_state(shared_state)
-        .layer(TraceLayer::new_for_http()))
+        .with_state(shared_state))
 }
 
 #[cfg(test)]
