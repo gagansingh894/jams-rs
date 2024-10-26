@@ -39,7 +39,7 @@ pub async fn start(config: server::Config) -> anyhow::Result<()> {
     }
 
     // logs to stdout, if service is running it will send traces to jaegar
-    instrument::jaeger::init(log_level)?;
+    instrument::jaeger::init("jams_http".to_string(), log_level)?;
 
     // setup shared state
     let shared_state = match build_app_state_from_config(config).await {
