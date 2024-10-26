@@ -28,7 +28,7 @@ services:
       - S3_BUCKET_NAME=jamsmodelstore
 
     depends_on:
-      - localstack
+      - minio
     command: ["start", "http", "--model-store=minio"]
   jams-grpc:
     image: gagansingh894/jams:latest
@@ -42,5 +42,5 @@ services:
       - MINIO_ROOT_PASSWORD=minioadmin  # Default secret key for MinIO
       - S3_BUCKET_NAME=jamsmodelstore
     depends_on:
-      - localstack
+      - minio
     command: ["start", "grpc", "--model-store=minio"]
