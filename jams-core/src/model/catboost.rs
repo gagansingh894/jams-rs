@@ -21,6 +21,7 @@ impl CatboostModelInput {
     /// # Errors
     ///
     /// Returns an `Err` if there is an issue parsing the input data.
+    #[tracing::instrument(skip(input))]
     pub fn parse(input: ModelInput) -> anyhow::Result<Self> {
         let mut categorical_features: Vec<Vec<String>> = Vec::new();
         let mut numerical_features: Vec<Vec<f32>> = Vec::new();
@@ -169,6 +170,7 @@ impl Catboost {
     /// # Errors
     ///
     /// Returns an `Err` if loading the Catboost model fails.
+    #[tracing::instrument]
     pub fn load(path: &str) -> anyhow::Result<Self> {
         let model = match catboost_rs::Model::load(path) {
             Ok(model) => model,
