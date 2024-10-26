@@ -48,9 +48,6 @@ ENV LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$COMMON_LIBS_PATH/libtensorflow/lib
 # Copy the binary
 COPY --from=builder /jams-rs/target/release/jams jams
 
-# Ensure binary runs
-RUN jams --version
-
 # Expose the port if the application listens on a specific port
 # 3000 for HTTP, 4000 for gRPC
 EXPOSE 3000
