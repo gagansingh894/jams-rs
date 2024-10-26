@@ -5,14 +5,19 @@ use crate::model_store::storage::{
     append_model_format, extract_framework_from_path, load_predictor, Metadata, Model, ModelName,
     Storage,
 };
+use anyhow::anyhow;
 use async_trait::async_trait;
 use aws_config::meta::region::ProvideRegion;
 use aws_config::BehaviorVersion;
 use aws_sdk_s3 as s3;
+use aws_sdk_s3::config::http::HttpResponse;
+use aws_sdk_s3::config::{Credentials, Region};
+use aws_sdk_s3::operation::list_buckets::{ListBucketsError, ListBucketsOutput};
 use chrono::Utc;
 use dashmap::mapref::one::Ref;
 use dashmap::DashMap;
 use std::env;
+use std::env::VarError;
 use std::sync::Arc;
 use std::time::Duration;
 use uuid::Uuid;
@@ -42,18 +47,35 @@ impl S3ModelStore {
     /// # Returns
     ///
     /// A result containing the newly created `S3ModelStore` or an error if the initialization fails.
-    pub async fn new(bucket_name: String) -> anyhow::Result<Self> {
+    pub async fn new(bucket_name: String, use_minio: Option<bool>) -> anyhow::Result<Self> {
         // Ensure model_dir_uri is not empty, return error if empty
         if bucket_name.is_empty() {
             anyhow::bail!("S3 bucket name must be specified ❌")
         }
-        // Create an S3 client with the loaded configuration
-        let client = match build_s3_client(use_localstack()).await {
-            Ok(client) => client,
-            Err(e) => {
-                anyhow::bail!("Failed to build S3 client ❌: {}", e.to_string())
+
+        // Check if minio is to be used instead of the standard AWS client.
+        let client = if use_minio.is_some() {
+            match build_minio_client().await {
+                Ok(client) => {
+                    log::info!("Using MinIO as model store ℹ️");
+                    client
+                }
+                Err(e) => {
+                    anyhow::bail!("Failed to build MinIO client ❌: {}", e.to_string());
+                }
+            }
+        } else {
+            match build_s3_client(use_localstack()).await {
+                Ok(client) => {
+                    log::info!("Using AWS S3 as model store ℹ️");
+                    client
+                }
+                Err(e) => {
+                    anyhow::bail!("Failed to build S3 client ❌: {}", e.to_string());
+                }
             }
         };
+
         // Directory, which stores the models downloaded from S3
         let model_store_dir = format!(
             "{}/{}_{}",
@@ -143,6 +165,39 @@ async fn build_s3_client(use_localstack: bool) -> anyhow::Result<s3::Client> {
     let s3_config = s3_config.build();
     // Create an S3 client with the loaded configuration
     Ok(s3::Client::from_conf(s3_config))
+}
+
+async fn build_minio_client() -> anyhow::Result<s3::Client> {
+    let key_id = env::var("MINIO_ACCESS_KEY_ID").unwrap_or("minioadmin".to_string());
+    let secret_key = env::var("MINIO_ACCESS_KEY_ID").unwrap_or("minioadmin".to_string());
+    let url = env::var("MINIO_URL").unwrap_or("http://0.0.0.0:9000".to_string());
+    let region = env::var("AWS_REGION").unwrap_or("eu-west-2".to_string());
+
+    let cred = Credentials::new(
+        key_id,
+        secret_key,
+        None,
+        None,
+        "minio-loaded-from-custom-env",
+    );
+
+    let s3_config = aws_sdk_s3::config::Builder::new()
+        .endpoint_url(url)
+        .credentials_provider(cred)
+        .behavior_version_latest()
+        .region(Region::new(region))
+        .force_path_style(true) // apply bucketname as path param instead of pre-domain
+        .build();
+
+    let client = aws_sdk_s3::Client::from_conf(s3_config);
+
+    // healthcheck
+    match client.list_buckets().send().await {
+        Ok(_) => Ok(client),
+        Err(e) => {
+            anyhow::bail!("Failed to connect to MinIO model store ❌")
+        }
+    }
 }
 
 /// Implements the `Drop` trait for `S3ModelStore`.
@@ -561,7 +616,32 @@ mod tests {
         create_test_bucket(client.clone(), bucket_name.clone()).await;
 
         // create s3 model store without models
-        let model_store = S3ModelStore::new(bucket_name.clone()).await;
+        let model_store = S3ModelStore::new(bucket_name.clone(), None).await;
+
+        // assert
+        assert!(model_store.is_ok());
+        let model_store = model_store.unwrap();
+        assert_eq!(model_store.models.len(), 0);
+
+        // add model - upload model to s3 then call add model
+        upload_models_for_test(client.clone(), bucket_name).await;
+
+        let resp = model_store
+            .add_model("catboost-titanic_model".to_string())
+            .await;
+        assert!(resp.is_ok());
+        assert_eq!(model_store.models.len(), 1);
+    }
+
+    #[tokio::test]
+    async fn successfully_create_minio_model_store_without_models_and_then_add_one() {
+        // setup
+        let client = build_minio_client().await.unwrap();
+        let bucket_name = generate_bucket_name();
+        create_test_bucket(client.clone(), bucket_name.clone()).await;
+
+        // create minio model store without models
+        let model_store = S3ModelStore::new(bucket_name.clone(), Some(true)).await;
 
         // assert
         assert!(model_store.is_ok());
@@ -586,7 +666,7 @@ mod tests {
         setup_test_dependencies(client.clone(), bucket_name.clone()).await;
 
         // load models
-        let model_store = S3ModelStore::new(bucket_name.clone()).await;
+        let model_store = S3ModelStore::new(bucket_name.clone(), None).await;
 
         // assert
         assert!(model_store.is_ok());
@@ -604,7 +684,7 @@ mod tests {
         setup_test_dependencies(client.clone(), bucket_name.clone()).await;
 
         // load models
-        let model_store = S3ModelStore::new(bucket_name.clone()).await.unwrap();
+        let model_store = S3ModelStore::new(bucket_name.clone(), None).await.unwrap();
         let model = model_store.get_model("my_awesome_reg_model".to_string());
 
         // assert
@@ -622,7 +702,7 @@ mod tests {
         setup_test_dependencies(client.clone(), bucket_name.clone()).await;
 
         // load models
-        let model_store = S3ModelStore::new(bucket_name.clone()).await.unwrap();
+        let model_store = S3ModelStore::new(bucket_name.clone(), None).await.unwrap();
         let model = model_store.get_model("model_which_does_not_exist".to_string());
 
         // assert
@@ -640,7 +720,7 @@ mod tests {
         setup_test_dependencies(client.clone(), bucket_name.clone()).await;
 
         // load models
-        let model_store = S3ModelStore::new(bucket_name.clone()).await.unwrap();
+        let model_store = S3ModelStore::new(bucket_name.clone(), None).await.unwrap();
         let models = model_store.get_models();
 
         // assert
@@ -659,7 +739,7 @@ mod tests {
         setup_test_dependencies(client.clone(), bucket_name.clone()).await;
 
         // load models
-        let model_store = S3ModelStore::new(bucket_name.clone()).await.unwrap();
+        let model_store = S3ModelStore::new(bucket_name.clone(), None).await.unwrap();
         let deletion = model_store.delete_model("my_awesome_penguin_model".to_string());
 
         // assert
@@ -677,7 +757,7 @@ mod tests {
         setup_test_dependencies(client.clone(), bucket_name.clone()).await;
 
         // load models
-        let model_store = S3ModelStore::new(bucket_name.clone()).await.unwrap();
+        let model_store = S3ModelStore::new(bucket_name.clone(), None).await.unwrap();
         let deletion = model_store.delete_model("model_which_does_not_exist".to_string());
 
         // assert
@@ -696,7 +776,7 @@ mod tests {
         let model_name = "my_awesome_reg_model".to_string();
 
         // load models
-        let model_store = S3ModelStore::new(bucket_name.clone()).await.unwrap();
+        let model_store = S3ModelStore::new(bucket_name.clone(), None).await.unwrap();
         tokio::time::sleep(Duration::from_secs_f32(1.25)).await;
 
         // retrieve timestamp from existing to model for assertion
@@ -731,7 +811,7 @@ mod tests {
         let incorrect_model_name = "my_awesome_reg_model_incorrect".to_string();
 
         // load models
-        let model_store = S3ModelStore::new(bucket_name.clone()).await.unwrap();
+        let model_store = S3ModelStore::new(bucket_name.clone(), None).await.unwrap();
 
         // update model with incorrect model name
         let update = model_store.update_model(incorrect_model_name).await;
@@ -751,7 +831,7 @@ mod tests {
         setup_test_dependencies(client.clone(), bucket_name.clone()).await;
 
         // load models
-        let model_store = S3ModelStore::new(bucket_name.clone()).await.unwrap();
+        let model_store = S3ModelStore::new(bucket_name.clone(), None).await.unwrap();
 
         // delete model to set up test
         model_store
@@ -787,7 +867,7 @@ mod tests {
         setup_test_dependencies(client.clone(), bucket_name.clone()).await;
 
         // load models
-        let model_store = S3ModelStore::new(bucket_name.clone()).await.unwrap();
+        let model_store = S3ModelStore::new(bucket_name.clone(), None).await.unwrap();
 
         // add model
         let add = model_store.add_model("wrong_model_name".to_string()).await;
