@@ -1,6 +1,6 @@
 # ruff: noqa
 # type: ignore
-
+import asyncio
 import json
 
 from jamspy.client import http
@@ -10,12 +10,12 @@ from jamspy.client import http
 URL = "https://jams-http.onrender.com"
 
 
-if __name__ == '__main__':
+async def pytorch_example():
     http_client = http.Client(base_url=URL)
 
     # health check
     try:
-        http_client.health_check()
+        await http_client.health_check()
     except Exception as e:
         raise f'service is not running: {e}'
 
@@ -28,6 +28,9 @@ if __name__ == '__main__':
 
     # this is a regression model so output would be continous for each input record
     print('TORCH PREDICTIONS')
-    torch_preds = http_client.predict('my_awesome_californiahousing_model', payload)
+    torch_preds = await http_client.predict('my_awesome_californiahousing_model', payload)
     print(f'prices: {torch_preds.values} \n')
 
+
+if __name__ == '__main__':
+    asyncio.run(pytorch_example())

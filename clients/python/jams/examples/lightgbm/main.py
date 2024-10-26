@@ -1,6 +1,7 @@
 # ruff: noqa
 # type: ignore
 
+import asyncio
 import json
 
 from jamspy.client import http
@@ -10,12 +11,12 @@ from jamspy.client import http
 URL = "https://jams-http.onrender.com"
 
 
-if __name__ == '__main__':
+async def lightgbm_example():
     http_client = http.Client(base_url=URL)
 
     # health check
     try:
-        http_client.health_check()
+        await http_client.health_check()
     except Exception as e:
         raise f'service is not running: {e}'
 
@@ -28,5 +29,9 @@ if __name__ == '__main__':
 
     # this is a regression model so output would be continous for each input record
     print('LIGHTGBM PREDICTIONS')
-    lightgbm_preds = http_client.predict('my_awesome_reg_model', payload)
+    lightgbm_preds = await http_client.predict('my_awesome_reg_model', payload)
     print(f'values: {lightgbm_preds.values}')
+
+
+if __name__ == '__main__':
+    asyncio.run(lightgbm_example())

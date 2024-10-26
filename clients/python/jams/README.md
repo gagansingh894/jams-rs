@@ -21,7 +21,7 @@ from jamspy.client.http import Client
 client = Client('0.0.0.0:3000')
 
 # healthcheck
-client.health_check()
+await client.health_check()
 
 # predict   
 model_name = "titanic_model"
@@ -45,7 +45,7 @@ model_input = json.dumps(
         "alone": ["True", "False"],
     }
 )
-prediction = client..predict(model_name=model_name, model_input=model_input)
+prediction = client.predict(model_name=model_name, model_input=model_input)
 prediction.values # use predictions
 
 
