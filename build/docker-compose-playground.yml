@@ -58,9 +58,11 @@ services:
       - MINIO_ROOT_PASSWORD=minioadmin  # Default secret key for MinIO
       - S3_BUCKET_NAME=jamsmodelstore
       - MINIO_URL=http://minio:9000
+      - OTLP_EXPORTER_URL=http://jaegar:4317
     depends_on:
       - minio
       - createbucket
+      - jaeger
     command: ["start", "http", "--model-store=minio"]
     restart: on-failure
   jams-grpc:
@@ -75,8 +77,10 @@ services:
       - MINIO_ROOT_PASSWORD=minioadmin  # Default secret key for MinIO
       - S3_BUCKET_NAME=jamsmodelstore
       - MINIO_URL=http://minio:9000
+      - OTLP_EXPORTER_URL=http://jaegar:4317
     depends_on:
       - minio
       - createbucket
+      - jaeger
     command: ["start", "grpc", "--model-store=minio"]
     restart: on-failure
