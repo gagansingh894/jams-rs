@@ -39,6 +39,7 @@ services:
       - MINIO_ROOT_USER=minioadmin  # Default access key for MinIO
       - MINIO_ROOT_PASSWORD=minioadmin  # Default secret key for MinIO
       - S3_BUCKET_NAME=jamsmodelstore
+      - MINIO_URL=http://minio:9000
     depends_on:
       - minio
       - createbucket
@@ -54,6 +55,7 @@ services:
       - MINIO_ROOT_USER=minioadmin  # Default access key for MinIO
       - MINIO_ROOT_PASSWORD=minioadmin  # Default secret key for MinIO
       - S3_BUCKET_NAME=jamsmodelstore
+      - MINIO_URL=http://minio:9000
     depends_on:
       - minio
       - createbucket
