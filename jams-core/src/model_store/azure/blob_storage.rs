@@ -2,8 +2,7 @@ use crate::model_store::azure::common::download_blob;
 use crate::model_store::common::{cleanup, DOWNLOADED_MODELS_DIRECTORY_NAME_PREFIX};
 use crate::model_store::fetcher::Fetcher;
 use crate::model_store::storage::{
-    append_model_format, extract_framework, load_predictor, Metadata, Model, ModelName,
-    Storage,
+    append_model_format, extract_framework, load_predictor, Metadata, Model, ModelName, Storage,
 };
 use async_trait::async_trait;
 use azure_storage::{CloudLocation, StorageCredentials};

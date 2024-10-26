@@ -2,8 +2,7 @@ use crate::model_store::aws::common::download_objects;
 use crate::model_store::common::{cleanup, DOWNLOADED_MODELS_DIRECTORY_NAME_PREFIX};
 use crate::model_store::fetcher::Fetcher;
 use crate::model_store::storage::{
-    append_model_format, extract_framework, load_predictor, Metadata, Model, ModelName,
-    Storage,
+    append_model_format, extract_framework, load_predictor, Metadata, Model, ModelName, Storage,
 };
 use async_trait::async_trait;
 use aws_config::meta::region::ProvideRegion;
@@ -342,7 +341,7 @@ impl Storage for S3ModelStore {
         if extract_framework(model_name.clone()).is_some() {
             anyhow::bail!("Ensure that framework is not being passed in the model name ❌. Expected <model_name> not <framework>-<model name>")
         }
-        
+
         // By calling remove on the hashmap, the object is returned on success/
         // We use the returned object, in this case the model to extract the framework and model path
         match self.models.remove(model_name.as_str()) {
