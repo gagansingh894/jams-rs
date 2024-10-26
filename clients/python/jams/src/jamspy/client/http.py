@@ -25,29 +25,27 @@ class Client:
             model_name=model_name, input=model_input
         ).model_dump()
 
-        async with httpx.AsyncClient() as client:
+        try:
+            response = await self.client.post(url, json=request)
+            if response.status_code != 200:
+                raise Exception(f'predict failed with {response.status_code}')
             try:
-                response = await self.client.post(url, json=request)
-                if response.status_code != 200:
-                    raise Exception(f'predict failed with {response.status_code}')
-                try:
-                    resp_obj = http.PredictResponse.model_validate(response.json())
-                    return common.Prediction(resp_obj.output)
-                except ValueError as e:
-                    raise Exception(f'fail to parse predict response: {e}')
-            except httpx.ConnectError:
-                raise ConnectionError('Could not connect to the server.')
+                resp_obj = http.PredictResponse.model_validate(response.json())
+                return common.Prediction(resp_obj.output)
+            except ValueError as e:
+                raise Exception(f'fail to parse predict response: {e}')
+        except httpx.ConnectError:
+            raise ConnectionError('Could not connect to the server.')
 
     async def add_model(self, model_name: str) -> None:
         url = f'{self.base_url}/api/models'
         request = http.AddModelsRequest(model_name=model_name).model_dump()
-        async with httpx.AsyncClient() as client:
-            try:
-                response = await self.client.post(url, json=request)
-                if response.status_code != 200:
-                    raise Exception(f'add model failed with {response.status_code}')
-            except httpx.ConnectError:
-                raise ConnectionError('Could not connect to the server.')
+        try:
+            response = await self.client.post(url, json=request)
+            if response.status_code != 200:
+                raise Exception(f'add model failed with {response.status_code}')
+        except httpx.ConnectError:
+            raise ConnectionError('Could not connect to the server.')
 
     async def update_model(self, model_name: str) -> None:
         url = f'{self.base_url}/api/models'
