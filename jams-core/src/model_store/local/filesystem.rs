@@ -2,7 +2,7 @@ use crate::model_store::common::{
     cleanup, unpack_tarball, DOWNLOADED_MODELS_DIRECTORY_NAME_PREFIX,
 };
 use crate::model_store::storage::{
-    append_model_format, extract_framework_from_path, load_models, load_predictor, Metadata, Model,
+    append_model_format, extract_framework, load_models, load_predictor, Metadata, Model,
     ModelName, Storage,
 };
 use async_trait::async_trait;
@@ -113,7 +113,7 @@ impl Storage for LocalModelStore {
         )?;
 
         // Extract model framework
-        let model_framework = match extract_framework_from_path(model_name.clone()) {
+        let model_framework = match extract_framework(model_name.clone()) {
             None => {
                 anyhow::bail!("Failed to extract framework from path");
             }
