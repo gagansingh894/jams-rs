@@ -6,24 +6,24 @@ use opentelemetry_sdk::{runtime, trace, Resource};
 use std::env;
 use tracing_subscriber::layer::SubscriberExt;
 
-pub fn init() -> anyhow::Result<()> {
+pub fn init(log_level: tracing::Level) -> anyhow::Result<()> {
     global::set_text_map_propagator(TraceContextPropagator::new());
-    // Create a formatted subscriber and combine it with the OpenTelemetry layer
-    let subscriber = tracing_subscriber::fmt()
-        .with_line_number(true)
-        .with_max_level(tracing::Level::INFO)
-        .pretty()
-        .finish();
-
     let tracer = init_otlp_trace()?;
     // Create the OpenTelemetry tracing layer
     let telemetry = tracing_opentelemetry::layer().with_tracer(tracer);
+    // Create a formatted subscriber and combine it with the OpenTelemetry layer
+    let subscriber = tracing_subscriber::fmt()
+        .with_line_number(true)
+        .with_max_level(log_level)
+        .pretty()
+        .finish()
+        .with(telemetry);
 
     // Set this combined subscriber as the global default
-    match tracing::subscriber::set_global_default(subscriber.with(telemetry)) {
+    match tracing::subscriber::set_global_default(subscriber) {
         Ok(_) => Ok(()),
         Err(_) => {
-            anyhow::bail!("Failed to set global default !")
+            anyhow::bail!("Failed to set_global_default tracing subscriber ")
         }
     }
 }
