@@ -1,16 +1,12 @@
 use crate::common::server;
 use crate::common::shutdown::shutdown_signal;
 use crate::common::state::build_app_state_from_config;
-use crate::common::opentelemetry::jaeger::init_otlp_trace;
+use crate::common::instrument;
 use crate::grpc::service::JamsService;
 use jams_proto::jams_v1::model_server_server::ModelServerServer;
 use jams_proto::jams_v1::FILE_DESCRIPTOR_SET;
 use tonic::codegen::tokio_stream::wrappers::TcpListenerStream;
 use tonic::transport::Server;
-use opentelemetry::global;
-use opentelemetry_sdk::propagation::TraceContextPropagator;
-use tower_http::trace::TraceLayer;
-use tracing_subscriber::layer::SubscriberExt;
 
 /// Starts the gRPC server with the provided configuration.
 ///
@@ -46,20 +42,24 @@ pub async fn start(config: server::Config) -> anyhow::Result<()> {
     if use_debug_level {
         _log_level = tracing::Level::TRACE
     }
-
-    global::set_text_map_propagator(TraceContextPropagator::new());
-    let tracer = init_otlp_trace().expect("Failed to create OTLP tracer provider ❌");
-    let telemetry = tracing_opentelemetry::layer().with_tracer(tracer);
-    let subscriber = tracing_subscriber::Registry::default().with(telemetry);
-    tracing::subscriber::set_global_default(subscriber).unwrap();
     
-
-    // // initialize tracing - by default log to fmt
-    // tracing_subscriber::fmt()
+    // initialize subscriber - formatted logging, default
+    // let subscriber = tracing_subscriber::fmt()
     //     .with_line_number(true)
     //     .with_max_level(log_level)
     //     .pretty()
-    //     .init();
+    //     .finish();
+    // 
+    // 
+    // based on config, if we are using tracing like jaeger etc then
+    // global::set_text_map_propagator(TraceContextPropagator::new());
+    // let tracer = init_otlp_trace().expect("Failed to create OTLP tracer provider ❌");
+    // let telemetry = tracing_opentelemetry::layer().with_tracer(tracer);
+
+
+    // Set this combined subscriber as the global default
+    // tracing::subscriber::set_global_default(subscriber.with(telemetry)).unwrap();
+    instrument::simple::init();
 
 
     // setup shared state
@@ -95,7 +95,6 @@ pub async fn start(config: server::Config) -> anyhow::Result<()> {
     );
 
     Server::builder()
-        .layer(TraceLayer::new_for_grpc())
         .add_service(reflection_service)
         .add_service(ModelServerServer::new(jams_service))
         .serve_with_incoming_shutdown(TcpListenerStream::new(listener), shutdown_signal())
