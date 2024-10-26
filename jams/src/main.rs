@@ -53,13 +53,13 @@ async fn main() -> anyhow::Result<()> {
                         port: config_data.config.port,
                         use_debug_level: Some(false),
                         num_workers: config_data.config.num_workers,
-                        model_store,
+                        model_store: model_store.clone(),
                         model_dir: config_data.config.model_dir,
                         s3_bucket_name: None
-                            .filter(|_| config_data.config.model_store == LOCAL)
+                            .filter(|_| model_store == LOCAL)
                             .or(config_data.config.s3_bucket_name),
                         azure_storage_container_name: None
-                            .filter(|_| config_data.config.model_store == LOCAL)
+                            .filter(|_| model_store == LOCAL)
                             .or(config_data.config.azure_storage_container_name),
                         poll_interval: config_data.config.poll_interval,
                     };
