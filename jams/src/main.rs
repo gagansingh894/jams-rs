@@ -9,6 +9,7 @@ const HTTP: &'static str = "http";
 const LOCAL: &'static str = "local";
 const AZURE: &'static str = "azure";
 const AWS: &'static str = "aws";
+const MINIO: &'static str = "minio";
 
 #[cfg(not(tarpaulin_include))]
 #[tokio::main]
@@ -33,20 +34,30 @@ async fn main() -> anyhow::Result<()> {
                         }
                     };
 
+                    let model_store = config_data.config.model_store;
+                    if (model_store != LOCAL)
+                        || (model_store != AZURE)
+                        || (model_store != AWS)
+                        || (model_store != MINIO)
+                    {
+                        anyhow::bail!(
+                            "Only following model stores are supported: {}, {}, {}, {}",
+                            LOCAL,
+                            AZURE,
+                            AWS,
+                            MINIO
+                        )
+                    }
+
                     let config = jams_serve::common::server::Config {
-                        model_dir: config_data.config.model_dir,
                         port: config_data.config.port,
                         use_debug_level: Some(false),
                         num_workers: config_data.config.num_workers,
-                        with_s3_model_store: Some(false)
-                            .filter(|_| config_data.config.model_store == LOCAL)
-                            .or(Some(config_data.config.model_store == AWS)),
+                        model_store,
+                        model_dir: config_data.config.model_dir,
                         s3_bucket_name: None
                             .filter(|_| config_data.config.model_store == LOCAL)
                             .or(config_data.config.s3_bucket_name),
-                        with_azure_model_store: Some(false)
-                            .filter(|_| config_data.config.model_store == LOCAL)
-                            .or(Some(config_data.config.model_store == AZURE)),
                         azure_storage_container_name: None
                             .filter(|_| config_data.config.model_store == LOCAL)
                             .or(config_data.config.azure_storage_container_name),
@@ -82,13 +93,12 @@ async fn main() -> anyhow::Result<()> {
                         }
                         Some(StartSubCommands::Http(args)) => {
                             let config = jams_serve::common::server::Config {
+                                model_store: args.model_store,
                                 model_dir: args.model_dir,
                                 port: args.port,
                                 use_debug_level: args.use_debug_level,
                                 num_workers: args.num_workers,
-                                with_s3_model_store: args.with_s3_model_store,
                                 s3_bucket_name: args.s3_bucket_name,
-                                with_azure_model_store: args.with_azure_model_store,
                                 azure_storage_container_name: args.azure_storage_container_name,
                                 poll_interval: args.poll_interval,
                             };
@@ -103,13 +113,12 @@ async fn main() -> anyhow::Result<()> {
                         }
                         Some(StartSubCommands::Grpc(args)) => {
                             let config = jams_serve::common::server::Config {
+                                model_store: args.model_store,
                                 model_dir: args.model_dir,
                                 port: args.port,
                                 use_debug_level: args.use_debug_level,
                                 num_workers: args.num_workers,
-                                with_s3_model_store: args.with_s3_model_store,
                                 s3_bucket_name: args.s3_bucket_name,
-                                with_azure_model_store: args.with_azure_model_store,
                                 azure_storage_container_name: args.azure_storage_container_name,
                                 poll_interval: args.poll_interval,
                             };
