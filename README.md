@@ -95,7 +95,7 @@ If everything worked fine, this should start a `minio` server with some preloade
 making predictions. You can add new models by uploading them directly to `minio` via UI (http://0.0.0.0:9001). The models
 should be of supported types and follow the naming convention  `<model_framework>-model_name.tar.gz`. 
 
-In addition to this, it will also start jaeger service for observability. The UI can be accessed at http://0.0.0.0:16686
+[//]: # (In addition to this, it will also start jaeger service for observability. The UI can be accessed at http://0.0.0.0:16686)
 
 Use the curl commands to make predictions 
 
