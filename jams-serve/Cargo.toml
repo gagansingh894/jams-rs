@@ -1,6 +1,6 @@
 [package]
 name = "jams-serve"
-version = "0.1.29"
+version = "0.1.30"
 edition = "2021"
 description = "jams-serve provides a http and gRPC API for jams-core."
 homepage = "https://github.com/gagansingh894/jams-rs"
@@ -34,6 +34,7 @@ opentelemetry_sdk = { version = "0.22.1", features = ["rt-tokio", "trace"] }
 opentelemetry-otlp = "0.15.0"
 opentelemetry-semantic-conventions = "0.15.0"
 tracing-opentelemetry = "0.23.0"
+toml = "0.8.19"
 
 [dev-dependencies]
 chrono = "0.4.38"
