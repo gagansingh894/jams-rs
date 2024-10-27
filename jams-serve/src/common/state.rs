@@ -1,4 +1,4 @@
-use crate::common::server;
+use crate::common::{instrument, server};
 use jams_core::manager::{Manager, ManagerBuilder};
 use jams_core::model_store::aws::s3::S3ModelStore;
 use jams_core::model_store::azure::blob_storage::AzureBlobStorageModelStore;
@@ -6,11 +6,6 @@ use jams_core::model_store::local::filesystem::LocalModelStore;
 use rayon::{ThreadPool, ThreadPoolBuilder};
 use std::env;
 use std::sync::Arc;
-
-type ModelStore = &'static str;
-const AWS: ModelStore = "aws";
-const AZURE: ModelStore = "azurite";
-const MINIO: ModelStore = "minio";
 
 /// AppState struct holds application state.
 pub struct AppState {
@@ -46,6 +41,8 @@ pub struct AppState {
 /// * `S3_BUCKET_NAME` - The name of the S3 bucket to store models (required if `with_s3_model_store` is true).
 ///
 pub async fn build_app_state_from_config(config: server::Config) -> anyhow::Result<Arc<AppState>> {
+    instrument::simple::init(tracing::Level::INFO);
+
     let model_dir = config.model_dir.unwrap_or_else(|| {
         // search for environment variable
         env::var("MODEL_STORE_DIR").unwrap_or_else(|_| "".to_string())
@@ -57,21 +54,8 @@ pub async fn build_app_state_from_config(config: server::Config) -> anyhow::Resu
     // run without polling by default
     let interval = config.poll_interval.unwrap_or(0);
 
-    // initialize threadpool for cpu intensive tasks
-    if worker_pool_threads < 1 {
-        anyhow::bail!("At least 1 worker is required for rayon threadpool")
-    }
-    let cpu_pool = ThreadPoolBuilder::new()
-        .num_threads(worker_pool_threads)
-        .build()
-        .expect("Failed to build rayon threadpool ❌");
-
-    tracing::info!(
-        "Rayon threadpool started with {} workers ⚙️",
-        worker_pool_threads
-    );
-
-    let manager = if model_store == AWS {
+    // initialize manager
+    let manager = if model_store == server::AWS {
         let s3_bucket_name = config.s3_bucket_name.unwrap_or_else(|| {
             // search for environment variable
             env::var("S3_BUCKET_NAME").expect("S3 bucket name not specified ❌. Either set the S3_BUCKET_NAME env variable or provide the value using --s3-bucket-name flag ")
@@ -85,7 +69,7 @@ pub async fn build_app_state_from_config(config: server::Config) -> anyhow::Resu
                 .build()
                 .expect("Failed to initialize manager ❌"),
         )
-    } else if model_store == MINIO {
+    } else if model_store == server::MINIO {
         let s3_bucket_name = config.s3_bucket_name.unwrap_or_else(|| {
             // search for environment variable
             env::var("S3_BUCKET_NAME").expect("S3 bucket name not specified ❌. Either set the S3_BUCKET_NAME env variable or provide the value using --s3-bucket-name flag ")
@@ -99,7 +83,7 @@ pub async fn build_app_state_from_config(config: server::Config) -> anyhow::Resu
                 .build()
                 .expect("Failed to initialize manager ❌"),
         )
-    } else if model_store == AZURE {
+    } else if model_store == server::AZURE {
         let azure_storage_container_name = config.azure_storage_container_name.unwrap_or_else(|| {
             // search for environment variable
             env::var("AZURE_STORAGE_CONTAINER_NAME").expect("Azure Storage container name not specified ❌. Either set the AZURE_STORAGE_CONTAINER_NAME env variable or provide the value using --azure-container-name flag ")
@@ -124,6 +108,20 @@ pub async fn build_app_state_from_config(config: server::Config) -> anyhow::Resu
                 .expect("Failed to initialize manager ❌"),
         )
     };
+
+    // initialize threadpool for cpu intensive tasks
+    if worker_pool_threads < 1 {
+        anyhow::bail!("At least 1 worker is required for rayon threadpool")
+    }
+    let cpu_pool = ThreadPoolBuilder::new()
+        .num_threads(worker_pool_threads)
+        .build()
+        .expect("Failed to build rayon threadpool ❌");
+
+    tracing::info!(
+        "Rayon threadpool started with {} workers ⚙️",
+        worker_pool_threads
+    );
 
     // setup shared state
     Ok(Arc::new(AppState { manager, cpu_pool }))

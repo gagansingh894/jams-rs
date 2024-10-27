@@ -342,7 +342,7 @@ pub async fn predict(
         Ok(predictions) => match predictions {
             Ok(output) => Ok((StatusCode::OK, Json(PredictResponse { output }))),
             Err(e) => {
-                tracing::error!("{}", format!("Failed to get models ❌: {}", e));
+                tracing::error!("{}", format!("Failed to predict ❌: {}", e));
                 Err((
                     StatusCode::INTERNAL_SERVER_ERROR,
                     Json(ErrorResponse {
@@ -352,7 +352,7 @@ pub async fn predict(
             }
         },
         Err(e) => {
-            tracing::error!("{}", format!("Failed to get models ❌: {}", e));
+            tracing::error!("{}", format!("Failed to predict ❌: {}", e));
             Err((
                 StatusCode::INTERNAL_SERVER_ERROR,
                 Json(ErrorResponse {

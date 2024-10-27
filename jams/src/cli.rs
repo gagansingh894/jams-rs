@@ -1,6 +1,6 @@
 use clap::{Args, Parser, Subcommand};
 use jams_core::model::predictor::Predictor;
-use serde::Deserialize;
+use jams_serve::common::server::{Config, Protocol};
 use std::fs;
 
 /// CLI for starting an J.A.M.S
@@ -77,10 +77,6 @@ pub struct StartCommandArgs {
     #[clap(long)]
     pub port: Option<u16>,
 
-    /// Toggle DEBUG logs on/off
-    #[clap(long)]
-    pub use_debug_level: Option<bool>,
-
     /// Number of threads to be used in CPU threadpool. This threadpool is different from the
     /// I/O threadpool and used for computing CPU intensive tasks (default: 2)
     #[clap(long)]
@@ -114,23 +110,17 @@ pub struct PredictCommandArgs {
     pub input_path: Option<String>,
 }
 
-// Top level struct to hold the TOML data.
-#[derive(Deserialize)]
-pub struct Data {
-    pub config: Config,
-}
-
-// Config struct holds to data from the `[config]` section.
-#[derive(Deserialize)]
-pub struct Config {
-    pub protocol: String,
-    pub port: Option<u16>,
-    pub model_store: String,
-    pub num_workers: Option<usize>,
-    pub poll_interval: Option<u64>,
-    pub model_dir: Option<String>,
-    pub azure_storage_container_name: Option<String>,
-    pub s3_bucket_name: Option<String>,
+pub fn parse_server_config_from_args(args: StartCommandArgs, protocol: Protocol) -> Config {
+    Config {
+        protocol: protocol.to_string(),
+        model_store: args.model_store,
+        model_dir: args.model_dir,
+        port: args.port,
+        num_workers: args.num_workers,
+        s3_bucket_name: args.s3_bucket_name,
+        azure_storage_container_name: args.azure_storage_container_name,
+        poll_interval: args.poll_interval,
+    }
 }
 
 pub fn predict(

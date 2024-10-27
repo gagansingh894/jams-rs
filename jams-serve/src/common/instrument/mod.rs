@@ -1,2 +1,2 @@
-pub mod jaeger;
+pub mod opentelemetry;
 pub mod simple;
