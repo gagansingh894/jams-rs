@@ -54,20 +54,7 @@ pub async fn build_app_state_from_config(config: server::Config) -> anyhow::Resu
     // run without polling by default
     let interval = config.poll_interval.unwrap_or(0);
 
-    // initialize threadpool for cpu intensive tasks
-    if worker_pool_threads < 1 {
-        anyhow::bail!("At least 1 worker is required for rayon threadpool")
-    }
-    let cpu_pool = ThreadPoolBuilder::new()
-        .num_threads(worker_pool_threads)
-        .build()
-        .expect("Failed to build rayon threadpool ❌");
-
-    tracing::info!(
-        "Rayon threadpool started with {} workers ⚙️",
-        worker_pool_threads
-    );
-
+    // initialize manager
     let manager = if model_store == server::AWS {
         let s3_bucket_name = config.s3_bucket_name.unwrap_or_else(|| {
             // search for environment variable
@@ -121,6 +108,20 @@ pub async fn build_app_state_from_config(config: server::Config) -> anyhow::Resu
                 .expect("Failed to initialize manager ❌"),
         )
     };
+
+    // initialize threadpool for cpu intensive tasks
+    if worker_pool_threads < 1 {
+        anyhow::bail!("At least 1 worker is required for rayon threadpool")
+    }
+    let cpu_pool = ThreadPoolBuilder::new()
+        .num_threads(worker_pool_threads)
+        .build()
+        .expect("Failed to build rayon threadpool ❌");
+
+    tracing::info!(
+        "Rayon threadpool started with {} workers ⚙️",
+        worker_pool_threads
+    );
 
     // setup shared state
     Ok(Arc::new(AppState { manager, cpu_pool }))
