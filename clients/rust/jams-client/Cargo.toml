@@ -1,6 +1,6 @@
 [package]
 name = "jams-client"
-version = "0.2.1"
+version = "0.2.2"
 edition = "2021"
 description = "A HTTP and gRPC client library for interacting with  J.A.M.S - Just Another Model Server"
 homepage = "https://github.com/gagansingh894/jams-rs"
