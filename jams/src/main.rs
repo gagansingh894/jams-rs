@@ -2,9 +2,7 @@ use crate::cli::{
     parse_server_config_from_args, predict, Commands, PredictSubCommands, StartSubCommands,
 };
 use clap::Parser;
-use jams_serve;
 use jams_serve::common::server::{GRPC, HTTP};
-use std::fs;
 
 mod cli;
 
