@@ -95,13 +95,12 @@ impl Config {
             }
         };
 
-        let data: Data = match toml::from_str(contents.as_str()) {
-            Ok(config) => config,
+        let config = match toml::from_str::<Data>(contents.as_str()) {
+            Ok(config) => config.config,
             Err(e) => {
                 anyhow::bail!("Failed to parse config file ❌: {}", e.to_string())
             }
         };
-        let config = data.config;
 
         let protocol = config.clone().protocol;
         if (protocol != HTTP) && (protocol != GRPC) {
