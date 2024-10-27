@@ -80,6 +80,12 @@ pub struct Config {
     pub poll_interval: Option<u64>,
 }
 
+/// Used for parsing the config TOML files
+#[derive(Deserialize)]
+struct Data {
+    config: Config,
+}
+
 impl Config {
     pub fn parse(file_path: String) -> anyhow::Result<Config> {
         let contents = match fs::read_to_string(file_path) {
@@ -89,12 +95,13 @@ impl Config {
             }
         };
 
-        let config: Config = match toml::from_str(contents.as_str()) {
+        let data: Data = match toml::from_str(contents.as_str()) {
             Ok(config) => config,
             Err(e) => {
                 anyhow::bail!("Failed to parse config file ❌: {}", e.to_string())
             }
         };
+        let config = data.config;
 
         let protocol = config.clone().protocol;
         if (protocol != HTTP) && (protocol != GRPC) {
