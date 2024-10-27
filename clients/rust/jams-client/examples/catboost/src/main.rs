@@ -1,11 +1,11 @@
-use jams_client::http::{ApiClient, Client};
+use jams_client::http::{ApiClientBuilder, Client};
 use std::fs;
 
 const URL: &str = "https://jams-http.onrender.com";
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
-    let http_client = ApiClient::new(URL.to_string())?;
+    let http_client = ApiClientBuilder::new(URL.to_string()).build()?;
 
     // health check
     http_client.health_check().await?;
