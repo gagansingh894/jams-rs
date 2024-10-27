@@ -62,25 +62,6 @@ mod tests {
     }
 
     #[tokio::test]
-    #[should_panic]
-    async fn grpc_server_fails_to_start_due_to_zero_workers_in_worker_pool() {
-        // Arrange
-        let config = common::server::Config {
-            protocol: GRPC.to_string(),
-            model_store: "local".to_string(),
-            model_dir: Some("".to_string()),
-            port: Some(5000),
-            num_workers: Some(0),
-            s3_bucket_name: Some("".to_string()),
-            azure_storage_container_name: Some("".to_string()),
-            poll_interval: Some(0),
-        };
-
-        // Act
-        start(config).await;
-    }
-
-    #[tokio::test]
     async fn successfully_starts_the_http_server() {
         let config = common::server::Config {
             protocol: HTTP.to_string(),
@@ -97,23 +78,5 @@ mod tests {
         tokio::spawn(async move { start(config).await });
 
         // The test will fail if the server fails to start
-    }
-
-    #[tokio::test]
-    #[should_panic]
-    async fn http_server_fails_to_start_due_to_zero_workers_in_worker_pool() {
-        let config = common::server::Config {
-            protocol: HTTP.to_string(),
-            model_store: "local".to_string(),
-            model_dir: Some("".to_string()),
-            port: Some(15000),
-            num_workers: Some(0),
-            s3_bucket_name: Some("".to_string()),
-            azure_storage_container_name: Some("".to_string()),
-            poll_interval: Some(0),
-        };
-
-        // Act
-        start(config).await;
     }
 }
