@@ -389,33 +389,21 @@ impl Predictor for Tensorflow {
     fn predict(&self, input: ModelInput) -> anyhow::Result<Output> {
         // Parse input into TensorFlow model input format
         let input = TensorflowModelInput::parse(input, &self.signature_def, &self.graph)?;
-
-        // Create separate vectors for tensor values
-        // Added here to make the compiler happy
-        let float_tensors: Vec<Tensor<f32>> =
-            input.float_tensors.iter().map(|(_, t)| t.clone()).collect();
-        let int_tensors: Vec<Tensor<i32>> =
-            input.int_tensors.iter().map(|(_, t)| t.clone()).collect();
-        let string_tensors: Vec<Tensor<String>> = input
-            .string_tensors
-            .iter()
-            .map(|(_, t)| t.clone())
-            .collect();
-
+        
         // Create session run arguments
         let mut run_args = SessionRunArgs::new();
 
         // Add input tensors to the session run arguments
-        for (i, float_feature) in input.float_tensors.iter().enumerate() {
-            run_args.add_feed(&float_feature.0, 0, &float_tensors[i]);
+        for float_feature in input.float_tensors.iter() {
+            run_args.add_feed(&float_feature.0, 0, &float_feature.1);
         }
 
-        for (i, int_feature) in input.int_tensors.iter().enumerate() {
-            run_args.add_feed(&int_feature.0, 0, &int_tensors[i]);
+        for int_feature in input.int_tensors.iter() {
+            run_args.add_feed(&int_feature.0, 0, &int_feature.1);
         }
 
-        for (i, string_feature) in input.string_tensors.iter().enumerate() {
-            run_args.add_feed(&string_feature.0, 0, &string_tensors[i]);
+        for string_feature in input.string_tensors.iter() {
+            run_args.add_feed(&string_feature.0, 0, &string_feature.1);
         }
 
         // Prepare output tensor
