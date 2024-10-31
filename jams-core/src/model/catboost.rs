@@ -1,4 +1,5 @@
-use crate::model::predictor::{ModelInput, Output, Predictor, Value, Values};
+use crate::model::predictor::{ModelInput, Output, Predictor, Value, Values, DEFAULT_OUTPUT_KEY};
+use std::collections::HashMap;
 
 use catboost_rs;
 use ndarray::Axis;
@@ -205,8 +206,10 @@ impl Predictor for Catboost {
             .model
             .calc_model_prediction(input.numeric_features, input.categorical_features);
         match preds {
-            Ok(predictions) => {
-                let predictions: Vec<Vec<f64>> = predictions.into_iter().map(|v| vec![v]).collect();
+            Ok(preds) => {
+                let mut predictions: HashMap<String, Vec<Vec<f64>>> = HashMap::new();
+                let values: Vec<Vec<f64>> = preds.into_iter().map(|v| vec![v]).collect();
+                predictions.insert(DEFAULT_OUTPUT_KEY.to_string(), values);
                 Ok(Output { predictions })
             }
             Err(e) => {
@@ -264,6 +267,7 @@ mod tests {
         // assert
         assert!(output.is_ok());
         let predictions = output.unwrap().predictions;
+        let predictions = predictions.get(DEFAULT_OUTPUT_KEY).unwrap();
 
         // asserts the output length of predictions is equal to input length
         assert_eq!(predictions.len(), size);
@@ -291,6 +295,7 @@ mod tests {
         // assert
         assert!(output.is_ok());
         let predictions = output.unwrap().predictions;
+        let predictions = predictions.get(DEFAULT_OUTPUT_KEY).unwrap();
 
         // asserts the output length of predictions is equal to input length
         assert_eq!(predictions.len(), size);
@@ -327,6 +332,7 @@ mod tests {
         // assert
         assert!(output.is_ok());
         let predictions = output.unwrap().predictions;
+        let predictions = predictions.get(DEFAULT_OUTPUT_KEY).unwrap();
 
         // asserts the output length of predictions is equal to input length
         assert_eq!(predictions.len(), size);
@@ -355,6 +361,7 @@ mod tests {
         // assert
         assert!(output.is_ok());
         let predictions = output.unwrap().predictions;
+        let predictions = predictions.get(DEFAULT_OUTPUT_KEY).unwrap();
 
         // asserts the output length of predictions is equal to input length
         assert_eq!(predictions.len(), size);

@@ -1,6 +1,8 @@
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 
+pub const DEFAULT_OUTPUT_KEY: &str = "predictions";
+
 /// Trait for making predictions using a model.
 pub trait Predictor: Send + Sync + 'static {
     /// Predicts the output for the given model input.
@@ -18,7 +20,10 @@ pub trait Predictor: Send + Sync + 'static {
 #[derive(Debug, Serialize)]
 pub struct Output {
     /// The predictions made by the model.
-    pub predictions: Vec<Vec<f64>>,
+    /// We use a hashmap because we can have models with multiple outputs
+    /// The client is responsible for selecting the correct field for their respective purpose
+    /// For the models which do not support multiple outputs, the default key will be 'predictions'
+    pub predictions: HashMap<String, Vec<Vec<f64>>>,
 }
 
 /// Struct representing the input to a model.

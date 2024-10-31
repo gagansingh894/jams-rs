@@ -1,7 +1,8 @@
 use crate::model::predictor::{ModelInput, Output, Predictor, Value, Values};
+use std::collections::HashMap;
 use tensorflow::{
-    DataType, Graph, Operation, SavedModelBundle, SessionOptions, SessionRunArgs, SignatureDef,
-    Tensor, DEFAULT_SERVING_SIGNATURE_DEF_KEY,
+    DataType, FetchToken, Graph, Operation, SavedModelBundle, SessionOptions, SessionRunArgs,
+    SignatureDef, Tensor, DEFAULT_SERVING_SIGNATURE_DEF_KEY,
 };
 
 /// Struct representing the input tensors for a TensorFlow model.
@@ -300,8 +301,6 @@ pub struct Tensorflow {
     bundle: SavedModelBundle,
     /// SignatureDef describing the model's input and output signatures.
     signature_def: SignatureDef,
-    /// OutputOperation describing the model's output operation. This is the last layer and should have at least one value.
-    output_operation: Operation,
 }
 
 impl Tensorflow {
@@ -347,31 +346,10 @@ impl Tensorflow {
             }
         };
 
-        let outputs_tensor_names: Vec<String> = signature_def
-            .outputs()
-            .values()
-            .map(|t| t.name().name.to_string())
-            .collect();
-        // TODO: multi output model support if possible, for now we only fetch the first index
-        let output_operation = match outputs_tensor_names.first() {
-            None => {
-                tracing::error!("Output Tensor is empty. At least 1 value is required");
-                anyhow::bail!("Output Tensor is empty. At least 1 value is required")
-            }
-            Some(name) => match graph.operation_by_name_required(name) {
-                Ok(op) => op,
-                Err(_) => {
-                    tracing::error!("Failed to fetch tensor output operation: {}", name);
-                    anyhow::bail!("Failed to fetch tensor output operation: {}", name)
-                }
-            },
-        };
-
         Ok(Tensorflow {
             graph,
             bundle,
             signature_def,
-            output_operation,
         })
     }
 }
@@ -389,7 +367,7 @@ impl Predictor for Tensorflow {
     fn predict(&self, input: ModelInput) -> anyhow::Result<Output> {
         // Parse input into TensorFlow model input format
         let input = TensorflowModelInput::parse(input, &self.signature_def, &self.graph)?;
-        
+
         // Create session run arguments
         let mut run_args = SessionRunArgs::new();
 
@@ -406,8 +384,18 @@ impl Predictor for Tensorflow {
             run_args.add_feed(&string_feature.0, 0, &string_feature.1);
         }
 
-        // Prepare output tensor
-        let output_fetch = run_args.request_fetch(&self.output_operation, 0);
+        // Prepare output tensors
+        // todo: we should be able to store output names, operation and index during when loading
+        let mut fetch_tokens: Vec<FetchToken> = Vec::new();
+        let mut output_names: Vec<String> = Vec::new();
+        for output_def in self.signature_def.outputs() {
+            let output_operation = self
+                .graph
+                .operation_by_name_required(&output_def.1.name().name)?;
+            let fetch_token = run_args.request_fetch(&output_operation, output_def.1.name().index);
+            output_names.push(output_def.0.to_string());
+            fetch_tokens.push(fetch_token);
+        }
 
         // Execute the TensorFlow graph
         match self.bundle.session.run(&mut run_args) {
@@ -418,20 +406,57 @@ impl Predictor for Tensorflow {
             }
         };
 
-        // Retrieve and process the output tensor
-        let output: Tensor<f32> = run_args
-            .fetch(output_fetch)
-            .expect("Failed to fetch output tensor");
-        let processed_output: Vec<Vec<f32>> = output
-            .chunks(output.dims()[1] as usize)
-            .map(|row| row.to_vec())
-            .collect();
+        // Retrieve and process the output tensors
+        let mut predictions: HashMap<String, Vec<Vec<f64>>> = HashMap::new();
 
-        // Convert processed output to the expected format
-        let predictions: Vec<Vec<f64>> = processed_output
-            .iter()
-            .map(|row| row.iter().map(|&value| value as f64).collect())
-            .collect();
+        for (i, token) in fetch_tokens.into_iter().enumerate() {
+            let output: Tensor<f32> = run_args.fetch(token)?;
+
+            // model output can have a scaler or nd-array output. Currently, only 2D is supported
+            if output.dims().len() > 2 {
+                anyhow::bail!("Only 2D shapes are supported in output nodes !")
+            }
+
+            // handle non scaler output - is_empty() is true for scalar values
+            if !output.dims().is_empty() {
+                let processed_output: Vec<Vec<f32>> = output
+                    .chunks(output.dims()[1] as usize)
+                    .map(|row| row.to_vec())
+                    .collect();
+
+                // Convert processed output to the expected format
+                let values: Vec<Vec<f64>> = processed_output
+                    .iter()
+                    .map(|row| {
+                        row.iter()
+                            .map(|&value| {
+                                if value.is_nan() {
+                                    -999.99f64
+                                } else {
+                                    value as f64
+                                }
+                            })
+                            .collect()
+                    })
+                    .collect();
+
+                predictions.insert(output_names.get(i).unwrap().to_string(), values);
+            } else {
+                // get the scaler value and convert it to Vec<Vec<f64>>
+                let scalar_value_vec = output.to_vec();
+                let scalar_value = match scalar_value_vec.first() {
+                    None => {
+                        tracing::error!("Failed to fetch scaler value from output");
+                        anyhow::bail!("Failed to fetch scaler value from output")
+                    }
+                    Some(scaler_value) => scaler_value,
+                };
+                predictions.insert(
+                    output_names.get(i).unwrap().to_string(),
+                    vec![vec![*scalar_value as f64]],
+                );
+            }
+        }
 
         Ok(Output { predictions })
     }
@@ -474,6 +499,7 @@ mod tests {
         // assert
         assert!(output.is_ok());
         let predictions = output.unwrap().predictions;
+        let predictions = predictions.get("dense_2").unwrap(); // the caller should be aware of which key to use
 
         // asserts the output length of predictions is equal to input length
         assert_eq!(predictions.len(), size);
@@ -506,6 +532,7 @@ mod tests {
         // assert
         assert!(output.is_ok());
         let predictions = output.unwrap().predictions;
+        let predictions = predictions.get("output_0").unwrap(); // the caller should be aware of which key to use
 
         // asserts the output length of predictions is equal to input length
         assert_eq!(predictions.len(), size);
@@ -540,6 +567,7 @@ mod tests {
         // assert
         assert!(output.is_ok());
         let predictions = output.unwrap().predictions;
+        let predictions = predictions.get("species").unwrap(); // the caller should be aware of which key to use
 
         // asserts the output length of predictions is equal to input length
         assert_eq!(predictions.len(), size);
