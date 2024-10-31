@@ -413,8 +413,12 @@ impl Predictor for Tensorflow {
             let output: Tensor<f32> = run_args.fetch(token)?;
 
             // model output can have a scaler or nd-array output. Currently, only 2D is supported
+            if output.dims().len() > 2 {
+                anyhow::bail!("Only 2D shapes are supported in output nodes !")
+            }
+
             // handle non scaler output - is_empty() is true for scalar values
-            if !output.is_empty() {
+            if !output.dims().is_empty() {
                 let processed_output: Vec<Vec<f32>> = output
                     .chunks(output.dims()[1] as usize)
                     .map(|row| row.to_vec())
