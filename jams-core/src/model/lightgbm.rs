@@ -1,9 +1,10 @@
-use crate::model::predictor::{ModelInput, Output, Predictor, Value, Values};
+use crate::model::predictor::{ModelInput, Output, Predictor, Value, Values, DEFAULT_OUTPUT_KEY};
 use lgbm;
 use lgbm::mat::MatLayouts;
 use lgbm::mat::MatLayouts::ColMajor;
 use lgbm::PredictType::RawScore;
 use lgbm::{MatBuf, Parameters};
+use std::collections::HashMap;
 
 /// Struct representing the input data format for a LightGBM model.
 ///
@@ -134,10 +135,10 @@ impl Predictor for LightGBM {
             .booster
             .predict_for_mat(input.matbuf, RawScore, 0, None, &p);
         match preds {
-            Ok(predictions) => {
-                // Convert predictions into Vec<Vec<f64>> format
-                let predictions: Vec<Vec<f64>> =
-                    predictions.values().iter().map(|v| vec![*v]).collect();
+            Ok(preds) => {
+                let mut predictions: HashMap<String, Vec<Vec<f64>>> = HashMap::new();
+                let values: Vec<Vec<f64>> = preds.values().iter().map(|v| vec![*v]).collect();
+                predictions.insert(DEFAULT_OUTPUT_KEY.to_string(), values);
                 Ok(Output { predictions })
             }
             Err(e) => {
@@ -187,6 +188,7 @@ mod tests {
         // assert the result is ok
         assert!(output.is_ok());
         let predictions = output.unwrap().predictions;
+        let predictions = predictions.get(DEFAULT_OUTPUT_KEY).unwrap();
 
         // asserts the output length of predictions is equal to input length
         assert_eq!(predictions.len(), size);
@@ -229,6 +231,7 @@ mod tests {
         // assert the result is ok
         assert!(output.is_ok());
         let predictions = output.unwrap().predictions;
+        let predictions = predictions.get(DEFAULT_OUTPUT_KEY).unwrap();
 
         // asserts the output length of predictions is equal to input length
         assert_eq!(predictions.len(), size);
@@ -263,6 +266,7 @@ mod tests {
         // assert the result is ok
         assert!(output.is_ok());
         let predictions = output.unwrap().predictions;
+        let predictions = predictions.get(DEFAULT_OUTPUT_KEY).unwrap();
 
         // asserts the output length of predictions is equal to input length
         assert_eq!(predictions.len(), size);
@@ -289,6 +293,7 @@ mod tests {
         // assert the result is ok
         assert!(output.is_ok());
         let predictions = output.unwrap().predictions;
+        let predictions = predictions.get(DEFAULT_OUTPUT_KEY).unwrap();
 
         // asserts the output length of predictions is equal to input length
         assert_eq!(predictions.len(), size);
@@ -324,6 +329,7 @@ mod tests {
         // assert the result is ok
         assert!(output.is_ok());
         let predictions = output.unwrap().predictions;
+        let predictions = predictions.get(DEFAULT_OUTPUT_KEY).unwrap();
 
         // asserts the output length of predictions is equal to input length
         assert_eq!(predictions.len(), size);
@@ -350,6 +356,7 @@ mod tests {
         // assert the result is ok
         assert!(output.is_ok());
         let predictions = output.unwrap().predictions;
+        let predictions = predictions.get(DEFAULT_OUTPUT_KEY).unwrap();
 
         // asserts the output length of predictions is equal to input length
         assert_eq!(predictions.len(), size);
@@ -385,6 +392,7 @@ mod tests {
         // assert the result is ok
         assert!(output.is_ok());
         let predictions = output.unwrap().predictions;
+        let predictions = predictions.get(DEFAULT_OUTPUT_KEY).unwrap();
 
         // asserts the output length of predictions is equal to input length
         assert_eq!(predictions.len(), size);
@@ -411,6 +419,7 @@ mod tests {
         // assert the result is ok
         assert!(output.is_ok());
         let predictions = output.unwrap().predictions;
+        let predictions = predictions.get(DEFAULT_OUTPUT_KEY).unwrap();
 
         // asserts the output length of predictions is equal to input length
         assert_eq!(predictions.len(), size);

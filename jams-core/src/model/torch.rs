@@ -1,4 +1,5 @@
-use crate::model::predictor::{ModelInput, Output, Predictor, Value, Values};
+use crate::model::predictor::{ModelInput, Output, Predictor, Value, Values, DEFAULT_OUTPUT_KEY};
+use std::collections::HashMap;
 
 use tch::CModule;
 
@@ -114,8 +115,10 @@ impl Predictor for Torch {
         let input = TorchModelInput::parse(input)?;
         let preds = self.model.forward_ts(&[input.tensor]);
         match preds {
-            Ok(predictions) => {
-                let predictions: Vec<Vec<f64>> = predictions.try_into()?;
+            Ok(preds) => {
+                let mut predictions: HashMap<String, Vec<Vec<f64>>> = HashMap::new();
+                let values: Vec<Vec<f64>> = preds.try_into()?;
+                predictions.insert(DEFAULT_OUTPUT_KEY.to_string(), values);
                 Ok(Output { predictions })
             }
             Err(e) => {
@@ -172,6 +175,7 @@ mod tests {
         // assert
         assert!(output.is_ok());
         let predictions = output.unwrap().predictions;
+        let predictions = predictions.get(DEFAULT_OUTPUT_KEY).unwrap();
 
         // asserts the output length of predictions is equal to input length
         assert_eq!(predictions.len(), size);
@@ -206,6 +210,7 @@ mod tests {
         // assert
         assert!(output.is_ok());
         let predictions = output.unwrap().predictions;
+        let predictions = predictions.get(DEFAULT_OUTPUT_KEY).unwrap();
 
         // asserts the output length of predictions is equal to input length
         assert_eq!(predictions.len(), size);
