@@ -305,7 +305,7 @@ pub async fn get_models(
 // StatusCode: 200 OK
 // {
 //   "error": "",
-//   "output": "{\"result_key\": \"[[result_value_1], [result_value_2], [result_value_3]]\"}"
+//   "output": "{\"predictions\":{\"predictions\":[[0.4526313832970486],[0.1716334566017958]]}}"
 // }
 // ```
 
