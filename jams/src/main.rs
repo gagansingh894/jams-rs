@@ -3,12 +3,24 @@ use crate::cli::{
 };
 use clap::Parser;
 use jams_serve::common::server::{GRPC, HTTP};
+use tokio::runtime::Builder;
 
 mod cli;
 
 #[cfg(not(tarpaulin_include))]
-#[tokio::main]
-async fn main() -> anyhow::Result<()> {
+fn main() -> anyhow::Result<()> {
+    // get physical cpu count and divide by 2.
+    // one half is given to tokio runtime and the another to rayon thread pool.
+    // the rayon threadpool worker count can also be set via config/flag
+    let physical_cores = (num_cpus::get_physical() / 2).max(1);
+
+    let tokio_runtime = Builder::new_multi_thread()
+        .worker_threads(physical_cores)
+        .max_blocking_threads(50)
+        .enable_all()
+        .build()
+        .expect("Failed to create Tokio runtime");
+
     let cli = cli::Cli::parse();
 
     match cli.cmd {
@@ -16,9 +28,13 @@ async fn main() -> anyhow::Result<()> {
             match subcommands.file {
                 Some(file_path) => {
                     let config = jams_serve::common::server::Config::parse(file_path)?;
-                    jams_serve::start(config).await;
-                    // shutdown signal received
-                    tracing::error!("Shutdown signal received ⚠️");
+
+                    tokio_runtime.block_on(async {
+                        jams_serve::start(config, physical_cores).await;
+                        // shutdown signal received
+                        tracing::error!("Shutdown signal received ⚠️");
+                    });
+
                     Ok(())
                 }
                 None => {
@@ -31,19 +47,25 @@ async fn main() -> anyhow::Result<()> {
                         Some(StartSubCommands::Http(args)) => {
                             let config = parse_server_config_from_args(args, HTTP);
 
-                            jams_serve::start(config).await;
+                            tokio_runtime.block_on(async {
+                                jams_serve::start(config, physical_cores).await;
 
-                            // shutdown signal received
-                            tracing::error!("Shutdown signal received ⚠️");
+                                // shutdown signal received
+                                tracing::error!("Shutdown signal received ⚠️");
+                            });
+
                             Ok(())
                         }
                         Some(StartSubCommands::Grpc(args)) => {
                             let config = parse_server_config_from_args(args, GRPC);
 
-                            jams_serve::start(config).await;
+                            tokio_runtime.block_on(async {
+                                jams_serve::start(config, physical_cores).await;
 
-                            // shutdown signal received
-                            tracing::error!("Shutdown signal received ⚠️");
+                                // shutdown signal received
+                                tracing::error!("Shutdown signal received ⚠️");
+                            });
+
                             Ok(())
                         }
                     }
