@@ -1,15 +1,15 @@
 import grpc  # type: ignore
 
 from google.protobuf import empty_pb2
-from src.jamspy.client.models.proto import jams_pb2
-from src.jamspy.client.models.proto import jams_pb2_grpc
-from src.jamspy.client.models import common
+from jamspy.client.models.proto import jams_pb2
+from jamspy.client.models.proto import jams_pb2_grpc
+from jamspy.client.models import common
 
 class Client:
     def __init__(self, base_url: str, timeout: float = 5):
         timeout=self._timeout = timeout
         self._channel = grpc.aio.insecure_channel(base_url)
-        self._stub = jams_pb2_grpc.ModelServerStub(self._channel)  # type: ignore
+        self._stub = jams_pb2_grpc.ModelServerStub(self._channel)
 
     async def close(self) -> None:
         await self._channel.close()

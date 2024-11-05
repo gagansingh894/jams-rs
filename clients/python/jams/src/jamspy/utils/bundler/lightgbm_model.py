@@ -1,6 +1,6 @@
 from lightgbm import Booster
 
-from src.jamspy.utils.bundler.common import ARTEFACTS_DIR, Bundle, create_tar_gz
+from jamspy.utils.bundler.common import ARTEFACTS_DIR, Bundle, create_tar_gz
 
 
 class LGBMBundler(Bundle):

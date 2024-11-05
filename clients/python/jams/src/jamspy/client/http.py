@@ -1,6 +1,6 @@
 import httpx
 
-from src.jamspy.client.models import common, http
+from jamspy.client.models import common, http
 
 
 class Client:

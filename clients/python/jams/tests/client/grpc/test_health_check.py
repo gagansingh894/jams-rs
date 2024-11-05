@@ -1,6 +1,6 @@
 import pytest
 
-from src.jamspy.client import grpc
+from jamspy.client import grpc
 
 from tests.client.helper import get_grpc_url
 

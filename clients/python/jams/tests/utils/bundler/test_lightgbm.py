@@ -2,7 +2,7 @@ import os
 
 import lightgbm as lgb
 
-from src.jamspy.utils.bundler.lightgbm import LGBMBundler
+from jamspy.utils.bundler.lightgbm_model import LGBMBundler
 
 
 def test_successfully_creates_bundle_for_lightgbm_model() -> None:

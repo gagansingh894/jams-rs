@@ -1,6 +1,6 @@
 from typing import Union
 
-from src.jamspy.utils.bundler.common import ARTEFACTS_DIR, Bundle, create_tar_gz
+from jamspy.utils.bundler.common import ARTEFACTS_DIR, Bundle, create_tar_gz
 
 import torch.nn
 

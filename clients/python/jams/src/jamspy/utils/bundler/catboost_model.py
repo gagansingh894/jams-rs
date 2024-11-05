@@ -2,7 +2,7 @@ from typing import Union
 
 from catboost import CatBoostClassifier, CatBoostRegressor  # type: ignore
 
-from src.jamspy.utils.bundler.common import ARTEFACTS_DIR, Bundle, create_tar_gz
+from jamspy.utils.bundler.common import ARTEFACTS_DIR, Bundle, create_tar_gz
 
 
 class CatBoostBundler(Bundle):
