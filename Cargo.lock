@@ -2037,13 +2037,14 @@ checksum = "49f1f14873335454500d59611f1cf4a4b0f786f9ac11f4312a78e4cf2566695b"
 
 [[package]]
 name = "jams"
-version = "0.1.24"
+version = "0.1.25"
 dependencies = [
  "anyhow",
  "clap",
  "jams-core",
  "jams-serve",
  "log",
+ "num_cpus",
  "serde",
  "tokio",
  "tracing",
@@ -2116,7 +2117,6 @@ dependencies = [
  "jams-core",
  "jams-proto",
  "log",
- "num_cpus",
  "opentelemetry",
  "opentelemetry-otlp",
  "opentelemetry-semantic-conventions 0.15.0",
