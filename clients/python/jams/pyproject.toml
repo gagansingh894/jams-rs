@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "jamspy"
-version = "0.3.0"
+version = "0.3.1"
 authors = [
   { name="gagansingh894" },
 ]
@@ -24,9 +24,10 @@ dependencies = [
 Homepage = "https://github.com/gagansingh894/jams-rs/tree/main/clients/python/jams"
 
 [tool.setuptools]
-# ...
-package-dir = {"" = "src"}
-    # directory containing all the packages (e.g.  src/mypkg1, src/mypkg2)
+packages = { "find" = { "where" = ["src"] } }
+
+[tool.setuptools.package-dir]
+"" = "src"
 
 [tool.ruff]
 exclude = [".venv", "venv", "src/jamspy/client/models/proto"]
