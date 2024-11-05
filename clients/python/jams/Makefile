@@ -31,7 +31,7 @@ test:
 	@echo "Running tests..."
 	pytest tests
 
-build:
+build-pkg:
 	@echo "Building distribution"
 	python3 -m build
 
