@@ -1,7 +1,7 @@
 import pytest
 
-from src.jamspy.client import http
-from src.jamspy.client.models.http import GetModelsResponse
+from jamspy.client import http
+from jamspy.client.models.http import GetModelsResponse
 
 from tests.client.helper import get_http_url
 

@@ -2,7 +2,7 @@ import os
 
 import tensorflow as tf  # type: ignore
 
-from src.jamspy.utils.bundler.tensorflow import TensorflowBundler
+from jamspy.utils.bundler.tensorflow_model import TensorflowBundler
 
 
 def test_successfully_creates_bundle_for_tensorflow_model() -> None:

@@ -2,7 +2,7 @@ import os
 
 from catboost import CatBoostClassifier, CatBoostRegressor  # type: ignore
 
-from src.jamspy.utils.bundler.catboost import CatBoostBundler
+from jamspy.utils.bundler.catboost_model import CatBoostBundler
 
 
 def test_successfully_creates_bundle_for_catboost_classifier_model() -> None:

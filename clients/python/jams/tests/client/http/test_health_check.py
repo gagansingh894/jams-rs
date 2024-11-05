@@ -1,6 +1,6 @@
 import pytest
 
-from src.jamspy.client import http
+from jamspy.client import http
 
 from tests.client.helper import get_http_url
 

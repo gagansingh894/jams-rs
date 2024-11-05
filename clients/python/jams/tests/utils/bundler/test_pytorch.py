@@ -2,7 +2,7 @@ import os
 
 import torch
 
-from src.jamspy.utils.bundler.pytorch import PytorchBundler
+from jamspy.utils.bundler.pytorch_model import PytorchBundler
 
 
 def test_successfully_creates_bundle_for_pytorch_model() -> None:

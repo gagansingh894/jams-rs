@@ -1,7 +1,7 @@
 import pytest
 
-from src.jamspy.client import grpc
-from src.jamspy.client.models.proto import jams_pb2
+from jamspy.client import grpc
+from jamspy.client.models.proto import jams_pb2
 
 from tests.client.helper import get_grpc_url
 

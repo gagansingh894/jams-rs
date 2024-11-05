@@ -1,8 +1,8 @@
 import json
 import pytest
 
-from src.jamspy.client import http
-from src.jamspy.client.models import common
+from jamspy.client import http
+from jamspy.client.models import common
 
 from tests.client.helper import get_http_url
 
