@@ -2037,13 +2037,14 @@ checksum = "49f1f14873335454500d59611f1cf4a4b0f786f9ac11f4312a78e4cf2566695b"
 
 [[package]]
 name = "jams"
-version = "0.1.24"
+version = "0.1.25"
 dependencies = [
  "anyhow",
  "clap",
  "jams-core",
  "jams-serve",
  "log",
+ "num_cpus",
  "serde",
  "tokio",
  "tracing",
@@ -2108,7 +2109,7 @@ dependencies = [
 
 [[package]]
 name = "jams-serve"
-version = "0.1.30"
+version = "0.1.31"
 dependencies = [
  "anyhow",
  "axum 0.7.7",
@@ -2414,6 +2415,16 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "071dfc062690e90b734c0b2273ce72ad0ffa95f0c74596bc250dcfd960262841"
 dependencies = [
  "autocfg",
+]
+
+[[package]]
+name = "num_cpus"
+version = "1.16.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "4161fcb6d602d4d2081af7c3a45852d875a03dd337a6bfdd6e06407b61342a43"
+dependencies = [
+ "hermit-abi",
+ "libc",
 ]
 
 [[package]]

@@ -40,7 +40,10 @@ pub struct AppState {
 /// * `MODEL_STORE_DIR` - The directory to store models locally (optional).
 /// * `S3_BUCKET_NAME` - The name of the S3 bucket to store models (required if `with_s3_model_store` is true).
 ///
-pub async fn build_app_state_from_config(config: server::Config) -> anyhow::Result<Arc<AppState>> {
+pub async fn build_app_state(
+    config: server::Config,
+    worker_pool_threads: usize,
+) -> anyhow::Result<Arc<AppState>> {
     instrument::simple::init(tracing::Level::INFO);
 
     let model_dir = config.model_dir.unwrap_or_else(|| {
@@ -48,7 +51,7 @@ pub async fn build_app_state_from_config(config: server::Config) -> anyhow::Resu
         env::var("MODEL_STORE_DIR").unwrap_or_else(|_| "".to_string())
     });
 
-    let worker_pool_threads = config.num_workers.unwrap_or(2);
+    let worker_pool_threads = config.num_workers.unwrap_or(worker_pool_threads);
     let model_store = config.model_store;
 
     // run without polling by default

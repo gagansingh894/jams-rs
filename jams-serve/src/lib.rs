@@ -4,17 +4,18 @@ pub mod http;
 
 use crate::common::server;
 use crate::common::server::HTTP;
-use crate::common::state::build_app_state_from_config;
+use crate::common::state::build_app_state;
 
-pub async fn start(config: server::Config) {
+pub async fn start(config: server::Config, num_physical_cores: usize) {
     // print terminal art
     println!("{}", server::ART);
 
     // init port number
-    let port = config.port.unwrap_or(3000);
+    let http_port = config.port.unwrap_or(3000);
+    let grpc_port = config.port.unwrap_or(4000);
 
     // setup shared state
-    let shared_state = match build_app_state_from_config(config.clone()).await {
+    let shared_state = match build_app_state(config.clone(), num_physical_cores).await {
         Ok(state) => state,
         Err(e) => {
             tracing::error!(
@@ -26,10 +27,15 @@ pub async fn start(config: server::Config) {
     };
 
     if config.protocol == HTTP {
-        http::server::start(shared_state, port).await.expect("")
+        // Start HTTP server
+        http::server::start(shared_state, http_port)
+            .await
+            .expect("Failed to start HTTP server");
     } else {
-        // start grpc server
-        grpc::server::start(shared_state, port).await.expect("")
+        // Start gRPC server
+        grpc::server::start(shared_state, grpc_port)
+            .await
+            .expect("Failed to start gRPC server");
     }
 }
 
@@ -55,7 +61,7 @@ mod tests {
 
         // Act
         tokio::spawn(async move {
-            start(config).await;
+            start(config, 1).await;
         });
 
         // The test will fail if the server fails to start
@@ -75,7 +81,7 @@ mod tests {
         };
 
         // Act
-        tokio::spawn(async move { start(config).await });
+        tokio::spawn(async move { start(config, 1).await });
 
         // The test will fail if the server fails to start
     }

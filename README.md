@@ -44,7 +44,7 @@ which provides thin abstraction around common machine learning and deep learning
 Azure Blob Storage, Local Filesystem.
 You can think of each component as a LEGO block which can be used to build a system depending on the requirements
 
-`jams-proto` is provides the gRPC contract for jams-serve.
+`jams-proto` provides the gRPC contract for jams-serve.
 
 `jams-serve` is a http and gRPC API library for jams-core.
 The API is highly configurable, allowing the user to select which components to use when setting up the model server.
