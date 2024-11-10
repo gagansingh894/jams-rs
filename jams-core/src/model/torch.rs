@@ -32,8 +32,7 @@ impl TorchModelInput {
             // get the value type
             match values.0.first() {
                 Some(first) => {
-                    // strings values are pushed to separate vector of type Vec<String>
-                    // int and float are pushed to separate of type Vec<f32>
+                    // int and float are pushed to vector of type Vec<f32>
                     match first {
                         Value::String(_) => {
                             tracing::error!("not supported string tensors");
