@@ -1,6 +1,7 @@
 #[cfg(test)]
 pub mod utils {
-    use crate::model::predictor::{FeatureName, ModelInput, Value, Values};
+    use crate::model::predictor::{FeatureName, ModelInput, Values};
+    use crate::MAX_CAPACITY;
     use rand::Rng;
     use std::collections::HashMap;
 
@@ -22,31 +23,31 @@ pub mod utils {
 
         // create string features
         for i in 0..num_string_features {
-            let mut string_features: Vec<Value> = Vec::new();
+            let mut string_features: Vec<String> = Vec::with_capacity(MAX_CAPACITY);
 
             for _ in 0..size {
                 let value = random_string_values
                     .get(rng.gen_range(0..random_string_values.len()))
                     .unwrap()
                     .to_string();
-                string_features.push(Value::String(value));
+                string_features.push(value);
             }
 
             let feature_name = format!("string_feature_{}", i);
-            model_input.insert(feature_name, Values(string_features));
+            model_input.insert(feature_name, Values::String(string_features));
         }
 
         // create numeric features
         for i in 0..num_numeric_features {
-            let mut number_features: Vec<Value> = Vec::new();
+            let mut number_features: Vec<f32> = Vec::with_capacity(MAX_CAPACITY);
 
             for _ in 0..size {
                 let value = rng.gen::<f32>();
-                number_features.push(Value::Float(value));
+                number_features.push(value);
             }
 
             let feature_name = format!("numeric_feature_{}", i);
-            model_input.insert(feature_name, Values(number_features));
+            model_input.insert(feature_name, Values::Float(number_features));
         }
 
         ModelInput::from_hashmap(model_input).unwrap()
@@ -70,29 +71,29 @@ pub mod utils {
 
         // create string features
         for feature_name in string_features_names {
-            let mut string_features: Vec<Value> = Vec::new();
+            let mut string_features: Vec<String> = Vec::with_capacity(MAX_CAPACITY);
 
             for _ in 0..size {
                 let value = random_string_values
                     .get(rng.gen_range(0..random_string_values.len()))
                     .unwrap()
                     .to_string();
-                string_features.push(Value::String(value));
+                string_features.push(value);
             }
 
-            model_input.insert(feature_name, Values(string_features));
+            model_input.insert(feature_name, Values::String(string_features));
         }
 
         // create numeric features
         for feature_name in numeric_features_names {
-            let mut number_features: Vec<Value> = Vec::new();
+            let mut number_features: Vec<f32> = Vec::with_capacity(MAX_CAPACITY);
 
             for _ in 0..size {
                 let value = rng.gen::<f32>();
-                number_features.push(Value::Float(value));
+                number_features.push(value);
             }
 
-            model_input.insert(feature_name, Values(number_features));
+            model_input.insert(feature_name, Values::Float(number_features));
         }
 
         ModelInput::from_hashmap(model_input).unwrap()

@@ -1,4 +1,4 @@
-use crate::model::predictor::{ModelInput, Output, Predictor, Value, Values, DEFAULT_OUTPUT_KEY};
+use crate::model::predictor::{ModelInput, Output, Predictor, Values, DEFAULT_OUTPUT_KEY};
 use std::collections::HashMap;
 
 use crate::MAX_CAPACITY;
@@ -18,43 +18,54 @@ impl CatboostModelInput {
     ///
     /// # Arguments
     ///
-    /// * `input` - The `ModelInput` containing input values.
+    /// * `model_input` - The `ModelInput` containing input values.
     ///
     /// # Errors
     ///
     /// Returns an `Err` if there is an issue parsing the input data.
-    #[tracing::instrument(skip(input))]
-    pub fn parse(input: ModelInput) -> anyhow::Result<Self> {
+    #[tracing::instrument(skip(model_input))]
+    pub fn parse(model_input: ModelInput) -> anyhow::Result<Self> {
         let mut categorical_features: Vec<Vec<String>> = Vec::with_capacity(MAX_CAPACITY);
         let mut numerical_features: Vec<Vec<f32>> = Vec::with_capacity(MAX_CAPACITY);
 
         // extract the values from hashmap
-        let input_matrix: Vec<Values> = input.values();
+        let input_matrix: Vec<Values> = model_input.values();
 
-        for values in input_matrix {
-            // get the value type
-            let first = match values.0.first() {
-                None => {
-                    tracing::error!("The values vector is empty");
-                    anyhow::bail!("The values vector is empty")
+        // Strings values are pushed to separate vector of type Vec<String>
+        // Int and float are pushed to separate of type Vec<f32>
+        for input in input_matrix {
+            match input {
+                Values::String(_) => {
+                    let values = match input.into_strings() {
+                        None => {
+                            tracing::error!("failed to convert input values to string vector");
+                            anyhow::bail!("failed to convert input values to string vector")
+                        }
+                        Some(v) => v,
+                    };
+                    categorical_features.push(values);
                 }
-                Some(v) => v,
-            };
-
-            // strings values are pushed to separate vector of type Vec<String>
-            // int and float are pushed to separate of type Vec<f32>
-            match first {
-                Value::String(_) => {
-                    categorical_features.push(values.to_strings()?);
-                }
-                Value::Int(_) => {
-                    let ints = values.to_ints()?;
+                Values::Int(_) => {
+                    let values = match input.into_ints() {
+                        None => {
+                            tracing::error!("failed to convert input values to int vector");
+                            anyhow::bail!("failed to convert input values to int vector")
+                        }
+                        Some(v) => v,
+                    };
                     // convert to float
-                    let floats = ints.into_iter().map(|x| x as f32).collect();
-                    numerical_features.push(floats);
+                    let values = values.into_iter().map(|x| x as f32).collect();
+                    numerical_features.push(values);
                 }
-                Value::Float(_) => {
-                    numerical_features.push(values.to_floats()?);
+                Values::Float(_) => {
+                    let values = match input.into_floats() {
+                        None => {
+                            tracing::error!("failed to convert input values to float vector");
+                            anyhow::bail!("failed to convert input values to float vector")
+                        }
+                        Some(v) => v,
+                    };
+                    numerical_features.push(values);
                 }
             }
         }

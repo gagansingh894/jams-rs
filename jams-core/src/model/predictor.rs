@@ -1,5 +1,7 @@
-use serde::{Deserialize, Serialize};
+use serde::de::{MapAccess, Visitor};
+use serde::{Deserialize, Deserializer, Serialize};
 use std::collections::HashMap;
+use std::fmt::Formatter;
 
 pub const DEFAULT_OUTPUT_KEY: &str = "predictions";
 
@@ -30,8 +32,81 @@ pub struct Output {
 ///
 /// # Fields
 /// * `0` - A hashmap where the keys are feature names and the values are feature values.
-#[derive(Deserialize, Debug, Clone)]
+#[derive(Debug, Clone)]
 pub struct ModelInput(HashMap<FeatureName, Values>);
+
+impl<'de> Deserialize<'de> for ModelInput {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        struct ModelInputVisitor;
+
+        impl<'de> Visitor<'de> for ModelInputVisitor {
+            type Value = ModelInput;
+
+            fn expecting(&self, formatter: &mut Formatter) -> std::fmt::Result {
+                formatter.write_str("a map with string keys and homogeneous arrays of integers, floats, or strings as values")
+            }
+
+            fn visit_map<M>(self, mut map: M) -> Result<Self::Value, M::Error>
+            where
+                M: MapAccess<'de>,
+            {
+                let mut data = HashMap::new();
+
+                while let Some((key, value)) = map.next_entry::<String, serde_json::Value>()? {
+                    let values = match value {
+                        serde_json::Value::Array(arr) => {
+                            // Try to interpret the array as a vector of strings
+                            if let Some(first_elem) = arr.first() {
+                                // Check if the array is empty
+                                if arr.is_empty() {
+                                    return Err(serde::de::Error::custom(format!(
+                                        "Empty array found for key '{}'",
+                                        key
+                                    )));
+                                }
+                                if first_elem.is_string() {
+                                    let vec: Vec<String> = arr
+                                        .into_iter()
+                                        .map(|v| v.as_str().unwrap().to_string())
+                                        .collect();
+                                    Values::String(vec)
+                                } else if first_elem.is_i64() {
+                                    // Try to interpret the array as a vector of integers
+                                    let vec: Vec<i32> = arr
+                                        .into_iter()
+                                        .map(|v| v.as_i64().unwrap() as i32)
+                                        .collect();
+                                    Values::Int(vec)
+                                } else if first_elem.is_f64() {
+                                    // Try to interpret the array as a vector of floats
+                                    let vec: Vec<f32> = arr
+                                        .into_iter()
+                                        .map(|v| v.as_f64().unwrap() as f32)
+                                        .collect();
+                                    Values::Float(vec)
+                                } else {
+                                    return Err(serde::de::Error::custom(
+                                        "Unsupported value type in array",
+                                    ));
+                                }
+                            } else {
+                                return Err(serde::de::Error::custom("Empty array found"));
+                            }
+                        }
+                        _ => return Err(serde::de::Error::custom("Expected an array as value")),
+                    };
+                    data.insert(key, values);
+                }
+                Ok(ModelInput(data))
+            }
+        }
+
+        deserializer.deserialize_map(ModelInputVisitor)
+    }
+}
 
 impl ModelInput {
     /// Retrieves a reference to the values associated with the given feature name.
@@ -62,23 +137,14 @@ impl ModelInput {
     #[allow(clippy::should_implement_trait)]
     #[tracing::instrument(skip(json))]
     pub fn from_str(json: &str) -> anyhow::Result<ModelInput> {
-        let value: serde_json::Value = serde_json::from_str(json)?;
-        let model_input = parse_json_serde_value(value)?;
-        Ok(Self(model_input))
-    }
-
-    /// Creates a `ModelInput` instance from a `serde_json::Value`.
-    ///
-    /// # Arguments
-    /// * `value` - The `serde_json::Value` representing the model input.
-    ///
-    /// # Returns
-    /// * `Ok(ModelInput)` - If the conversion was successful.
-    /// * `Err(anyhow::Error)` - If there was an error during the conversion.
-    #[tracing::instrument(skip(value))]
-    pub fn from_serde_json(value: serde_json::Value) -> anyhow::Result<Self> {
-        let model_input = parse_json_serde_value(value)?;
-        Ok(Self(model_input))
+        let model_input: Result<ModelInput, serde_json::Error> = serde_json::from_str(json);
+        match model_input {
+            Ok(input) => Ok(input),
+            Err(e) => {
+                tracing::error!("Failed to parse json to model input: {} ❌", e.to_string());
+                anyhow::bail!("Failed to parse json to model input: {} ❌", e.to_string())
+            }
+        }
     }
 
     /// Creates a `ModelInput` instance from a `HashMap`.
@@ -113,231 +179,104 @@ impl ModelInput {
 /// Type alias for the feature name, which is a string.
 pub type FeatureName = String;
 
-/// Struct representing a collection of feature values.
-#[derive(Deserialize, Debug, Clone)]
-pub struct Values(pub Vec<Value>);
+#[derive(Debug, Clone)]
+pub enum Values {
+    String(Vec<String>),
+    Int(Vec<i32>),
+    Float(Vec<f32>),
+}
 
 impl Values {
-    /// Returns an iterator over the feature values.
-    pub fn iter(&self) -> std::slice::Iter<'_, Value> {
-        self.0.iter()
-    }
-
-    /// Returns a mutable iterator over the feature values.
-    pub fn iter_mut(&mut self) -> std::slice::IterMut<'_, Value> {
-        self.0.iter_mut()
-    }
-
-    /// Creates a `Values` instance from a vector of strings.
-    ///
-    /// # Arguments
-    /// * `strings` - A vector of strings.
+    /// Consumes the `Values` enum and returns the inner `Vec<String>` if the variant is `Values::String`.
     ///
     /// # Returns
-    /// * `Values` - The created `Values` instance.
-    #[tracing::instrument(skip(strings))]
-    pub fn from_strings(strings: Vec<String>) -> Self {
-        let values = strings.into_iter().map(Value::String).collect();
-        Values(values)
-    }
-
-    /// Creates a `Values` instance from a vector of integers.
     ///
-    /// # Arguments
-    /// * `ints` - A vector of integers.
+    /// * `Some(Vec<String>)` - if the variant is `Values::String`.
+    /// * `None` - if the variant is not `Values::String`.
     ///
-    /// # Returns
-    /// * `Values` - The created `Values` instance.
-    #[tracing::instrument(skip(ints))]
-    pub fn from_ints(ints: Vec<i32>) -> Self {
-        let values = ints.into_iter().map(Value::Int).collect();
-        Values(values)
-    }
-
-    /// Creates a `Values` instance from a vector of floats.
-    ///
-    /// # Arguments
-    /// * `floats` - A vector of floats.
-    ///
-    /// # Returns
-    /// * `Values` - The created `Values` instance.
-    #[tracing::instrument(skip(floats))]
-    pub fn from_floats(floats: Vec<f32>) -> Self {
-        let values = floats.into_iter().map(Value::Float).collect();
-        Values(values)
-    }
-
-    /// Converts the feature values to a vector of strings.
-    ///
-    /// # Returns
-    /// * `anyhow::Result<Vec<String>>` - The converted values.
-    #[tracing::instrument(skip(self))]
-    pub fn to_strings(&self) -> anyhow::Result<Vec<String>> {
-        self.iter()
-            .map(|v| {
-                Ok(match v.as_string() {
-                    None => {
-                        tracing::error!("Failed to convert Values to strings ❌");
-                        anyhow::bail!("Failed to convert Values to strings ❌")
-                    }
-                    Some(v) => v.to_string(),
-                })
-            })
-            .collect()
-    }
-
-    /// Converts the feature values to a vector of integers.
-    ///
-    /// # Returns
-    /// * `anyhow::Result<Vec<i32>>` - The converted values.
-    #[tracing::instrument(skip(self))]
-    pub fn to_ints(&self) -> anyhow::Result<Vec<i32>> {
-        self.iter()
-            .map(|v| {
-                Ok(match v.as_int() {
-                    None => {
-                        tracing::error!("Failed to convert Values to ints ❌");
-                        anyhow::bail!("Failed to convert Values to ints ❌")
-                    }
-                    Some(v) => v,
-                })
-            })
-            .collect()
-    }
-
-    /// Converts the feature values to a vector of floats.
-    ///
-    /// # Returns
-    /// * `anyhow::Result<Vec<f32>>` - The converted values.
-    #[tracing::instrument(skip(self))]
-    pub fn to_floats(&self) -> anyhow::Result<Vec<f32>> {
-        self.iter()
-            .map(|v| {
-                Ok(match v.as_float() {
-                    None => {
-                        tracing::error!("Failed to convert Values to floats ❌");
-                        anyhow::bail!("Failed to convert Values to floats ❌")
-                    }
-                    Some(v) => v,
-                })
-            })
-            .collect()
-    }
-}
-/// Enum representing a feature value, which can be a string, integer, or float.
-#[derive(Deserialize, Debug, Clone)]
-pub enum Value {
-    String(String),
-    Int(i32),
-    Float(f32),
-}
-
-impl Value {
-    /// Converts the `Value` to an `Option<&String>`.
-    ///
-    /// # Returns
-    /// * `Some(&String)` - If the value is a string.
-    /// * `None` - If the value is not a string.
-    pub fn as_string(&self) -> Option<&String> {
-        match self {
-            Value::String(s) => Some(s),
-            _ => None,
-        }
-    }
-
-    /// Converts the `Value` to an `Option<i32>`.
-    ///
-    /// # Returns
-    /// * `Some(i32)` - If the value is an integer.
-    /// * `None` - If the value is not an integer.
-    pub fn as_int(&self) -> Option<i32> {
-        match self {
-            Value::Int(i) => Some(*i),
-            _ => None,
-        }
-    }
-
-    /// Converts the `Value` to an `Option<f32>`.
-    ///
-    /// # Returns
-    /// * `Some(f32)` - If the value is a float.
-    /// * `None` - If the value is not a float.
-    pub fn as_float(&self) -> Option<f32> {
-        match self {
-            Value::Float(f) => Some(*f),
-            _ => None,
-        }
-    }
-}
-
-/// Parses a `serde_json::Value` into a `HashMap` of feature names and values.
-///
-/// # Arguments
-/// * `json` - The JSON value representing the model input.
-///
-/// # Returns
-/// * `Ok(HashMap<FeatureName, Values>)` - If parsing was successful.
-/// * `Err(anyhow::Error)` - If there was an error during parsing.
-#[tracing::instrument(skip(json))]
-fn parse_json_serde_value(json: serde_json::Value) -> anyhow::Result<HashMap<FeatureName, Values>> {
-    // create an empty hashmap to store the features
-    let mut model_input: HashMap<FeatureName, Values> = HashMap::new();
-
-    let json_object = match json.as_object() {
-        None => {
-            tracing::error!("Failed to convert JSON input to JSON map ❌");
-            anyhow::bail!("Failed to convert JSON input to JSON map ❌")
-        }
-        Some(json_object) => json_object,
-    };
-
-    for (key, values) in json_object {
-        let feature_name: FeatureName = key.to_string();
-
-        // validate value is an array
-        let vec = match values.as_array() {
-            None => {
-                tracing::error!("Failed to cast serde json value to array.");
-                anyhow::bail!("Failed to cast serde json value to array.");
-            }
-            Some(vec) => vec,
-        };
-
-        let first = match vec.first() {
-            None => {
-                tracing::error!("Failed to get the first element from the array");
-                anyhow::bail!("Failed to get the first element from the array");
-            }
-            Some(first) => first,
-        };
-
-        if first.is_i64() {
-            let feature_values = vec
-                .iter()
-                .map(|v| Value::Int(v.as_i64().unwrap() as i32))
-                .collect();
-            model_input.insert(feature_name, Values(feature_values));
-        } else if first.is_f64() {
-            let feature_values = vec
-                .iter()
-                .map(|v| Value::Float(v.as_f64().unwrap() as f32))
-                .collect();
-            model_input.insert(feature_name, Values(feature_values));
-        } else if first.is_string() {
-            let feature_values = vec
-                .iter()
-                .map(|v| Value::String(v.as_str().unwrap().to_owned()))
-                .collect();
-            model_input.insert(feature_name, Values(feature_values));
+    pub fn into_strings(self) -> Option<Vec<String>> {
+        if let Values::String(v) = self {
+            Some(v)
         } else {
-            tracing::error!("Unsupported format in input json");
-            anyhow::bail!("Unsupported format in input json");
+            None
         }
     }
 
-    Ok(model_input)
-}
+    /// Returns a clone of the inner `Vec<String>` if the `Values` variant is `Values::String`.
+    ///
+    /// # Returns
+    ///
+    /// * `Some(Vec<String>)` - if the variant is `Values::String`.
+    /// * `None` - if the variant is not `Values::String`.
+    ///
+    pub fn to_strings(&self) -> Option<Vec<String>> {
+        if let Values::String(v) = self {
+            Some(v.to_vec())
+        } else {
+            None
+        }
+    }
 
+    /// Consumes the `Values` enum and returns the inner `Vec<f32>` if the variant is `Values::Float`.
+    ///
+    /// # Returns
+    ///
+    /// * `Some(Vec<f32>)` - if the variant is `Values::Float`.
+    /// * `None` - if the variant is not `Values::Float`.
+    ///
+    pub fn into_floats(self) -> Option<Vec<f32>> {
+        if let Values::Float(v) = self {
+            Some(v)
+        } else {
+            None
+        }
+    }
+
+    /// Returns a clone of the inner `Vec<f32>` if the `Values` variant is `Values::Float`.
+    ///
+    /// # Returns
+    ///
+    /// * `Some(Vec<f32>)` - if the variant is `Values::Float`.
+    /// * `None` - if the variant is not `Values::Float`.
+    ///
+    pub fn to_floats(&self) -> Option<Vec<f32>> {
+        if let Values::Float(v) = self {
+            Some(v.to_vec())
+        } else {
+            None
+        }
+    }
+
+    /// Consumes the `Values` enum and returns the inner `Vec<i32>` if the variant is `Values::Int`.
+    ///
+    /// # Returns
+    ///
+    /// * `Some(Vec<i32>)` - if the variant is `Values::Int`.
+    /// * `None` - if the variant is not `Values::Int`.
+    ///
+    pub fn into_ints(self) -> Option<Vec<i32>> {
+        if let Values::Int(v) = self {
+            Some(v)
+        } else {
+            None
+        }
+    }
+
+    /// Returns a clone of the inner `Vec<i32>` if the `Values` variant is `Values::Int`.
+    ///
+    /// # Returns
+    ///
+    /// * `Some(Vec<i32>)` - if the variant is `Values::Int`.
+    /// * `None` - if the variant is not `Values::Int`.
+    ///
+    pub fn to_ints(&self) -> Option<Vec<i32>> {
+        if let Values::Int(v) = self {
+            Some(v.to_vec())
+        } else {
+            None
+        }
+    }
+}
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -351,22 +290,7 @@ mod tests {
     }"#;
 
         let model_input = ModelInput::from_str(json_data);
-
-        // assert result is ok
-        assert!(model_input.is_ok())
-    }
-
-    #[test]
-    fn successfully_parses_model_input_serde_json_value() {
-        let json_data = r#"{
-        "feature_1": [42, 42],
-        "feature_2": [3.14, 3.14],
-        "feature_3": ["a", "a"]
-    }"#;
-
-        let serde_json_value = serde_json::from_str(json_data).unwrap();
-
-        let model_input = ModelInput::from_serde_json(serde_json_value);
+        println!("{:?}", model_input);
 
         // assert result is ok
         assert!(model_input.is_ok())
@@ -380,11 +304,9 @@ mod tests {
         "feature_3": []
     }"#;
 
-        let serde_json_value = serde_json::from_str(json_data).unwrap();
+        let model_input = ModelInput::from_str(json_data);
 
-        let model_input = ModelInput::from_serde_json(serde_json_value);
-
-        // assert result is ok
+        // assert result is err
         assert!(model_input.is_err())
     }
 
@@ -398,77 +320,9 @@ mod tests {
         "feature_3": []
     }"#;
 
-        let serde_json_value = serde_json::from_str(json_data).unwrap();
+        let model_input = ModelInput::from_str(json_data);
 
-        let model_input = ModelInput::from_serde_json(serde_json_value);
-
-        // assert result is ok
+        // assert result is err
         assert!(model_input.is_err())
-    }
-
-    // Adding these tests as these are not currently used anywhere in the code
-    // but are useful methods to have
-    #[test]
-    fn successfully_convert_to_value_enum_to_option_i32() {
-        let value = Value::Int(2147);
-
-        let convert = value.as_int();
-
-        assert!(convert.is_some())
-    }
-
-    #[test]
-    fn successfully_convert_to_values_enum_from_vec_i32() {
-        let vec = vec![1, 2, 3];
-
-        let values = Values::from_ints(vec.clone());
-
-        assert_eq!(vec.len(), values.iter().len())
-    }
-
-    #[test]
-    fn successfully_convert_to_values_enum_from_vec_f32() {
-        let vec: Vec<f32> = vec![1.0, 2.0, 3.0];
-
-        let values = Values::from_floats(vec.clone());
-
-        assert_eq!(vec.len(), values.iter().len())
-    }
-
-    #[test]
-    fn successfully_convert_to_values_enum_from_vec_string() {
-        let vec: Vec<String> = vec!["a".to_string(), "b".to_string(), "c".to_string()];
-
-        let values = Values::from_strings(vec.clone());
-
-        assert_eq!(vec.len(), values.iter().len())
-    }
-
-    #[test]
-    fn successfully_convert_the_values_enum_of_int_to_vec_int() {
-        let vec: Vec<i32> = vec![1, 2, 3];
-
-        let values = Values::from_ints(vec.clone());
-
-        let values_vec = values.to_ints().unwrap();
-
-        assert_eq!(vec, values_vec)
-    }
-
-    #[test]
-    fn successfully_returns_a_mutable_iterator_for_values_enum() {
-        let vec: Vec<f32> = vec![1.0, 2.0, 3.0];
-
-        let mut values = Values::from_floats(vec.clone());
-
-        // change all values to 10
-        for element in values.iter_mut() {
-            *element = Value::Int(10);
-        }
-
-        // assertion
-        for element in values.iter() {
-            assert_eq!(element.as_int().unwrap(), 10)
-        }
     }
 }
