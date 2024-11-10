@@ -1,9 +1,13 @@
 use crate::model::predictor::{ModelInput, Output, Predictor, Value, Values};
+use crate::MAX_CAPACITY;
 use std::collections::HashMap;
 use tensorflow::{
     DataType, FetchToken, Graph, Operation, SavedModelBundle, SessionOptions, SessionRunArgs,
     SignatureDef, Tensor, DEFAULT_SERVING_SIGNATURE_DEF_KEY,
 };
+
+// Arbitrary high number but in reality, the number is far less
+const MAX_OUTPUT_NODES_SUPPORTED: usize = 250;
 
 /// Struct representing the input tensors for a TensorFlow model.
 ///
@@ -63,9 +67,9 @@ fn parse_sequential(
     signature_def: &SignatureDef,
     graph: &Graph,
 ) -> anyhow::Result<TensorflowModelInput> {
-    let mut int_features: Vec<Vec<i32>> = Vec::new();
-    let mut float_features: Vec<Vec<f32>> = Vec::new();
-    let mut string_features: Vec<Vec<String>> = Vec::new();
+    let mut int_features: Vec<Vec<i32>> = Vec::with_capacity(MAX_CAPACITY);
+    let mut float_features: Vec<Vec<f32>> = Vec::with_capacity(MAX_CAPACITY);
+    let mut string_features: Vec<Vec<String>> = Vec::with_capacity(MAX_CAPACITY);
 
     // Extract the values from hashmap
     let input_matrix: Vec<Values> = input.values();
@@ -105,9 +109,9 @@ fn parse_sequential(
     let flatten_int: Vec<i32> = int_features.into_iter().flatten().collect();
     let flatten_string: Vec<String> = string_features.into_iter().flatten().collect();
 
-    let mut int_tensors: Vec<(Operation, Tensor<i32>)> = Vec::new();
-    let mut float_tensors: Vec<(Operation, Tensor<f32>)> = Vec::new();
-    let mut string_tensors: Vec<(Operation, Tensor<String>)> = Vec::new();
+    let mut int_tensors: Vec<(Operation, Tensor<i32>)> = Vec::with_capacity(MAX_CAPACITY);
+    let mut float_tensors: Vec<(Operation, Tensor<f32>)> = Vec::with_capacity(MAX_CAPACITY);
+    let mut string_tensors: Vec<(Operation, Tensor<String>)> = Vec::with_capacity(MAX_CAPACITY);
 
     // Create tensors
     for input in signature_def.inputs().iter() {
@@ -164,9 +168,9 @@ fn parse_functional(
     signature_def: &SignatureDef,
     graph: &Graph,
 ) -> anyhow::Result<TensorflowModelInput> {
-    let mut int_tensors: Vec<(Operation, Tensor<i32>)> = Vec::new();
-    let mut float_tensors: Vec<(Operation, Tensor<f32>)> = Vec::new();
-    let mut string_tensors: Vec<(Operation, Tensor<String>)> = Vec::new();
+    let mut int_tensors: Vec<(Operation, Tensor<i32>)> = Vec::with_capacity(MAX_CAPACITY);
+    let mut float_tensors: Vec<(Operation, Tensor<f32>)> = Vec::with_capacity(MAX_CAPACITY);
+    let mut string_tensors: Vec<(Operation, Tensor<String>)> = Vec::with_capacity(MAX_CAPACITY);
 
     for input in signature_def.inputs().iter() {
         let input_info = match signature_def.get_input(input.0) {
@@ -386,8 +390,8 @@ impl Predictor for Tensorflow {
 
         // Prepare output tensors
         // todo: we should be able to store output names, operation and index during when loading
-        let mut fetch_tokens: Vec<FetchToken> = Vec::new();
-        let mut output_names: Vec<String> = Vec::new();
+        let mut fetch_tokens: Vec<FetchToken> = Vec::with_capacity(MAX_OUTPUT_NODES_SUPPORTED);
+        let mut output_names: Vec<String> = Vec::with_capacity(MAX_OUTPUT_NODES_SUPPORTED);
         for output_def in self.signature_def.outputs() {
             let output_operation = self
                 .graph
