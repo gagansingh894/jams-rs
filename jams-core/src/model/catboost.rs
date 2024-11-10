@@ -1,6 +1,7 @@
 use crate::model::predictor::{ModelInput, Output, Predictor, Value, Values, DEFAULT_OUTPUT_KEY};
 use std::collections::HashMap;
 
+use crate::MAX_CAPACITY;
 use catboost_rs;
 use ndarray::Axis;
 
@@ -24,8 +25,8 @@ impl CatboostModelInput {
     /// Returns an `Err` if there is an issue parsing the input data.
     #[tracing::instrument(skip(input))]
     pub fn parse(input: ModelInput) -> anyhow::Result<Self> {
-        let mut categorical_features: Vec<Vec<String>> = Vec::new();
-        let mut numerical_features: Vec<Vec<f32>> = Vec::new();
+        let mut categorical_features: Vec<Vec<String>> = Vec::with_capacity(MAX_CAPACITY);
+        let mut numerical_features: Vec<Vec<f32>> = Vec::with_capacity(MAX_CAPACITY);
 
         // extract the values from hashmap
         let input_matrix: Vec<Values> = input.values();
