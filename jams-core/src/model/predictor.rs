@@ -306,7 +306,7 @@ mod tests {
 
         let model_input = ModelInput::from_str(json_data);
 
-        // assert result is ok
+        // assert result is err
         assert!(model_input.is_err())
     }
 
@@ -322,7 +322,7 @@ mod tests {
 
         let model_input = ModelInput::from_str(json_data);
 
-        // assert result is ok
+        // assert result is err
         assert!(model_input.is_err())
     }
 }
