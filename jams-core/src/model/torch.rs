@@ -1,6 +1,7 @@
-use crate::model::predictor::{ModelInput, Output, Predictor, Value, Values, DEFAULT_OUTPUT_KEY};
+use crate::model::predictor::{ModelInput, Output, Predictor, Values, DEFAULT_OUTPUT_KEY};
 use std::collections::HashMap;
 
+use crate::MAX_CAPACITY;
 use tch::CModule;
 
 /// Struct representing the input for a Torch model.
@@ -15,43 +16,45 @@ impl TorchModelInput {
     /// Parses a `ModelInput` into a `TorchModelInput`.
     ///
     /// # Arguments
-    /// * `input` - The `ModelInput` to be parsed.
+    /// * `model_input` - The `ModelInput` to be parsed.
     ///
     /// # Returns
     /// * `Ok(TorchModelInput)` - If parsing was successful.
     /// * `Err(anyhow::Error)` - If there was an error during parsing.
-    #[tracing::instrument(skip(input))]
-    fn parse(input: ModelInput) -> anyhow::Result<Self> {
-        let mut numerical_features: Vec<Vec<f32>> = Vec::new();
+    #[tracing::instrument(skip(model_input))]
+    fn parse(model_input: ModelInput) -> anyhow::Result<Self> {
+        let mut numerical_features: Vec<Vec<f32>> = Vec::with_capacity(MAX_CAPACITY);
 
         // extract the values from hashmap
-        let input_matrix: Vec<Values> = input.values();
+        let input_matrix: Vec<Values> = model_input.values();
 
         for values in input_matrix {
-            // get the value type
-            match values.0.first() {
-                Some(first) => {
-                    // strings values are pushed to separate vector of type Vec<String>
-                    // int and float are pushed to separate of type Vec<f32>
-                    match first {
-                        Value::String(_) => {
-                            tracing::error!("not supported string tensors");
-                            anyhow::bail!("not supported string tensors")
-                        }
-                        Value::Int(_) => {
-                            let ints = values.to_ints()?;
-                            // convert to float
-                            let floats = ints.into_iter().map(|x| x as f32).collect();
-                            numerical_features.push(floats);
-                        }
-                        Value::Float(_) => {
-                            numerical_features.push(values.to_floats()?);
-                        }
-                    }
+            match values {
+                Values::String(_) => {
+                    tracing::error!("string type as input feature is not supported");
+                    anyhow::bail!("string type as input feature is not supported")
                 }
-                None => {
-                    tracing::error!("failed to get first value ❌");
-                    anyhow::bail!("failed to get first value ❌")
+                Values::Int(_) => {
+                    let ints = match values.into_ints() {
+                        None => {
+                            tracing::error!("failed to convert input values to int vector");
+                            anyhow::bail!("failed to convert input values to int vector")
+                        }
+                        Some(ints) => ints,
+                    };
+                    // convert to float
+                    let floats = ints.into_iter().map(|x| x as f32).collect();
+                    numerical_features.push(floats);
+                }
+                Values::Float(_) => {
+                    let floats = match values.into_floats() {
+                        None => {
+                            tracing::error!("failed to convert input values to float vector");
+                            anyhow::bail!("failed to convert input values to float vector")
+                        }
+                        Some(ints) => ints,
+                    };
+                    numerical_features.push(floats);
                 }
             }
         }
