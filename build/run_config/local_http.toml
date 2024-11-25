@@ -27,6 +27,7 @@ s3_bucket_name = "jamsmodelstore"               # Indicates the name of the S3 b
 poll_interval = 300                             # Defines the time interval (in seconds) for polling the model store
                                                 # to check for updates.
                                                 # Example: 600 means the application will poll every 10 minutes.
+                                                # Polling reloads all the models and some models might require warmup which may affect latency.
 
 num_workers = 4                                 # Sets the number of Rayon threadpool worker threads
                                                 # Example: 4 threads

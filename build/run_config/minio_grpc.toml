@@ -3,4 +3,4 @@ protocol = "grpc"
 port = 4000
 model_store = "minio"
 s3_bucket_name = "jamsmodelstore"
-poll_interval = 30 # in seconds
+poll_interval = 0 # in seconds, default off as polling reloads all the models and some models might require warmup which may affect latency.
