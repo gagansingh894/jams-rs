@@ -1,6 +1,5 @@
 use crate::model;
 use crate::model::frameworks::{ModelFramework, CATBOOST, LIGHTGBM, PYTORCH, TENSORFLOW, TORCH};
-use crate::model::predict::Predict;
 use crate::model::Predictor;
 use async_trait::async_trait;
 use chrono::Utc;

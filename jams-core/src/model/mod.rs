@@ -3,6 +3,8 @@ use crate::model::lightgbm::LightGBM;
 use crate::model::predict::{ModelInput, Output, Predict};
 use crate::model::tensorflow::Tensorflow;
 use crate::model::torch::Torch;
+
+#[cfg(feature = "xgboost")]
 use crate::model::xgboost::XGBoost;
 
 #[cfg(feature = "catboost")]
@@ -39,6 +41,7 @@ pub enum Predictor {
     /// Torch model predictor.
     Torch(Torch),
 
+    #[cfg(feature = "xgboost")]
     /// XGBoost model predictor.
     XGBoost(XGBoost),
 }
@@ -70,6 +73,7 @@ impl Predictor {
             Predictor::LightGBM(predictor) => predictor.predict(input),
             Predictor::Tensorflow(predictor) => predictor.predict(input),
             Predictor::Torch(predictor) => predictor.predict(input),
+            #[cfg(feature = "xgboost")]
             Predictor::XGBoost(predictor) => predictor.predict(input),
         }
     }
