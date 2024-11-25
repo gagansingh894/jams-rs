@@ -67,12 +67,17 @@ fn parse_sequential(
     signature_def: &SignatureDef,
     graph: &Graph,
 ) -> anyhow::Result<TensorflowModelInput> {
-    let mut int_features: Vec<Vec<i32>> = Vec::with_capacity(MAX_CAPACITY);
-    let mut float_features: Vec<Vec<f32>> = Vec::with_capacity(MAX_CAPACITY);
-    let mut string_features: Vec<Vec<String>> = Vec::with_capacity(MAX_CAPACITY);
+    let mut int_features: Vec<i32> = Vec::with_capacity(MAX_CAPACITY);
+    let mut float_features: Vec<f32> = Vec::with_capacity(MAX_CAPACITY);
+    let mut string_features: Vec<String> = Vec::with_capacity(MAX_CAPACITY);
 
     // Extract the values from hashmap
     let input_matrix: Vec<Values> = model_input.values();
+    let mut num_int_features: usize = 0;
+    let mut num_float_features: usize = 0;
+    let mut num_string_features: usize = 0;
+    // it is okay to overwrite this on each loop as all the length of each row is same
+    let mut num_feature_values: usize = 0;
 
     // Strings values are pushed to separate vector of type Vec<String>
     // Float values pushed to separate of type Vec<f32>
@@ -87,7 +92,9 @@ fn parse_sequential(
                     }
                     Some(v) => v,
                 };
-                string_features.push(values);
+                num_feature_values = values.len();
+                num_string_features += 1;
+                string_features.extend(values);
             }
             Values::Int(_) => {
                 let values = match input.into_ints() {
@@ -97,7 +104,9 @@ fn parse_sequential(
                     }
                     Some(v) => v,
                 };
-                int_features.push(values);
+                num_feature_values = values.len();
+                num_int_features += 1;
+                int_features.extend(values);
             }
             Values::Float(_) => {
                 let values = match input.into_floats() {
@@ -107,20 +116,12 @@ fn parse_sequential(
                     }
                     Some(v) => v,
                 };
-                float_features.push(values);
+                num_feature_values = values.len();
+                num_float_features += 1;
+                float_features.extend(values);
             }
         }
     }
-
-    // Calculate dimensions of the 2D vector
-    let (int_num_rows, int_num_cols) = get_shape(&int_features)?;
-    let (float_num_rows, float_num_cols) = get_shape(&float_features)?;
-    let (string_num_rows, string_num_cols) = get_shape(&string_features)?;
-
-    // Flatten features
-    let flatten_float: Vec<f32> = float_features.into_iter().flatten().collect();
-    let flatten_int: Vec<i32> = int_features.into_iter().flatten().collect();
-    let flatten_string: Vec<String> = string_features.into_iter().flatten().collect();
 
     let mut int_tensors: Vec<(Operation, Tensor<i32>)> = Vec::with_capacity(MAX_CAPACITY);
     let mut float_tensors: Vec<(Operation, Tensor<f32>)> = Vec::with_capacity(MAX_CAPACITY);
@@ -135,21 +136,23 @@ fn parse_sequential(
         match input_info.dtype() {
             DataType::Int32 => {
                 // Swapping num_rows and num_cols to satisfy shape
-                let tensor = Tensor::<i32>::new(&[int_num_cols as u64, int_num_rows as u64])
-                    .with_values(&flatten_int)?;
+                let tensor =
+                    Tensor::<i32>::new(&[num_feature_values as u64, num_int_features as u64])
+                        .with_values(&int_features)?;
                 int_tensors.push((input_op, tensor));
             }
             DataType::Float => {
                 // Swapping num_rows and num_cols to satisfy shape
-                let tensor = Tensor::<f32>::new(&[float_num_cols as u64, float_num_rows as u64])
-                    .with_values(&flatten_float)?;
+                let tensor =
+                    Tensor::<f32>::new(&[num_feature_values as u64, num_float_features as u64])
+                        .with_values(&float_features)?;
                 float_tensors.push((input_op, tensor));
             }
             DataType::String => {
                 // Swapping num_rows and num_cols to satisfy shape
                 let tensor =
-                    Tensor::<String>::new(&[string_num_cols as u64, string_num_rows as u64])
-                        .with_values(&flatten_string)?;
+                    Tensor::<String>::new(&[num_feature_values as u64, num_string_features as u64])
+                        .with_values(&string_features)?;
                 string_tensors.push((input_op, tensor));
             }
             _ => {
@@ -335,6 +338,7 @@ pub struct Tensorflow {
     bundle: SavedModelBundle,
     /// SignatureDef describing the model's input and output signatures.
     signature_def: SignatureDef,
+    output_names: Vec<String>,
 }
 
 impl Tensorflow {
@@ -380,10 +384,17 @@ impl Tensorflow {
             }
         };
 
+        // store output names here as his will avoid allocations on each request
+        let mut output_names: Vec<String> = Vec::with_capacity(MAX_OUTPUT_NODES_SUPPORTED);
+        for output_def in signature_def.outputs() {
+            output_names.push(output_def.0.to_string());
+        }
+
         Ok(Tensorflow {
             graph,
             bundle,
             signature_def,
+            output_names,
         })
     }
 }
@@ -419,15 +430,12 @@ impl Predictor for Tensorflow {
         }
 
         // Prepare output tensors
-        // todo: we should be able to store output names, operation and index when loading
         let mut fetch_tokens: Vec<FetchToken> = Vec::with_capacity(MAX_OUTPUT_NODES_SUPPORTED);
-        let mut output_names: Vec<String> = Vec::with_capacity(MAX_OUTPUT_NODES_SUPPORTED);
         for output_def in self.signature_def.outputs() {
             let output_operation = self
                 .graph
                 .operation_by_name_required(&output_def.1.name().name)?;
             let fetch_token = run_args.request_fetch(&output_operation, output_def.1.name().index);
-            output_names.push(output_def.0.to_string());
             fetch_tokens.push(fetch_token);
         }
 
@@ -474,7 +482,7 @@ impl Predictor for Tensorflow {
                     })
                     .collect();
 
-                predictions.insert(output_names.get(i).unwrap().to_string(), values);
+                predictions.insert(self.output_names.get(i).unwrap().to_string(), values);
             } else {
                 // get the scaler value and convert it to Vec<Vec<f64>>
                 let scalar_value_vec = output.to_vec();
@@ -486,7 +494,7 @@ impl Predictor for Tensorflow {
                     Some(scaler_value) => scaler_value,
                 };
                 predictions.insert(
-                    output_names.get(i).unwrap().to_string(),
+                    self.output_names.get(i).unwrap().to_string(),
                     vec![vec![*scalar_value as f64]],
                 );
             }

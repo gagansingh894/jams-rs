@@ -1,5 +1,5 @@
 use crate::model::predictor::{ModelInput, Output, Predictor, Values, DEFAULT_OUTPUT_KEY};
-use crate::MAX_CAPACITY;
+use crate::MAX_1D_VEC_CAPACITY;
 use lgbm;
 use lgbm::mat::MatLayouts;
 use lgbm::mat::MatLayouts::ColMajor;
@@ -32,10 +32,13 @@ impl LightGBMModelInput {
     /// issues converting or organizing the numerical features.
     #[tracing::instrument(skip(model_input))]
     pub fn parse(model_input: ModelInput) -> anyhow::Result<Self> {
-        let mut numerical_features: Vec<Vec<f32>> = Vec::with_capacity(MAX_CAPACITY);
+        let mut numerical_features: Vec<f32> = Vec::with_capacity(MAX_1D_VEC_CAPACITY);
 
         // extract the values from hashmap
         let input_matrix: Vec<Values> = model_input.values();
+        let num_cols = input_matrix.len();
+        // it is okay to overwrite this on each loop as all the length of each row is same
+        let mut num_rows: usize = 0;
 
         for values in input_matrix {
             match values {
@@ -52,8 +55,9 @@ impl LightGBMModelInput {
                         Some(ints) => ints,
                     };
                     // convert to float
-                    let floats = ints.into_iter().map(|x| x as f32).collect();
-                    numerical_features.push(floats);
+                    let floats: Vec<f32> = ints.into_iter().map(|x| x as f32).collect();
+                    num_rows = floats.len();
+                    numerical_features.extend(floats);
                 }
                 Values::Float(_) => {
                     let floats = match values.into_floats() {
@@ -61,9 +65,10 @@ impl LightGBMModelInput {
                             tracing::error!("failed to convert input values to float vector");
                             anyhow::bail!("failed to convert input values to float vector")
                         }
-                        Some(ints) => ints,
+                        Some(floats) => floats,
                     };
-                    numerical_features.push(floats);
+                    num_rows = floats.len();
+                    numerical_features.extend(floats);
                 }
             }
         }
@@ -73,17 +78,8 @@ impl LightGBMModelInput {
             anyhow::bail!("input is empty")
         }
 
-        // determine the number of rows and columns in the matrix
-        let (rows, cols) = (
-            numerical_features.len(),
-            numerical_features.first().unwrap().len(),
-        );
-
-        // flatten and convert numerical features into a single vector
-        let flatten_values = numerical_features.into_iter().flatten().collect();
-
         // create a MatBuf in column-major order
-        let matbuf = MatBuf::from_vec(flatten_values, cols, rows, ColMajor);
+        let matbuf = MatBuf::from_vec(numerical_features, num_rows, num_cols, ColMajor);
 
         Ok(Self { matbuf })
     }
@@ -202,7 +198,7 @@ mod tests {
     }
 
     #[test]
-    fn returns_empty_prediction_using_lightgbm_when_input_is_empty() {
+    fn fails_to_make_prediction_using_lightgbm_when_input_is_empty() {
         let path = "tests/model_storage/models/lightgbm-my_awesome_reg_model.txt";
         let model = LightGBM::load(path).unwrap();
 
@@ -215,13 +211,7 @@ mod tests {
         let output = model.predict(model_inputs);
 
         // assert the result is ok
-        assert!(output.is_ok());
-        assert!(output
-            .unwrap()
-            .predictions
-            .get("predictions")
-            .unwrap()
-            .is_empty())
+        assert!(output.is_err());
     }
 
     #[test]
