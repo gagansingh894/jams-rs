@@ -10,7 +10,6 @@ use std::sync::Arc;
 use std::time::Duration;
 use tonic::transport::server::Router;
 use tonic::transport::{Channel, Server};
-use jams_core::model_store::ModelStore;
 
 async fn setup_shared_state() -> Arc<AppState> {
     let cpu_pool = ThreadPoolBuilder::new()
