@@ -66,21 +66,11 @@ impl Predictor {
     ///
     pub fn predict(&self, input: ModelInput) -> anyhow::Result<Output> {
         match self {
-            Predictor::Catboost(predictor) => {
-                predictor.predict(input)
-            }
-            Predictor::LightGBM(predictor) => {
-                predictor.predict(input)
-            }
-            Predictor::Tensorflow(predictor) => {
-                predictor.predict(input)
-            }
-            Predictor::Torch(predictor) => {
-                predictor.predict(input)
-            }
-            Predictor::XGBoost(predictor) => {
-                predictor.predict(input)
-            }
+            Predictor::Catboost(predictor) => predictor.predict(input),
+            Predictor::LightGBM(predictor) => predictor.predict(input),
+            Predictor::Tensorflow(predictor) => predictor.predict(input),
+            Predictor::Torch(predictor) => predictor.predict(input),
+            Predictor::XGBoost(predictor) => predictor.predict(input),
         }
     }
 }

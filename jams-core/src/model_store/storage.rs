@@ -1,6 +1,7 @@
 use crate::model;
 use crate::model::frameworks::{ModelFramework, CATBOOST, LIGHTGBM, PYTORCH, TENSORFLOW, TORCH};
 use crate::model::predict::Predict;
+use crate::model::Predictor;
 use async_trait::async_trait;
 use chrono::Utc;
 use dashmap::mapref::one::Ref;
@@ -9,7 +10,6 @@ use serde::Serialize;
 use std::sync::Arc;
 use std::time;
 use tokio::fs;
-use crate::model::Predictor;
 
 pub type ModelName = String;
 
