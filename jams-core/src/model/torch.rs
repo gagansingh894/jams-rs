@@ -1,4 +1,4 @@
-use crate::model::predictor::{ModelInput, Output, Predictor, Values, DEFAULT_OUTPUT_KEY};
+use crate::model::predict::{ModelInput, Output, Predict, Values, DEFAULT_OUTPUT_KEY};
 use std::collections::HashMap;
 
 use crate::MAX_CAPACITY;
@@ -110,7 +110,7 @@ impl Torch {
     }
 }
 
-impl Predictor for Torch {
+impl Predict for Torch {
     /// Predicts the output for the given model input.
     ///
     /// # Arguments

@@ -1,4 +1,4 @@
-use crate::model::predictor::{ModelInput, Output, Predictor, Values, DEFAULT_OUTPUT_KEY};
+use crate::model::predict::{ModelInput, Output, Predict, Values, DEFAULT_OUTPUT_KEY};
 use std::collections::HashMap;
 
 use crate::MAX_1D_VEC_CAPACITY;
@@ -140,7 +140,7 @@ impl Catboost {
     }
 }
 
-impl Predictor for Catboost {
+impl Predict for Catboost {
     /// Predicts output based on the given input using the Catboost model.
     ///
     /// # Arguments

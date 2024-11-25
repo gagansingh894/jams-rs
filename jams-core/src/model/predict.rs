@@ -6,7 +6,7 @@ use std::fmt::Formatter;
 pub const DEFAULT_OUTPUT_KEY: &str = "predictions";
 
 /// Trait for making predictions using a model.
-pub trait Predictor: Send + Sync + 'static {
+pub trait Predict: Send + Sync + 'static {
     /// Predicts the output for the given model input.
     ///
     /// # Arguments

@@ -1,4 +1,4 @@
-use crate::model::predictor::{ModelInput, Output, Predictor, Values};
+use crate::model::predict::{ModelInput, Output, Predict, Values};
 use crate::MAX_CAPACITY;
 use std::collections::HashMap;
 use tensorflow::{
@@ -399,7 +399,7 @@ impl Tensorflow {
     }
 }
 
-impl Predictor for Tensorflow {
+impl Predict for Tensorflow {
     /// Performs prediction using the TensorFlow model.
     ///
     /// # Arguments

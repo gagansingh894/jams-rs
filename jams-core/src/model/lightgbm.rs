@@ -1,4 +1,4 @@
-use crate::model::predictor::{ModelInput, Output, Predictor, Values, DEFAULT_OUTPUT_KEY};
+use crate::model::predict::{ModelInput, Output, Predict, Values, DEFAULT_OUTPUT_KEY};
 use crate::MAX_1D_VEC_CAPACITY;
 use lgbm;
 use lgbm::mat::MatLayouts;
@@ -116,7 +116,7 @@ impl LightGBM {
     }
 }
 
-impl Predictor for LightGBM {
+impl Predict for LightGBM {
     /// Performs prediction using the loaded LightGBM model.
     ///
     /// # Arguments
