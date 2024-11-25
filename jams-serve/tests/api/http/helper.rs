@@ -6,6 +6,7 @@ use jams_serve::common::state::AppState;
 use jams_serve::http::router::build_router;
 use rayon::ThreadPoolBuilder;
 use std::sync::Arc;
+use jams_core::model_store::ModelStore;
 
 async fn setup_shared_state() -> Arc<AppState> {
     let cpu_pool = ThreadPoolBuilder::new()
@@ -18,7 +19,7 @@ async fn setup_shared_state() -> Arc<AppState> {
         .expect("Failed to create model store ❌");
 
     let manager = Arc::new(
-        ManagerBuilder::new(Arc::new(model_store))
+        ManagerBuilder::new(Arc::new(ModelStore::Local(model_store)))
             .build()
             .expect("Failed to initialize manager ❌"),
     );

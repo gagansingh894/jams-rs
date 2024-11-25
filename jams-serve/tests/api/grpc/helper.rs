@@ -10,6 +10,7 @@ use std::sync::Arc;
 use std::time::Duration;
 use tonic::transport::server::Router;
 use tonic::transport::{Channel, Server};
+use jams_core::model_store::ModelStore;
 
 async fn setup_shared_state() -> Arc<AppState> {
     let cpu_pool = ThreadPoolBuilder::new()
@@ -22,7 +23,7 @@ async fn setup_shared_state() -> Arc<AppState> {
         .expect("Failed to create model store ❌");
 
     let manager = Arc::new(
-        ManagerBuilder::new(Arc::new(model_store))
+        ManagerBuilder::new(Arc::new(ModelStore::Local(model_store)))
             .build()
             .expect("Failed to initialize manager ❌"),
     );

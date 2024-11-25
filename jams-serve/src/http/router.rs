@@ -28,6 +28,7 @@ mod tests {
     use crate::http::router::build_router;
     use jams_core::manager::ManagerBuilder;
     use jams_core::model_store::local::filesystem::LocalModelStore;
+    use jams_core::model_store::ModelStore;
     use rayon::ThreadPoolBuilder;
     use std::sync::Arc;
 
@@ -42,7 +43,7 @@ mod tests {
             .expect("Failed to create model store ❌");
 
         let manager = Arc::new(
-            ManagerBuilder::new(Arc::new(model_store))
+            ManagerBuilder::new(Arc::new(ModelStore::Local(model_store)))
                 .build()
                 .expect("Failed to initialize manager ❌"),
         );

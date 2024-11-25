@@ -3,6 +3,7 @@ use jams_core::manager::{Manager, ManagerBuilder};
 use jams_core::model_store::aws::s3::S3ModelStore;
 use jams_core::model_store::azure::blob_storage::AzureBlobStorageModelStore;
 use jams_core::model_store::local::filesystem::LocalModelStore;
+use jams_core::model_store::ModelStore;
 use rayon::{ThreadPool, ThreadPoolBuilder};
 use std::env;
 use std::sync::Arc;
@@ -67,7 +68,7 @@ pub async fn build_app_state(
             .await
             .expect("Failed to create S3 model store ❌");
         Arc::new(
-            ManagerBuilder::new(Arc::new(model_store))
+            ManagerBuilder::new(Arc::new(ModelStore::AWS(model_store)))
                 .with_polling(interval)
                 .build()
                 .expect("Failed to initialize manager ❌"),
@@ -81,7 +82,7 @@ pub async fn build_app_state(
             .await
             .expect("Failed to create S3 model store ❌");
         Arc::new(
-            ManagerBuilder::new(Arc::new(model_store))
+            ManagerBuilder::new(Arc::new(ModelStore::AWS(model_store)))
                 .with_polling(interval)
                 .build()
                 .expect("Failed to initialize manager ❌"),
@@ -95,7 +96,7 @@ pub async fn build_app_state(
             .await
             .expect("Failed to create Azure model store ❌");
         Arc::new(
-            ManagerBuilder::new(Arc::new(model_store))
+            ManagerBuilder::new(Arc::new(ModelStore::Azure(model_store)))
                 .with_polling(interval)
                 .build()
                 .expect("Failed to initialize manager ❌"),
@@ -105,7 +106,7 @@ pub async fn build_app_state(
             .await
             .expect("Failed to create local model store ❌");
         Arc::new(
-            ManagerBuilder::new(Arc::new(model_store))
+            ManagerBuilder::new(Arc::new(ModelStore::Local(model_store)))
                 .with_polling(interval)
                 .build()
                 .expect("Failed to initialize manager ❌"),
