@@ -1,5 +1,5 @@
 use clap::{Args, Parser, Subcommand};
-use jams_core::model::predictor::Predictor;
+use jams_core::model::predict::Predict;
 use jams_serve::common::server::{Config, Protocol};
 use std::fs;
 
@@ -124,10 +124,10 @@ pub fn parse_server_config_from_args(args: StartCommandArgs, protocol: Protocol)
 }
 
 pub fn predict(
-    model: impl Predictor,
+    model: impl Predict,
     input: Option<String>,
     input_path: Option<String>,
-) -> anyhow::Result<jams_core::model::predictor::Output> {
+) -> anyhow::Result<jams_core::model::predict::Output> {
     Ok(match input {
         None => match input_path {
             None => {
@@ -135,13 +135,12 @@ pub fn predict(
             }
             Some(path) => {
                 let data = fs::read_to_string(path)?;
-                let model_inputs =
-                    jams_core::model::predictor::ModelInput::from_str(data.as_str())?;
+                let model_inputs = jams_core::model::predict::ModelInput::from_str(data.as_str())?;
                 model.predict(model_inputs)?
             }
         },
         Some(input) => {
-            let model_inputs = jams_core::model::predictor::ModelInput::from_str(input.as_str())?;
+            let model_inputs = jams_core::model::predict::ModelInput::from_str(input.as_str())?;
             model.predict(model_inputs)?
         }
     })

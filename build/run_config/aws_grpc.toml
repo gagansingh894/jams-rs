@@ -3,5 +3,5 @@ protocol = "grpc"
 port = 4000
 model_store = "aws"
 s3_bucket_name = "jamsmodelstore"
-poll_interval = 600 # in seconds
+poll_interval = 0 # in seconds, default off as polling reloads all the models and some models might require warmup which may affect latency.
 num_workers = 4

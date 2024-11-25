@@ -1,6 +1,6 @@
 #[cfg(test)]
 pub mod utils {
-    use crate::model::predictor::{FeatureName, ModelInput, Values};
+    use crate::model::predict::{FeatureName, ModelInput, Values};
     use crate::MAX_CAPACITY;
     use rand::Rng;
     use std::collections::HashMap;

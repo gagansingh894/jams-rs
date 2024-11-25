@@ -1,4 +1,4 @@
-use crate::model::predictor::{ModelInput, Output, Predictor, Values, DEFAULT_OUTPUT_KEY};
+use crate::model::predict::{ModelInput, Output, Predict, Values, DEFAULT_OUTPUT_KEY};
 use std::collections::HashMap;
 
 use crate::MAX_CAPACITY;
@@ -23,10 +23,13 @@ impl TorchModelInput {
     /// * `Err(anyhow::Error)` - If there was an error during parsing.
     #[tracing::instrument(skip(model_input))]
     fn parse(model_input: ModelInput) -> anyhow::Result<Self> {
-        let mut numerical_features: Vec<Vec<f32>> = Vec::with_capacity(MAX_CAPACITY);
+        let mut numerical_features: Vec<f32> = Vec::with_capacity(MAX_CAPACITY);
 
         // extract the values from hashmap
         let input_matrix: Vec<Values> = model_input.values();
+        let num_cols = input_matrix.len();
+        // it is okay to overwrite this on each loop as all the length of each row is same
+        let mut num_rows: usize = 0;
 
         for values in input_matrix {
             match values {
@@ -43,8 +46,9 @@ impl TorchModelInput {
                         Some(ints) => ints,
                     };
                     // convert to float
-                    let floats = ints.into_iter().map(|x| x as f32).collect();
-                    numerical_features.push(floats);
+                    let floats: Vec<f32> = ints.into_iter().map(|x| x as f32).collect();
+                    num_rows = floats.len();
+                    numerical_features.extend(floats);
                 }
                 Values::Float(_) => {
                     let floats = match values.into_floats() {
@@ -54,12 +58,14 @@ impl TorchModelInput {
                         }
                         Some(ints) => ints,
                     };
-                    numerical_features.push(floats);
+                    num_rows = floats.len();
+                    numerical_features.extend(floats);
                 }
             }
         }
 
-        let tensor = tch::Tensor::from_slice2(&numerical_features).tr();
+        let tensor =
+            tch::Tensor::from_slice(&numerical_features).view([num_rows as i64, num_cols as i64]);
 
         Ok(Self { tensor })
     }
@@ -104,7 +110,7 @@ impl Torch {
     }
 }
 
-impl Predictor for Torch {
+impl Predict for Torch {
     /// Predicts the output for the given model input.
     ///
     /// # Arguments

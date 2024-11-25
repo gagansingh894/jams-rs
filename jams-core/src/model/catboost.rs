@@ -1,9 +1,8 @@
-use crate::model::predictor::{ModelInput, Output, Predictor, Values, DEFAULT_OUTPUT_KEY};
+use crate::model::predict::{ModelInput, Output, Predict, Values, DEFAULT_OUTPUT_KEY};
 use std::collections::HashMap;
 
-use crate::MAX_CAPACITY;
+use crate::MAX_1D_VEC_CAPACITY;
 use catboost_rs;
-use ndarray::Axis;
 
 /// Struct representing input data for a Catboost model.
 struct CatboostModelInput {
@@ -25,11 +24,15 @@ impl CatboostModelInput {
     /// Returns an `Err` if there is an issue parsing the input data.
     #[tracing::instrument(skip(model_input))]
     pub fn parse(model_input: ModelInput) -> anyhow::Result<Self> {
-        let mut categorical_features: Vec<Vec<String>> = Vec::with_capacity(MAX_CAPACITY);
-        let mut numerical_features: Vec<Vec<f32>> = Vec::with_capacity(MAX_CAPACITY);
+        let mut categorical_features: Vec<String> = Vec::with_capacity(MAX_1D_VEC_CAPACITY);
+        let mut numerical_features: Vec<f32> = Vec::with_capacity(MAX_1D_VEC_CAPACITY);
 
         // extract the values from hashmap
         let input_matrix: Vec<Values> = model_input.values();
+        let mut num_categorical_features: usize = 0;
+        let mut num_numeric_features: usize = 0;
+        // it is okay to overwrite this on each loop as all the length of each row is same
+        let mut num_feature_values: usize = 0;
 
         // Strings values are pushed to separate vector of type Vec<String>
         // Int and float are pushed to separate of type Vec<f32>
@@ -43,7 +46,9 @@ impl CatboostModelInput {
                         }
                         Some(v) => v,
                     };
-                    categorical_features.push(values);
+                    num_categorical_features += 1;
+                    num_feature_values = values.len();
+                    categorical_features.extend(values);
                 }
                 Values::Int(_) => {
                     let values = match input.into_ints() {
@@ -54,8 +59,10 @@ impl CatboostModelInput {
                         Some(v) => v,
                     };
                     // convert to float
-                    let values = values.into_iter().map(|x| x as f32).collect();
-                    numerical_features.push(values);
+                    let values: Vec<f32> = values.into_iter().map(|x| x as f32).collect();
+                    num_numeric_features += 1;
+                    num_feature_values = values.len();
+                    numerical_features.extend(values);
                 }
                 Values::Float(_) => {
                     let values = match input.into_floats() {
@@ -65,110 +72,42 @@ impl CatboostModelInput {
                         }
                         Some(v) => v,
                     };
-                    numerical_features.push(values);
+                    num_numeric_features += 1;
+                    num_feature_values = values.len();
+                    numerical_features.extend(values);
                 }
             }
         }
 
-        create_catboost_model_inputs(categorical_features, numerical_features)
-    }
-}
+        // we will use nd array to perform transpose operation
+        let categorical_nd = match categorical_features.is_empty() {
+            true => ndarray::Array2::<String>::default((1, 1)),
+            false => ndarray::Array2::<String>::from_shape_vec(
+                (num_categorical_features, num_feature_values),
+                categorical_features,
+            )?,
+        };
 
-/// Creates a `CatboostModelInput` struct from categorical and numeric feature vectors.
-///
-/// # Arguments
-///
-/// * `categorical_features` - 2D vector containing categorical feature values.
-/// * `numeric_features` - 2D vector containing numeric feature values.
-///
-/// # Errors
-///
-/// Returns an `Err` if there is an issue with the shape or content of the input vectors.
-#[tracing::instrument(skip(categorical_features, numeric_features))]
-fn create_catboost_model_inputs(
-    categorical_features: Vec<Vec<String>>,
-    numeric_features: Vec<Vec<f32>>,
-) -> anyhow::Result<CatboostModelInput> {
-    // parse the 2d vecs to ndarrau
-    let mut categorical_nd = ndarray::Array2::<String>::default(get_shape(&categorical_features)?);
-    let mut numeric_nd = ndarray::Array2::<f32>::default(get_shape(&numeric_features)?);
+        let numeric_nd = match numerical_features.is_empty() {
+            true => ndarray::Array2::<f32>::default((1, 1)),
+            false => ndarray::Array2::<f32>::from_shape_vec(
+                (num_numeric_features, num_feature_values),
+                numerical_features,
+            )?,
+        };
 
-    // populate if values are present
-    if !categorical_features.is_empty() {
-        for (i, mut row) in categorical_nd.axis_iter_mut(Axis(0)).enumerate() {
-            for (j, col) in row.iter_mut().enumerate() {
-                let val = match categorical_features.get(i) {
-                    None => {
-                        tracing::error!("Incorrect input ❌");
-                        anyhow::bail!("Incorrect input ❌");
-                    }
-                    Some(ith) => match ith.get(j) {
-                        None => {
-                            tracing::error!("Incorrect input ❌");
-                            anyhow::bail!("Incorrect input ❌");
-                        }
-                        Some(val) => val,
-                    },
-                };
-                col.clone_from(val);
-            }
-        }
-    }
-
-    // populate if values are present
-    if !numeric_features.is_empty() {
-        for (i, mut row) in numeric_nd.axis_iter_mut(Axis(0)).enumerate() {
-            for (j, col) in row.iter_mut().enumerate() {
-                let val = match numeric_features.get(i) {
-                    None => {
-                        tracing::error!("Incorrect input ❌");
-                        anyhow::bail!("Incorrect input ❌");
-                    }
-                    Some(ith) => match ith.get(j) {
-                        None => {
-                            tracing::error!("Incorrect input ❌");
-                            anyhow::bail!("Incorrect input ❌");
-                        }
-                        Some(val) => val,
-                    },
-                };
-                col.clone_from(val);
-            }
-        }
-    }
-
-    Ok(CatboostModelInput {
-        numeric_features: numeric_nd
-            .t()
-            .outer_iter()
-            .map(|row| row.to_vec())
-            .collect(),
-        categorical_features: categorical_nd
-            .t()
-            .outer_iter()
-            .map(|row| row.to_vec())
-            .collect(),
-    })
-}
-
-/// Returns the shape (rows, cols) of a 2D vector.
-///
-/// # Arguments
-///
-/// * `vector` - Reference to a vector of vectors.
-///
-/// # Returns
-///
-/// A tuple representing the number of rows and columns in the input vector.
-fn get_shape<T>(vector: &[Vec<T>]) -> anyhow::Result<(usize, usize)> {
-    match vector.is_empty() {
-        true => Ok((1, 1)),
-        false => match vector.first() {
-            None => {
-                anyhow::bail!("The values vector is empty")
-            }
-            Some(inner_vec) => Ok((vector.len(), inner_vec.len())),
-        },
+        Ok(CatboostModelInput {
+            numeric_features: numeric_nd
+                .t()
+                .outer_iter()
+                .map(|row| row.to_vec())
+                .collect(),
+            categorical_features: categorical_nd
+                .t()
+                .outer_iter()
+                .map(|row| row.to_vec())
+                .collect(),
+        })
     }
 }
 
@@ -201,7 +140,7 @@ impl Catboost {
     }
 }
 
-impl Predictor for Catboost {
+impl Predict for Catboost {
     /// Predicts output based on the given input using the Catboost model.
     ///
     /// # Arguments

@@ -1,6 +1,6 @@
 use crate::model;
 use crate::model::frameworks::{ModelFramework, CATBOOST, LIGHTGBM, PYTORCH, TENSORFLOW, TORCH};
-use crate::model::predictor::Predictor;
+use crate::model::Predictor;
 use async_trait::async_trait;
 use chrono::Utc;
 use dashmap::mapref::one::Ref;
@@ -48,7 +48,7 @@ pub trait Storage: Send + Sync + 'static {
 /// * `info` - Metadata about the model.
 ///
 pub struct Model {
-    pub predictor: Arc<dyn Predictor>,
+    pub predictor: Arc<Predictor>,
     pub info: Metadata,
 }
 
@@ -90,7 +90,7 @@ impl Model {
     /// A `Model` instance containing the predictor and metadata.
     ///
     pub fn new(
-        predictor: Arc<dyn Predictor>,
+        predictor: Arc<Predictor>,
         model_name: String,
         framework: ModelFramework,
         path: String,
@@ -173,7 +173,7 @@ pub async fn load_models(model_dir: String) -> anyhow::Result<DashMap<ModelName,
                             let now = Utc::now();
                             let sanitised_model_name = sanitize_model_name(model_name);
                             let model = Model::new(
-                                Arc::new(predictor),
+                                Arc::new(Predictor::Tensorflow(predictor)),
                                 sanitised_model_name.clone(),
                                 TENSORFLOW,
                                 file_path.clone(),
@@ -207,7 +207,7 @@ pub async fn load_models(model_dir: String) -> anyhow::Result<DashMap<ModelName,
                                     let now = Utc::now();
                                     let sanitised_model_name = sanitize_model_name(model_name);
                                     let model = Model::new(
-                                        Arc::new(predictor),
+                                        Arc::new(Predictor::Torch(predictor)),
                                         sanitised_model_name.clone(),
                                         PYTORCH, // TORCH can also be used, but they are aliases
                                         file_path.clone(),
@@ -226,7 +226,7 @@ pub async fn load_models(model_dir: String) -> anyhow::Result<DashMap<ModelName,
                             let now = Utc::now();
                             let sanitised_model_name = sanitize_model_name(model_name);
                             let model = Model::new(
-                                Arc::new(predictor),
+                                Arc::new(Predictor::Torch(predictor)),
                                 sanitised_model_name.clone(),
                                 PYTORCH, // TORCH can also be used, but they are aliases
                                 file_path.clone(),
@@ -256,7 +256,7 @@ pub async fn load_models(model_dir: String) -> anyhow::Result<DashMap<ModelName,
                             let now = Utc::now();
                             let sanitised_model_name = sanitize_model_name(model_name);
                             let model = Model::new(
-                                Arc::new(predictor),
+                                Arc::new(Predictor::Catboost(predictor)),
                                 sanitised_model_name.clone(),
                                 CATBOOST,
                                 file_path.clone(),
@@ -286,7 +286,7 @@ pub async fn load_models(model_dir: String) -> anyhow::Result<DashMap<ModelName,
                             let now = Utc::now();
                             let sanitised_model_name = sanitize_model_name(model_name);
                             let model = Model::new(
-                                Arc::new(predictor),
+                                Arc::new(Predictor::LightGBM(predictor)),
                                 sanitised_model_name.clone(),
                                 LIGHTGBM,
                                 file_path.clone(),
@@ -343,10 +343,10 @@ pub async fn load_models(model_dir: String) -> anyhow::Result<DashMap<ModelName,
 pub async fn load_predictor(
     model_framework: ModelFramework,
     model_path: &str,
-) -> anyhow::Result<Arc<dyn Predictor>> {
+) -> anyhow::Result<Arc<Predictor>> {
     if model_framework == TENSORFLOW {
         match model::tensorflow::Tensorflow::load(model_path) {
-            Ok(predictor) => Ok(Arc::new(predictor)),
+            Ok(predictor) => Ok(Arc::new(Predictor::Tensorflow(predictor))),
             Err(e) => {
                 tracing::error!("Failed to load Tensorflow model: {}", e);
                 anyhow::bail!("Failed to load Tensorflow model: {}", e)
@@ -354,7 +354,7 @@ pub async fn load_predictor(
         }
     } else if (model_framework == TORCH) || (model_framework == PYTORCH) {
         match model::torch::Torch::load(model_path) {
-            Ok(predictor) => Ok(Arc::new(predictor)),
+            Ok(predictor) => Ok(Arc::new(Predictor::Torch(predictor))),
             Err(e) => {
                 tracing::error!("Failed to load Torch model: {}", e);
                 anyhow::bail!("Failed to load Torch model: {}", e)
@@ -362,7 +362,7 @@ pub async fn load_predictor(
         }
     } else if model_framework == CATBOOST {
         match model::catboost::Catboost::load(model_path) {
-            Ok(predictor) => Ok(Arc::new(predictor)),
+            Ok(predictor) => Ok(Arc::new(Predictor::Catboost(predictor))),
             Err(e) => {
                 tracing::error!("Failed to load Catboost model: {}", e);
                 anyhow::bail!("Failed to load Catboost model: {}", e)
@@ -370,7 +370,7 @@ pub async fn load_predictor(
         }
     } else if model_framework == LIGHTGBM {
         match model::lightgbm::LightGBM::load(model_path) {
-            Ok(predictor) => Ok(Arc::new(predictor)),
+            Ok(predictor) => Ok(Arc::new(Predictor::LightGBM(predictor))),
             Err(e) => {
                 tracing::error!("Failed to load LightGBM model: {}", e);
                 anyhow::bail!("Failed to load LightGBM model: {}", e)
@@ -471,7 +471,7 @@ mod tests {
 
         // Create
         let model = Model::new(
-            Arc::new(predictor),
+            Arc::new(Predictor::Torch(predictor)),
             model_name.clone(),
             framework,
             path.to_string(),

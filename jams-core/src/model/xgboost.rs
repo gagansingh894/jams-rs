@@ -1,4 +1,4 @@
-use crate::model::predictor::{ModelInput, Output, Predictor};
+use crate::model::predict::{ModelInput, Output, Predict};
 
 pub struct XGBoost {}
 
@@ -9,7 +9,7 @@ impl XGBoost {
     }
 }
 
-impl Predictor for XGBoost {
+impl Predict for XGBoost {
     fn predict(&self, _: ModelInput) -> anyhow::Result<Output> {
         todo!()
     }

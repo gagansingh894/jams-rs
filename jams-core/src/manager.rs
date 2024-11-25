@@ -1,5 +1,6 @@
-use crate::model::predictor::ModelInput;
-use crate::model_store::storage::{Metadata, ModelName, Storage};
+use crate::model::predict::ModelInput;
+use crate::model_store::storage::{Metadata, ModelName};
+use crate::model_store::ModelStore;
 use std::sync::Arc;
 use tokio::time;
 
@@ -11,7 +12,7 @@ use tokio::time;
 /// # Fields
 /// - `model_store` (Arc&ltdyn Storage&gt): A shared reference to the model storage.
 pub struct Manager {
-    model_store: Arc<dyn Storage>,
+    model_store: Arc<ModelStore>,
 }
 
 impl Manager {
@@ -142,7 +143,7 @@ impl Manager {
 #[derive(Default)]
 pub struct ManagerBuilder {
     // Note: `model_store` cannot use `#[derive(Default)]` as `Arc<dyn Storage>` doesn't have a default value.
-    model_store: Option<Arc<dyn Storage>>, // Option is used to indicate it's initially None.
+    model_store: Option<Arc<ModelStore>>, // Option is used to indicate it's initially None.
     poll_interval: time::Duration,
 }
 
@@ -156,7 +157,7 @@ impl ManagerBuilder {
     /// # Returns
     /// - `ManagerBuilder`: A builder object used to configure and build a `Manager`.
     ///
-    pub fn new(model_store: Arc<dyn Storage>) -> ManagerBuilder {
+    pub fn new(model_store: Arc<ModelStore>) -> ManagerBuilder {
         ManagerBuilder {
             model_store: Some(model_store),
             poll_interval: time::Duration::from_secs(0),
@@ -218,7 +219,7 @@ mod tests {
     async fn successfully_create_manager_with_local_model_store() {
         let model_dir = "./tests/model_storage/model_store";
         let local_model_store = LocalModelStore::new(model_dir.to_string()).await.unwrap();
-        let manager = ManagerBuilder::new(Arc::new(local_model_store)).build();
+        let manager = ManagerBuilder::new(Arc::new(ModelStore::Local(local_model_store))).build();
 
         // assert
         assert!(manager.is_ok());
@@ -228,7 +229,7 @@ mod tests {
     async fn successfully_create_manager_with_local_model_store_with_polling() {
         let model_dir = "./tests/model_storage/model_store";
         let local_model_store = LocalModelStore::new(model_dir.to_string()).await.unwrap();
-        let manager = ManagerBuilder::new(Arc::new(local_model_store))
+        let manager = ManagerBuilder::new(Arc::new(ModelStore::Local(local_model_store)))
             .with_polling(2)
             .build();
 
@@ -240,7 +241,7 @@ mod tests {
     async fn successfully_make_predictions_via_manager_with_local_model_store() {
         let model_dir = "tests/model_storage/model_store";
         let local_model_store = LocalModelStore::new(model_dir.to_string()).await.unwrap();
-        let manager = ManagerBuilder::new(Arc::new(local_model_store))
+        let manager = ManagerBuilder::new(Arc::new(ModelStore::Local(local_model_store)))
             .build()
             .unwrap();
 
@@ -258,7 +259,7 @@ mod tests {
     {
         let model_dir = "tests/model_storage/model_store";
         let local_model_store = LocalModelStore::new(model_dir.to_string()).await.unwrap();
-        let manager = ManagerBuilder::new(Arc::new(local_model_store))
+        let manager = ManagerBuilder::new(Arc::new(ModelStore::Local(local_model_store)))
             .build()
             .unwrap();
 
@@ -275,7 +276,7 @@ mod tests {
     async fn successfully_get_models_via_manager_with_local_model_store() {
         let model_dir = "tests/model_storage/model_store";
         let local_model_store = LocalModelStore::new(model_dir.to_string()).await.unwrap();
-        let manager = ManagerBuilder::new(Arc::new(local_model_store))
+        let manager = ManagerBuilder::new(Arc::new(ModelStore::Local(local_model_store)))
             .build()
             .unwrap();
 
@@ -291,7 +292,7 @@ mod tests {
     async fn successfully_add_model_via_manager_with_local_model_store() {
         let model_dir = "tests/model_storage/model_store";
         let local_model_store = LocalModelStore::new(model_dir.to_string()).await.unwrap();
-        let manager = ManagerBuilder::new(Arc::new(local_model_store))
+        let manager = ManagerBuilder::new(Arc::new(ModelStore::Local(local_model_store)))
             .build()
             .unwrap();
         let model_name: ModelName = "catboost-titanic_model".to_string();
@@ -315,7 +316,7 @@ mod tests {
     async fn successfully_update_model_via_manager_with_local_model_store() {
         let model_dir = "tests/model_storage/model_store";
         let local_model_store = LocalModelStore::new(model_dir.to_string()).await.unwrap();
-        let manager = ManagerBuilder::new(Arc::new(local_model_store))
+        let manager = ManagerBuilder::new(Arc::new(ModelStore::Local(local_model_store)))
             .build()
             .unwrap();
         let model_name: ModelName = "my_awesome_penguin_model".to_string();
@@ -331,7 +332,7 @@ mod tests {
     async fn successfully_delete_model_via_manager_with_local_model_store() {
         let model_dir = "tests/model_storage/model_store";
         let local_model_store = LocalModelStore::new(model_dir.to_string()).await.unwrap();
-        let manager = ManagerBuilder::new(Arc::new(local_model_store))
+        let manager = ManagerBuilder::new(Arc::new(ModelStore::Local(local_model_store)))
             .build()
             .unwrap();
         let model_name: ModelName = "my_awesome_penguin_model".to_string();
