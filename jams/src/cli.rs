@@ -135,8 +135,7 @@ pub fn predict(
             }
             Some(path) => {
                 let data = fs::read_to_string(path)?;
-                let model_inputs =
-                    jams_core::model::predict::ModelInput::from_str(data.as_str())?;
+                let model_inputs = jams_core::model::predict::ModelInput::from_str(data.as_str())?;
                 model.predict(model_inputs)?
             }
         },

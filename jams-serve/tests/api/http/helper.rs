@@ -1,6 +1,7 @@
 use axum::Router;
 use jams_core::manager::ManagerBuilder;
 use jams_core::model_store::local::filesystem::LocalModelStore;
+use jams_core::model_store::ModelStore;
 use jams_serve::common::state::AppState;
 use jams_serve::http::router::build_router;
 use rayon::ThreadPoolBuilder;

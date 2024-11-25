@@ -1,5 +1,6 @@
 use jams_core::manager::ManagerBuilder;
 use jams_core::model_store::local::filesystem::LocalModelStore;
+use jams_core::model_store::ModelStore;
 use jams_proto::jams_v1::model_server_client::ModelServerClient;
 use jams_proto::jams_v1::model_server_server::ModelServerServer;
 use jams_serve::common::state::AppState;

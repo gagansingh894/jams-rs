@@ -308,28 +308,6 @@ fn parse_functional(
     })
 }
 
-/// Returns the shape (rows, cols) of a 2D vector.
-///
-/// # Arguments
-///
-/// * `vector` - Reference to a vector of vectors.
-///
-/// # Returns
-///
-/// A tuple representing the number of rows and columns in the input vector.
-fn get_shape<T>(vector: &[Vec<T>]) -> anyhow::Result<(usize, usize)> {
-    match vector.is_empty() {
-        true => Ok((0, 0)),
-        false => match vector.first() {
-            None => {
-                tracing::error!("The values vector is empty");
-                anyhow::bail!("The values vector is empty")
-            }
-            Some(inner_vec) => Ok((vector.len(), inner_vec.len())),
-        },
-    }
-}
-
 /// Struct representing a TensorFlow model and its associated components.
 pub struct Tensorflow {
     /// TensorFlow graph containing the model structure and operations.
