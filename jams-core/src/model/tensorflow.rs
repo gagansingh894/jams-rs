@@ -134,9 +134,9 @@ fn parse_functional(
     signature_def: &SignatureDef,
     graph: &Graph,
 ) -> anyhow::Result<TensorflowModelInput> {
-    let mut int_tensors: Vec<(Operation, Tensor<i32>)> = Vec::with_capacity(MAX_CAPACITY);
-    let mut float_tensors: Vec<(Operation, Tensor<f32>)> = Vec::with_capacity(MAX_CAPACITY);
-    let mut string_tensors: Vec<(Operation, Tensor<String>)> = Vec::with_capacity(MAX_CAPACITY);
+    let mut int_tensors: Vec<(Operation, Tensor<i32>)> = Vec::with_capacity(FEATURE_NAMES_CAPACITY);
+    let mut float_tensors: Vec<(Operation, Tensor<f32>)> = Vec::with_capacity(FEATURE_NAMES_CAPACITY * 2);
+    let mut string_tensors: Vec<(Operation, Tensor<String>)> = Vec::with_capacity(FEATURE_NAMES_CAPACITY);
 
     for input in signature_def.inputs().iter() {
         let input_info = match signature_def.get_input(input.0) {
