@@ -248,7 +248,7 @@ fn get_integer_feature_from_model_input<'a>(
         .position(|x| x == feature_name)
     {
         let start = if index == 0 { 0 } else { index * num_features };
-        let end = start + num_features - 1;
+        let end = start + num_features;
         Some(&model_input.integer_features.values[start..end])
     } else {
         None
@@ -286,7 +286,7 @@ fn get_string_feature_from_model_input<'a>(
         .position(|x| x == feature_name)
     {
         let start = if index == 0 { 0 } else { index * num_features };
-        let end = start + num_features - 1;
+        let end = start + num_features;
         Some(&model_input.string_features.values[start..end])
     } else {
         None
