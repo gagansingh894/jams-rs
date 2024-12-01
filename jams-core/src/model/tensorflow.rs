@@ -1,10 +1,10 @@
-use crate::model::predict::{ModelInput, Output, Predict, Values};
-use crate::MAX_CAPACITY;
+use crate::model::predict::{FeatureName, ModelInput, Output, Predict};
 use std::collections::HashMap;
 use tensorflow::{
     DataType, FetchToken, Graph, Operation, SavedModelBundle, SessionOptions, SessionRunArgs,
     SignatureDef, Tensor, DEFAULT_SERVING_SIGNATURE_DEF_KEY,
 };
+use crate::FEATURE_NAMES_CAPACITY;
 
 // Arbitrary high number but in reality, the number is far less
 const MAX_OUTPUT_NODES_SUPPORTED: usize = 250;
@@ -67,65 +67,9 @@ fn parse_sequential(
     signature_def: &SignatureDef,
     graph: &Graph,
 ) -> anyhow::Result<TensorflowModelInput> {
-    let mut int_features: Vec<i32> = Vec::with_capacity(MAX_CAPACITY);
-    let mut float_features: Vec<f32> = Vec::with_capacity(MAX_CAPACITY);
-    let mut string_features: Vec<String> = Vec::with_capacity(MAX_CAPACITY);
-
-    // Extract the values from hashmap
-    let input_matrix: Vec<Values> = model_input.values();
-    let mut num_int_features: usize = 0;
-    let mut num_float_features: usize = 0;
-    let mut num_string_features: usize = 0;
-    // it is okay to overwrite this on each loop as all the length of each row is same
-    let mut num_feature_values: usize = 0;
-
-    // Strings values are pushed to separate vector of type Vec<String>
-    // Float values pushed to separate of type Vec<f32>
-    // Int values pushed to separate of type Vec<i32>
-    for input in input_matrix {
-        match input {
-            Values::String(_) => {
-                let values = match input.into_strings() {
-                    None => {
-                        tracing::error!("failed to convert input values to string vector");
-                        anyhow::bail!("failed to convert input values to string vector")
-                    }
-                    Some(v) => v,
-                };
-                num_feature_values = values.len();
-                num_string_features += 1;
-                string_features.extend(values);
-            }
-            Values::Int(_) => {
-                let values = match input.into_ints() {
-                    None => {
-                        tracing::error!("failed to convert input values to int vector");
-                        anyhow::bail!("failed to convert input values to int vector")
-                    }
-                    Some(v) => v,
-                };
-                num_feature_values = values.len();
-                num_int_features += 1;
-                int_features.extend(values);
-            }
-            Values::Float(_) => {
-                let values = match input.into_floats() {
-                    None => {
-                        tracing::error!("failed to convert input values to float vector");
-                        anyhow::bail!("failed to convert input values to float vector")
-                    }
-                    Some(v) => v,
-                };
-                num_feature_values = values.len();
-                num_float_features += 1;
-                float_features.extend(values);
-            }
-        }
-    }
-
-    let mut int_tensors: Vec<(Operation, Tensor<i32>)> = Vec::with_capacity(MAX_CAPACITY);
-    let mut float_tensors: Vec<(Operation, Tensor<f32>)> = Vec::with_capacity(MAX_CAPACITY);
-    let mut string_tensors: Vec<(Operation, Tensor<String>)> = Vec::with_capacity(MAX_CAPACITY);
+    let mut int_tensors: Vec<(Operation, Tensor<i32>)> = Vec::with_capacity(FEATURE_NAMES_CAPACITY);
+    let mut float_tensors: Vec<(Operation, Tensor<f32>)> = Vec::with_capacity(FEATURE_NAMES_CAPACITY * 2);
+    let mut string_tensors: Vec<(Operation, Tensor<String>)> = Vec::with_capacity(FEATURE_NAMES_CAPACITY);
 
     // Create tensors
     for input in signature_def.inputs().iter() {
@@ -136,23 +80,29 @@ fn parse_sequential(
         match input_info.dtype() {
             DataType::Int32 => {
                 // Swapping num_rows and num_cols to satisfy shape
-                let tensor =
-                    Tensor::<i32>::new(&[num_feature_values as u64, num_int_features as u64])
-                        .with_values(&int_features)?;
+                let tensor = Tensor::<i32>::new(&[
+                    model_input.integer_features.shape.1 as u64,
+                    model_input.integer_features.shape.0 as u64,
+                ])
+                .with_values(&model_input.integer_features.values)?;
                 int_tensors.push((input_op, tensor));
             }
             DataType::Float => {
                 // Swapping num_rows and num_cols to satisfy shape
-                let tensor =
-                    Tensor::<f32>::new(&[num_feature_values as u64, num_float_features as u64])
-                        .with_values(&float_features)?;
+                let tensor = Tensor::<f32>::new(&[
+                    model_input.float_features.shape.1 as u64,
+                    model_input.float_features.shape.0 as u64,
+                ])
+                .with_values(&model_input.float_features.values)?;
                 float_tensors.push((input_op, tensor));
             }
             DataType::String => {
                 // Swapping num_rows and num_cols to satisfy shape
-                let tensor =
-                    Tensor::<String>::new(&[num_feature_values as u64, num_string_features as u64])
-                        .with_values(&string_features)?;
+                let tensor = Tensor::<String>::new(&[
+                    model_input.string_features.shape.1 as u64,
+                    model_input.string_features.shape.0 as u64,
+                ])
+                .with_values(&model_input.string_features.values)?;
                 string_tensors.push((input_op, tensor));
             }
             _ => {
@@ -184,9 +134,9 @@ fn parse_functional(
     signature_def: &SignatureDef,
     graph: &Graph,
 ) -> anyhow::Result<TensorflowModelInput> {
-    let mut int_tensors: Vec<(Operation, Tensor<i32>)> = Vec::with_capacity(MAX_CAPACITY);
-    let mut float_tensors: Vec<(Operation, Tensor<f32>)> = Vec::with_capacity(MAX_CAPACITY);
-    let mut string_tensors: Vec<(Operation, Tensor<String>)> = Vec::with_capacity(MAX_CAPACITY);
+    let mut int_tensors: Vec<(Operation, Tensor<i32>)> = Vec::with_capacity(FEATURE_NAMES_CAPACITY);
+    let mut float_tensors: Vec<(Operation, Tensor<f32>)> = Vec::with_capacity(FEATURE_NAMES_CAPACITY * 2);
+    let mut string_tensors: Vec<(Operation, Tensor<String>)> = Vec::with_capacity(FEATURE_NAMES_CAPACITY);
 
     for input in signature_def.inputs().iter() {
         let input_info = match signature_def.get_input(input.0) {
@@ -216,20 +166,14 @@ fn parse_functional(
 
         match input_info.dtype() {
             DataType::Int32 => {
-                match model_input.get(&model_input_feature_name) {
+                match get_integer_feature_from_model_input(&model_input, &model_input_feature_name)
+                {
                     None => {
                         tracing::error!("Failed to retrieve {} values", model_input_feature_name);
                         anyhow::bail!("Failed to retrieve {} values", model_input_feature_name)
                     }
-                    Some(inputs) => {
-                        let values = match inputs.to_ints() {
-                            None => {
-                                tracing::error!("failed to convert input values to int vector");
-                                anyhow::bail!("failed to convert input values to int vector")
-                            }
-                            Some(v) => v,
-                        };
-                        match Tensor::<i32>::new(&[values.len() as u64, 1]).with_values(&values) {
+                    Some(values) => {
+                        match Tensor::<i32>::new(&[values.len() as u64, 1]).with_values(values) {
                             Ok(tensor) => {
                                 int_tensors.push((input_op, tensor));
                             }
@@ -239,23 +183,16 @@ fn parse_functional(
                             }
                         };
                     }
-                };
+                }
             }
             DataType::Float => {
-                match model_input.get(&model_input_feature_name) {
+                match get_float_feature_from_model_input(&model_input, &model_input_feature_name) {
                     None => {
                         tracing::error!("Failed to retrieve {} values", model_input_feature_name);
                         anyhow::bail!("Failed to retrieve {} values", model_input_feature_name)
                     }
-                    Some(inputs) => {
-                        let values = match inputs.to_floats() {
-                            None => {
-                                tracing::error!("failed to convert input values to float vector");
-                                anyhow::bail!("failed to convert input values to float vector")
-                            }
-                            Some(v) => v,
-                        };
-                        match Tensor::<f32>::new(&[values.len() as u64, 1]).with_values(&values) {
+                    Some(values) => {
+                        match Tensor::<f32>::new(&[values.len() as u64, 1]).with_values(values) {
                             Ok(tensor) => {
                                 float_tensors.push((input_op, tensor));
                             }
@@ -265,25 +202,16 @@ fn parse_functional(
                             }
                         };
                     }
-                };
+                }
             }
             DataType::String => {
-                match model_input.get(&model_input_feature_name) {
+                match get_string_feature_from_model_input(&model_input, &model_input_feature_name) {
                     None => {
                         tracing::error!("Failed to retrieve {} values", model_input_feature_name);
                         anyhow::bail!("Failed to retrieve {} values", model_input_feature_name)
                     }
-                    Some(inputs) => {
-                        let values = match inputs.to_strings() {
-                            None => {
-                                tracing::error!("failed to convert input values to string vector");
-                                anyhow::bail!("failed to convert input values to string vector")
-                            }
-                            Some(v) => v,
-                        };
-                        match Tensor::<String>::new(&[values.iter().len() as u64, 1])
-                            .with_values(&values)
-                        {
+                    Some(values) => {
+                        match Tensor::<String>::new(&[values.len() as u64, 1]).with_values(values) {
                             Ok(tensor) => {
                                 string_tensors.push((input_op, tensor));
                             }
@@ -293,7 +221,7 @@ fn parse_functional(
                             }
                         };
                     }
-                };
+                }
             }
             _ => {
                 tracing::error!("Type not supported");
@@ -306,6 +234,63 @@ fn parse_functional(
         float_tensors,
         string_tensors,
     })
+}
+
+fn get_integer_feature_from_model_input<'a>(
+    model_input: &'a ModelInput,
+    feature_name: &FeatureName,
+) -> Option<&'a [i32]> {
+    let num_features = model_input.integer_features.shape.1;
+    if let Some(index) = model_input
+        .integer_features
+        .names
+        .iter()
+        .position(|x| x == feature_name)
+    {
+        let start = if index == 0 { 0 } else { index * num_features };
+        let end = start + num_features;
+        Some(&model_input.integer_features.values[start..end])
+    } else {
+        None
+    }
+}
+
+fn get_float_feature_from_model_input<'a>(
+    model_input: &'a ModelInput,
+    feature_name: &FeatureName,
+) -> Option<&'a [f32]> {
+    let num_features = model_input.float_features.shape.1;
+    if let Some(index) = model_input
+        .float_features
+        .names
+        .iter()
+        .position(|x| x == feature_name)
+    {
+        let start = if index == 0 { 0 } else { index * num_features };
+        let end = start + num_features;
+        Some(&model_input.float_features.values[start..end])
+    } else {
+        None
+    }
+}
+
+fn get_string_feature_from_model_input<'a>(
+    model_input: &'a ModelInput,
+    feature_name: &FeatureName,
+) -> Option<&'a [String]> {
+    let num_features = model_input.string_features.shape.1;
+    if let Some(index) = model_input
+        .string_features
+        .names
+        .iter()
+        .position(|x| x == feature_name)
+    {
+        let start = if index == 0 { 0 } else { index * num_features };
+        let end = start + num_features;
+        Some(&model_input.string_features.values[start..end])
+    } else {
+        None
+    }
 }
 
 /// Struct representing a TensorFlow model and its associated components.

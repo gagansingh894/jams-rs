@@ -1,7 +1,6 @@
-use crate::model::predict::{ModelInput, Output, Predict, Values, DEFAULT_OUTPUT_KEY};
+use crate::model::predict::{ModelInput, Output, Predict, DEFAULT_OUTPUT_KEY};
 use std::collections::HashMap;
 
-use crate::MAX_1D_VEC_CAPACITY;
 use catboost_rs;
 
 /// Struct representing input data for a Catboost model.
@@ -23,76 +22,40 @@ impl CatboostModelInput {
     ///
     /// Returns an `Err` if there is an issue parsing the input data.
     #[tracing::instrument(skip(model_input))]
-    pub fn parse(model_input: ModelInput) -> anyhow::Result<Self> {
-        let mut categorical_features: Vec<String> = Vec::with_capacity(MAX_1D_VEC_CAPACITY);
-        let mut numerical_features: Vec<f32> = Vec::with_capacity(MAX_1D_VEC_CAPACITY);
+    pub fn parse(mut model_input: ModelInput) -> anyhow::Result<Self> {
+        // only float features are supported, so we are converting Vec<i32> to Vec<f32>
+        // we can use .1 of any features as the length is same.
+        // only the number of features is changing
+        let numerical_features_shape = (
+            model_input.integer_features.shape.0 + model_input.float_features.shape.0,
+            model_input.float_features.shape.1,
+        );
 
-        // extract the values from hashmap
-        let input_matrix: Vec<Values> = model_input.values();
-        let mut num_categorical_features: usize = 0;
-        let mut num_numeric_features: usize = 0;
-        // it is okay to overwrite this on each loop as all the length of each row is same
-        let mut num_feature_values: usize = 0;
+        // convert integer to float
+        let mut converted: Vec<f32> = model_input
+            .integer_features
+            .values
+            .into_iter()
+            .map(|x| x as f32)
+            .collect();
 
-        // Strings values are pushed to separate vector of type Vec<String>
-        // Int and float are pushed to separate of type Vec<f32>
-        for input in input_matrix {
-            match input {
-                Values::String(_) => {
-                    let values = match input.into_strings() {
-                        None => {
-                            tracing::error!("failed to convert input values to string vector");
-                            anyhow::bail!("failed to convert input values to string vector")
-                        }
-                        Some(v) => v,
-                    };
-                    num_categorical_features += 1;
-                    num_feature_values = values.len();
-                    categorical_features.extend(values);
-                }
-                Values::Int(_) => {
-                    let values = match input.into_ints() {
-                        None => {
-                            tracing::error!("failed to convert input values to int vector");
-                            anyhow::bail!("failed to convert input values to int vector")
-                        }
-                        Some(v) => v,
-                    };
-                    // convert to float
-                    let values: Vec<f32> = values.into_iter().map(|x| x as f32).collect();
-                    num_numeric_features += 1;
-                    num_feature_values = values.len();
-                    numerical_features.extend(values);
-                }
-                Values::Float(_) => {
-                    let values = match input.into_floats() {
-                        None => {
-                            tracing::error!("failed to convert input values to float vector");
-                            anyhow::bail!("failed to convert input values to float vector")
-                        }
-                        Some(v) => v,
-                    };
-                    num_numeric_features += 1;
-                    num_feature_values = values.len();
-                    numerical_features.extend(values);
-                }
-            }
-        }
+        // reuse the float vector by appending new values
+        model_input.float_features.values.append(&mut converted);
 
         // we will use nd array to perform transpose operation
-        let categorical_nd = match categorical_features.is_empty() {
+        let categorical_nd = match model_input.string_features.values.is_empty() {
             true => ndarray::Array2::<String>::default((1, 1)),
             false => ndarray::Array2::<String>::from_shape_vec(
-                (num_categorical_features, num_feature_values),
-                categorical_features,
+                model_input.string_features.shape,
+                model_input.string_features.values,
             )?,
         };
 
-        let numeric_nd = match numerical_features.is_empty() {
+        let numeric_nd = match model_input.float_features.values.is_empty() {
             true => ndarray::Array2::<f32>::default((1, 1)),
             false => ndarray::Array2::<f32>::from_shape_vec(
-                (num_numeric_features, num_feature_values),
-                numerical_features,
+                numerical_features_shape,
+                model_input.float_features.values,
             )?,
         };
 

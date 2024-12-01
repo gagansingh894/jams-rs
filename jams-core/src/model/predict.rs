@@ -1,7 +1,7 @@
 use serde::de::{MapAccess, Visitor};
 use serde::{Deserialize, Deserializer, Serialize};
 use std::collections::HashMap;
-use std::fmt::Formatter;
+use std::fmt::{Debug, Formatter};
 
 pub const DEFAULT_OUTPUT_KEY: &str = "predictions";
 
@@ -28,104 +28,39 @@ pub struct Output {
     pub predictions: HashMap<String, Vec<Vec<f64>>>,
 }
 
-/// Struct representing the input to a model.
+/// Type alias for the feature name, which is a string.
+pub type FeatureName = String;
+
+// todo: add sealed constraints on Vec<T>
+/// A collection of features of a specific type.
 ///
-/// # Fields
-/// * `0` - A hashmap where the keys are feature names and the values are feature values.
-#[derive(Debug, Clone)]
-pub struct ModelInput(HashMap<FeatureName, Values>);
+/// This struct represents a generic feature set, where each feature has a name,
+/// a collection of values, and a shape that describes the dimensions of the data.
+#[derive(Debug, Default, Clone)]
+pub struct Features<T> {
+    /// The names of the features.
+    pub names: Vec<FeatureName>,
+    /// The values associated with the features.
+    pub values: Vec<T>,
+    /// The shape of the feature set, represented as (rows, columns).
+    pub shape: (usize, usize),
+}
 
-impl<'de> Deserialize<'de> for ModelInput {
-    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
-    where
-        D: Deserializer<'de>,
-    {
-        struct ModelInputVisitor;
-
-        impl<'de> Visitor<'de> for ModelInputVisitor {
-            type Value = ModelInput;
-
-            fn expecting(&self, formatter: &mut Formatter) -> std::fmt::Result {
-                formatter.write_str("a map with string keys and homogeneous arrays of integers, floats, or strings as values")
-            }
-
-            fn visit_map<M>(self, mut map: M) -> Result<Self::Value, M::Error>
-            where
-                M: MapAccess<'de>,
-            {
-                let mut data = HashMap::new();
-
-                while let Some((key, value)) = map.next_entry::<String, serde_json::Value>()? {
-                    let values = match value {
-                        serde_json::Value::Array(arr) => {
-                            // Try to interpret the array as a vector of strings
-                            if let Some(first_elem) = arr.first() {
-                                // Check if the array is empty
-                                if arr.is_empty() {
-                                    return Err(serde::de::Error::custom(format!(
-                                        "Empty array found for key '{}'",
-                                        key
-                                    )));
-                                }
-                                if first_elem.is_string() {
-                                    let vec: Vec<String> = arr
-                                        .into_iter()
-                                        .map(|v| v.as_str().unwrap().to_string())
-                                        .collect();
-                                    Values::String(vec)
-                                } else if first_elem.is_i64() {
-                                    // Try to interpret the array as a vector of integers
-                                    let vec: Vec<i32> = arr
-                                        .into_iter()
-                                        .map(|v| v.as_i64().unwrap() as i32)
-                                        .collect();
-                                    Values::Int(vec)
-                                } else if first_elem.is_f64() {
-                                    // Try to interpret the array as a vector of floats
-                                    let vec: Vec<f32> = arr
-                                        .into_iter()
-                                        .map(|v| v.as_f64().unwrap() as f32)
-                                        .collect();
-                                    Values::Float(vec)
-                                } else {
-                                    return Err(serde::de::Error::custom(
-                                        "Unsupported value type in array",
-                                    ));
-                                }
-                            } else {
-                                return Err(serde::de::Error::custom("Empty array found"));
-                            }
-                        }
-                        _ => return Err(serde::de::Error::custom("Expected an array as value")),
-                    };
-                    data.insert(key, values);
-                }
-                Ok(ModelInput(data))
-            }
-        }
-
-        deserializer.deserialize_map(ModelInputVisitor)
-    }
+/// The input data for a machine learning model.
+///
+/// This struct contains three types of features: float, integer, and string.
+/// Each type is stored in its own `Features` structure.
+#[derive(Debug, Default, Clone)]
+pub struct ModelInput {
+    /// The float features in the input.
+    pub float_features: Features<f32>,
+    /// The integer features in the input.
+    pub integer_features: Features<i32>,
+    /// The string features in the input.
+    pub string_features: Features<String>,
 }
 
 impl ModelInput {
-    /// Retrieves a reference to the values associated with the given feature name.
-    ///
-    /// # Arguments
-    /// * `key` - The feature name.
-    ///
-    /// # Returns
-    /// * `Some(&Values)` - If the feature name exists.
-    /// * `None` - If the feature name does not exist.
-    pub fn get(&self, key: &FeatureName) -> Option<&Values> {
-        self.0.get(key)
-    }
-
-    /// Returns a vector of all values.
-    pub fn values(self) -> Vec<Values> {
-        self.inner().into_values().collect()
-    }
-
     /// Parses a JSON string to create a `ModelInput` instance.
     ///
     /// # Arguments
@@ -146,38 +81,89 @@ impl ModelInput {
             }
         }
     }
-
-    /// Creates a `ModelInput` instance from a `HashMap`.
-    ///
-    /// # Arguments
-    /// * `value` - The `HashMap` representing the model input.
-    ///
-    /// # Returns
-    /// * `Ok(ModelInput)` - If the conversion was successful.
-    /// * `Err(anyhow::Error)` - If there was an error during the conversion.
-    pub fn from_hashmap(value: HashMap<FeatureName, Values>) -> anyhow::Result<Self> {
-        Ok(Self(value))
-    }
-
-    /// Consumes the `ModelInput` and returns the inner `HashMap`.
-    pub fn inner(self) -> HashMap<FeatureName, Values> {
-        self.0
-    }
-
-    /// Returns an iterator over the feature names and values.
-    pub fn iter(&self) -> std::collections::hash_map::Iter<'_, FeatureName, Values> {
-        self.0.iter()
-    }
-
-    /// Consumes the `ModelInput` and returns an iterator over the feature names and values.
-    #[allow(clippy::should_implement_trait)]
-    pub fn into_iter(self) -> std::collections::hash_map::IntoIter<FeatureName, Values> {
-        self.0.into_iter()
-    }
 }
 
-/// Type alias for the feature name, which is a string.
-pub type FeatureName = String;
+impl<'de> Deserialize<'de> for ModelInput {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        struct ModelInputVisitor;
+
+        impl<'de> Visitor<'de> for ModelInputVisitor {
+            type Value = ModelInput;
+
+            fn expecting(&self, formatter: &mut Formatter) -> std::fmt::Result {
+                formatter.write_str("a map with string keys and homogeneous arrays of integers, floats, or strings as values")
+            }
+
+            fn visit_map<M>(self, mut map: M) -> Result<Self::Value, M::Error>
+            where
+                M: MapAccess<'de>,
+            {
+                let mut model_input = ModelInput::default();
+
+                while let Some((key, value)) = map.next_entry::<String, serde_json::Value>()? {
+                    match value {
+                        serde_json::Value::Array(arr) => {
+                            // Try to interpret the array as a vector of strings
+                            if let Some(first_elem) = arr.first() {
+                                // Check if the array is empty
+                                if arr.is_empty() {
+                                    return Err(serde::de::Error::custom(format!(
+                                        "Empty array found for key '{}'",
+                                        key
+                                    )));
+                                }
+                                let arr_length = arr.len();
+                                if first_elem.is_string() {
+                                    let vec: Vec<String> = arr
+                                        .into_iter()
+                                        .map(|v| v.as_str().unwrap().to_owned())
+                                        .collect();
+                                    model_input.string_features.names.push(key);
+                                    model_input.string_features.values.extend(vec);
+                                    model_input.string_features.shape.0 += 1;
+                                    model_input.string_features.shape.1 = arr_length;
+                                } else if first_elem.is_i64() {
+                                    // Try to interpret the array as a vector of integers
+                                    let vec: Vec<i32> = arr
+                                        .into_iter()
+                                        .map(|v| v.as_i64().unwrap() as i32)
+                                        .collect();
+                                    model_input.integer_features.names.push(key);
+                                    model_input.integer_features.values.extend(vec);
+                                    model_input.integer_features.shape.0 += 1;
+                                    model_input.integer_features.shape.1 = arr_length;
+                                } else if first_elem.is_f64() {
+                                    // Try to interpret the array as a vector of floats
+                                    let vec: Vec<f32> = arr
+                                        .into_iter()
+                                        .map(|v| v.as_f64().unwrap() as f32)
+                                        .collect();
+                                    model_input.float_features.names.push(key);
+                                    model_input.float_features.values.extend(vec);
+                                    model_input.float_features.shape.0 += 1;
+                                    model_input.float_features.shape.1 = arr_length;
+                                } else {
+                                    return Err(serde::de::Error::custom(
+                                        "Unsupported value type in array",
+                                    ));
+                                }
+                            } else {
+                                return Err(serde::de::Error::custom("Empty array found"));
+                            }
+                        }
+                        _ => return Err(serde::de::Error::custom("Expected an array as value")),
+                    }
+                }
+                Ok(model_input)
+            }
+        }
+
+        deserializer.deserialize_map(ModelInputVisitor)
+    }
+}
 
 #[derive(Debug, Clone)]
 pub enum Values {
@@ -290,7 +276,20 @@ mod tests {
     }"#;
 
         let model_input = ModelInput::from_str(json_data);
-        println!("{:?}", model_input);
+
+        // assert result is ok
+        assert!(model_input.is_ok())
+    }
+
+    #[test]
+    fn successfully_parses_model_input_v2_from_str() {
+        let json_data = r#"{
+        "feature_1": [42, 42],
+        "feature_2": [3.14, 3.14],
+        "feature_3": ["a", "a"]
+    }"#;
+
+        let model_input = ModelInput::from_str(json_data);
 
         // assert result is ok
         assert!(model_input.is_ok())
