@@ -1,5 +1,4 @@
-use crate::model::predict::{ModelInput, Output, Predict, Values, DEFAULT_OUTPUT_KEY};
-use crate::MAX_1D_VEC_CAPACITY;
+use crate::model::predict::{ModelInput, Output, Predict, DEFAULT_OUTPUT_KEY};
 use lgbm;
 use lgbm::mat::MatLayouts;
 use lgbm::mat::MatLayouts::ColMajor;
@@ -31,55 +30,40 @@ impl LightGBMModelInput {
     /// Returns an `Err` if the input contains unsupported string values or if there are
     /// issues converting or organizing the numerical features.
     #[tracing::instrument(skip(model_input))]
-    pub fn parse(model_input: ModelInput) -> anyhow::Result<Self> {
-        let mut numerical_features: Vec<f32> = Vec::with_capacity(MAX_1D_VEC_CAPACITY);
-
-        // extract the values from hashmap
-        let input_matrix: Vec<Values> = model_input.values();
-        let num_cols = input_matrix.len();
-        // it is okay to overwrite this on each loop as all the length of each row is same
-        let mut num_rows: usize = 0;
-
-        for values in input_matrix {
-            match values {
-                Values::String(_) => {
-                    tracing::error!("string type as input feature is not supported");
-                    anyhow::bail!("string type as input feature is not supported")
-                }
-                Values::Int(_) => {
-                    let ints = match values.into_ints() {
-                        None => {
-                            tracing::error!("failed to convert input values to int vector");
-                            anyhow::bail!("failed to convert input values to int vector")
-                        }
-                        Some(ints) => ints,
-                    };
-                    // convert to float
-                    let floats: Vec<f32> = ints.into_iter().map(|x| x as f32).collect();
-                    num_rows = floats.len();
-                    numerical_features.extend(floats);
-                }
-                Values::Float(_) => {
-                    let floats = match values.into_floats() {
-                        None => {
-                            tracing::error!("failed to convert input values to float vector");
-                            anyhow::bail!("failed to convert input values to float vector")
-                        }
-                        Some(floats) => floats,
-                    };
-                    num_rows = floats.len();
-                    numerical_features.extend(floats);
-                }
-            }
-        }
-
-        if numerical_features.is_empty() {
+    pub fn parse(mut model_input: ModelInput) -> anyhow::Result<Self> {
+        if (model_input.integer_features.values.is_empty())
+            && (model_input.float_features.values.is_empty())
+        {
             tracing::error!("input is empty");
             anyhow::bail!("input is empty")
         }
 
+        // only float features are supported, so we are converting Vec<i32> to Vec<f32>
+        // we can use .1 of any features as the length is same.
+        // only the number of features is changing
+        let numerical_features_shape = (
+            model_input.integer_features.shape.0 + model_input.float_features.shape.0,
+            model_input.float_features.shape.1,
+        );
+
+        // convert integer to float
+        let mut converted: Vec<f32> = model_input
+            .integer_features
+            .values
+            .into_iter()
+            .map(|x| x as f32)
+            .collect();
+
+        // reuse the float vector by appending new values
+        model_input.float_features.values.append(&mut converted);
+
         // create a MatBuf in column-major order
-        let matbuf = MatBuf::from_vec(numerical_features, num_rows, num_cols, ColMajor);
+        let matbuf = MatBuf::from_vec(
+            model_input.float_features.values,
+            numerical_features_shape.1,
+            numerical_features_shape.0,
+            ColMajor,
+        );
 
         Ok(Self { matbuf })
     }

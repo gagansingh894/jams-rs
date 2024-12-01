@@ -1,9 +1,7 @@
 #[cfg(test)]
 pub mod utils {
-    use crate::model::predict::{FeatureName, ModelInput, Values};
-    use crate::MAX_CAPACITY;
+    use crate::model::predict::ModelInput;
     use rand::Rng;
-    use std::collections::HashMap;
 
     #[cfg(test)]
     pub fn create_model_inputs(
@@ -11,7 +9,7 @@ pub mod utils {
         num_string_features: usize,
         size: usize,
     ) -> ModelInput {
-        let mut model_input: HashMap<FeatureName, Values> = HashMap::new();
+        let mut model_input = ModelInput::default();
         let mut rng = rand::thread_rng();
         let random_string_values: Vec<String> = vec![
             "a".to_string(),
@@ -23,34 +21,34 @@ pub mod utils {
 
         // create string features
         for i in 0..num_string_features {
-            let mut string_features: Vec<String> = Vec::with_capacity(MAX_CAPACITY);
-
             for _ in 0..size {
                 let value = random_string_values
                     .get(rng.gen_range(0..random_string_values.len()))
                     .unwrap()
                     .to_string();
-                string_features.push(value);
+                model_input.string_features.values.push(value);
+                model_input.string_features.shape.1 = size;
             }
 
             let feature_name = format!("string_feature_{}", i);
-            model_input.insert(feature_name, Values::String(string_features));
+            model_input.string_features.names.push(feature_name);
+            model_input.string_features.shape.0 += 1;
         }
 
         // create numeric features
         for i in 0..num_numeric_features {
-            let mut number_features: Vec<f32> = Vec::with_capacity(MAX_CAPACITY);
-
             for _ in 0..size {
                 let value = rng.gen::<f32>();
-                number_features.push(value);
+                model_input.float_features.values.push(value);
+                model_input.float_features.shape.1 = size;
             }
 
             let feature_name = format!("numeric_feature_{}", i);
-            model_input.insert(feature_name, Values::Float(number_features));
+            model_input.float_features.names.push(feature_name);
+            model_input.float_features.shape.0 += 1;
         }
 
-        ModelInput::from_hashmap(model_input).unwrap()
+        model_input
     }
 
     #[cfg(test)]
@@ -59,7 +57,7 @@ pub mod utils {
         string_features_names: Vec<String>,
         size: usize,
     ) -> ModelInput {
-        let mut model_input: HashMap<FeatureName, Values> = HashMap::new();
+        let mut model_input = ModelInput::default();
         let mut rng = rand::thread_rng();
         let random_string_values: Vec<String> = vec![
             "a".to_string(),
@@ -71,31 +69,31 @@ pub mod utils {
 
         // create string features
         for feature_name in string_features_names {
-            let mut string_features: Vec<String> = Vec::with_capacity(MAX_CAPACITY);
-
             for _ in 0..size {
                 let value = random_string_values
                     .get(rng.gen_range(0..random_string_values.len()))
                     .unwrap()
                     .to_string();
-                string_features.push(value);
+                model_input.string_features.values.push(value);
+                model_input.string_features.shape.1 = size;
             }
 
-            model_input.insert(feature_name, Values::String(string_features));
+            model_input.string_features.names.push(feature_name);
+            model_input.string_features.shape.0 += 1;
         }
 
         // create numeric features
         for feature_name in numeric_features_names {
-            let mut number_features: Vec<f32> = Vec::with_capacity(MAX_CAPACITY);
-
             for _ in 0..size {
                 let value = rng.gen::<f32>();
-                number_features.push(value);
+                model_input.float_features.values.push(value);
+                model_input.float_features.shape.1 = size;
             }
 
-            model_input.insert(feature_name, Values::Float(number_features));
+            model_input.float_features.names.push(feature_name);
+            model_input.float_features.shape.0 += 1;
         }
 
-        ModelInput::from_hashmap(model_input).unwrap()
+        model_input
     }
 }

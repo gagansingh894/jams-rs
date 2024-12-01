@@ -1,7 +1,6 @@
-use crate::model::predict::{ModelInput, Output, Predict, Values, DEFAULT_OUTPUT_KEY};
+use crate::model::predict::{ModelInput, Output, Predict, DEFAULT_OUTPUT_KEY};
 use std::collections::HashMap;
 
-use crate::MAX_CAPACITY;
 use tch::CModule;
 
 /// Struct representing the input for a Torch model.
@@ -22,50 +21,30 @@ impl TorchModelInput {
     /// * `Ok(TorchModelInput)` - If parsing was successful.
     /// * `Err(anyhow::Error)` - If there was an error during parsing.
     #[tracing::instrument(skip(model_input))]
-    fn parse(model_input: ModelInput) -> anyhow::Result<Self> {
-        let mut numerical_features: Vec<f32> = Vec::with_capacity(MAX_CAPACITY);
+    fn parse(mut model_input: ModelInput) -> anyhow::Result<Self> {
+        // only float features are supported, so we are converting Vec<i32> to Vec<f32>
+        // we can use .1 of any features as the length is same.
+        // only the number of features is changing
+        let numerical_features_shape = (
+            model_input.integer_features.shape.0 + model_input.float_features.shape.0,
+            model_input.float_features.shape.1,
+        );
 
-        // extract the values from hashmap
-        let input_matrix: Vec<Values> = model_input.values();
-        let num_cols = input_matrix.len();
-        // it is okay to overwrite this on each loop as all the length of each row is same
-        let mut num_rows: usize = 0;
+        // convert integer to float
+        let mut converted: Vec<f32> = model_input
+            .integer_features
+            .values
+            .into_iter()
+            .map(|x| x as f32)
+            .collect();
 
-        for values in input_matrix {
-            match values {
-                Values::String(_) => {
-                    tracing::error!("string type as input feature is not supported");
-                    anyhow::bail!("string type as input feature is not supported")
-                }
-                Values::Int(_) => {
-                    let ints = match values.into_ints() {
-                        None => {
-                            tracing::error!("failed to convert input values to int vector");
-                            anyhow::bail!("failed to convert input values to int vector")
-                        }
-                        Some(ints) => ints,
-                    };
-                    // convert to float
-                    let floats: Vec<f32> = ints.into_iter().map(|x| x as f32).collect();
-                    num_rows = floats.len();
-                    numerical_features.extend(floats);
-                }
-                Values::Float(_) => {
-                    let floats = match values.into_floats() {
-                        None => {
-                            tracing::error!("failed to convert input values to float vector");
-                            anyhow::bail!("failed to convert input values to float vector")
-                        }
-                        Some(ints) => ints,
-                    };
-                    num_rows = floats.len();
-                    numerical_features.extend(floats);
-                }
-            }
-        }
+        // reuse the float vector by appending new values
+        model_input.float_features.values.append(&mut converted);
 
-        let tensor =
-            tch::Tensor::from_slice(&numerical_features).view([num_rows as i64, num_cols as i64]);
+        let tensor = tch::Tensor::from_slice(&model_input.float_features.values).view([
+            numerical_features_shape.1 as i64,
+            numerical_features_shape.0 as i64,
+        ]);
 
         Ok(Self { tensor })
     }
