@@ -31,17 +31,32 @@ pub struct Output {
 /// Type alias for the feature name, which is a string.
 pub type FeatureName = String;
 
+// todo: add sealed constraints on Vec<T>
+/// A collection of features of a specific type.
+///
+/// This struct represents a generic feature set, where each feature has a name,
+/// a collection of values, and a shape that describes the dimensions of the data.
 #[derive(Debug, Default, Clone)]
 pub struct Features<T> {
+    /// The names of the features.
     pub names: Vec<FeatureName>,
+    /// The values associated with the features.
     pub values: Vec<T>,
+    /// The shape of the feature set, represented as (rows, columns).
     pub shape: (usize, usize),
 }
 
+/// The input data for a machine learning model.
+///
+/// This struct contains three types of features: float, integer, and string.
+/// Each type is stored in its own `Features` structure.
 #[derive(Debug, Default, Clone)]
 pub struct ModelInput {
+    /// The float features in the input.
     pub float_features: Features<f32>,
+    /// The integer features in the input.
     pub integer_features: Features<i32>,
+    /// The string features in the input.
     pub string_features: Features<String>,
 }
 
