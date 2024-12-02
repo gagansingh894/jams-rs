@@ -2081,9 +2081,11 @@ dependencies = [
  "dashmap",
  "flate2",
  "futures",
+ "lazy_static",
  "lgbm",
  "log",
  "ndarray",
+ "object-pool",
  "rand 0.8.5",
  "serde",
  "serde_json",
@@ -2434,6 +2436,15 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "aedf0a2d09c573ed1d8d85b30c119153926a2b36dce0ab28322c09a117a4683e"
 dependencies = [
  "memchr",
+]
+
+[[package]]
+name = "object-pool"
+version = "0.6.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "ceffa2e6ccecd71e60a0f06b655df2c66acd1c0c892dafefc96fd49d65f71d53"
+dependencies = [
+ "parking_lot",
 ]
 
 [[package]]
