@@ -1,4 +1,4 @@
-use crate::model::predict::ModelInput;
+use crate::model::input::ModelInput;
 use crate::model_store::storage::{Metadata, ModelName};
 use crate::model_store::ModelStore;
 use std::sync::Arc;

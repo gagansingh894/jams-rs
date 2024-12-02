@@ -1,10 +1,12 @@
-use crate::model::predict::{FeatureName, ModelInput, Output, Predict};
+use crate::model::input::{FeatureName, ModelInput};
+use crate::model::output::ModelOutput;
+use crate::model::predict::Predict;
+use crate::FEATURE_NAMES_CAPACITY;
 use std::collections::HashMap;
 use tensorflow::{
     DataType, FetchToken, Graph, Operation, SavedModelBundle, SessionOptions, SessionRunArgs,
     SignatureDef, Tensor, DEFAULT_SERVING_SIGNATURE_DEF_KEY,
 };
-use crate::FEATURE_NAMES_CAPACITY;
 
 // Arbitrary high number but in reality, the number is far less
 const MAX_OUTPUT_NODES_SUPPORTED: usize = 250;
@@ -68,8 +70,10 @@ fn parse_sequential(
     graph: &Graph,
 ) -> anyhow::Result<TensorflowModelInput> {
     let mut int_tensors: Vec<(Operation, Tensor<i32>)> = Vec::with_capacity(FEATURE_NAMES_CAPACITY);
-    let mut float_tensors: Vec<(Operation, Tensor<f32>)> = Vec::with_capacity(FEATURE_NAMES_CAPACITY * 2);
-    let mut string_tensors: Vec<(Operation, Tensor<String>)> = Vec::with_capacity(FEATURE_NAMES_CAPACITY);
+    let mut float_tensors: Vec<(Operation, Tensor<f32>)> =
+        Vec::with_capacity(FEATURE_NAMES_CAPACITY * 2);
+    let mut string_tensors: Vec<(Operation, Tensor<String>)> =
+        Vec::with_capacity(FEATURE_NAMES_CAPACITY);
 
     // Create tensors
     for input in signature_def.inputs().iter() {
@@ -84,7 +88,7 @@ fn parse_sequential(
                     model_input.integer_features.shape.1 as u64,
                     model_input.integer_features.shape.0 as u64,
                 ])
-                .with_values(&model_input.integer_features.values)?;
+                .with_values(model_input.integer_features.values.as_ints().unwrap())?;
                 int_tensors.push((input_op, tensor));
             }
             DataType::Float => {
@@ -93,7 +97,7 @@ fn parse_sequential(
                     model_input.float_features.shape.1 as u64,
                     model_input.float_features.shape.0 as u64,
                 ])
-                .with_values(&model_input.float_features.values)?;
+                .with_values(model_input.float_features.values.as_floats().unwrap())?;
                 float_tensors.push((input_op, tensor));
             }
             DataType::String => {
@@ -102,7 +106,7 @@ fn parse_sequential(
                     model_input.string_features.shape.1 as u64,
                     model_input.string_features.shape.0 as u64,
                 ])
-                .with_values(&model_input.string_features.values)?;
+                .with_values(model_input.string_features.values.as_strings().unwrap())?;
                 string_tensors.push((input_op, tensor));
             }
             _ => {
@@ -135,8 +139,10 @@ fn parse_functional(
     graph: &Graph,
 ) -> anyhow::Result<TensorflowModelInput> {
     let mut int_tensors: Vec<(Operation, Tensor<i32>)> = Vec::with_capacity(FEATURE_NAMES_CAPACITY);
-    let mut float_tensors: Vec<(Operation, Tensor<f32>)> = Vec::with_capacity(FEATURE_NAMES_CAPACITY * 2);
-    let mut string_tensors: Vec<(Operation, Tensor<String>)> = Vec::with_capacity(FEATURE_NAMES_CAPACITY);
+    let mut float_tensors: Vec<(Operation, Tensor<f32>)> =
+        Vec::with_capacity(FEATURE_NAMES_CAPACITY * 2);
+    let mut string_tensors: Vec<(Operation, Tensor<String>)> =
+        Vec::with_capacity(FEATURE_NAMES_CAPACITY);
 
     for input in signature_def.inputs().iter() {
         let input_info = match signature_def.get_input(input.0) {
@@ -249,7 +255,7 @@ fn get_integer_feature_from_model_input<'a>(
     {
         let start = if index == 0 { 0 } else { index * num_features };
         let end = start + num_features;
-        Some(&model_input.integer_features.values[start..end])
+        Some(&model_input.integer_features.values.as_ints().unwrap()[start..end])
     } else {
         None
     }
@@ -268,7 +274,7 @@ fn get_float_feature_from_model_input<'a>(
     {
         let start = if index == 0 { 0 } else { index * num_features };
         let end = start + num_features;
-        Some(&model_input.float_features.values[start..end])
+        Some(&model_input.float_features.values.as_floats().unwrap()[start..end])
     } else {
         None
     }
@@ -287,7 +293,7 @@ fn get_string_feature_from_model_input<'a>(
     {
         let start = if index == 0 { 0 } else { index * num_features };
         let end = start + num_features;
-        Some(&model_input.string_features.values[start..end])
+        Some(&model_input.string_features.values.as_strings().unwrap()[start..end])
     } else {
         None
     }
@@ -372,7 +378,7 @@ impl Predict for Tensorflow {
     /// * `Ok(Output)` - If prediction was successful, containing the predicted output.
     /// * `Err(anyhow::Error)` - If there was an error during prediction.
     #[tracing::instrument(skip(self, input))]
-    fn predict(&self, input: ModelInput) -> anyhow::Result<Output> {
+    fn predict(&self, input: ModelInput) -> anyhow::Result<ModelOutput> {
         // Parse input into TensorFlow model input format
         let input = TensorflowModelInput::parse(input, &self.signature_def, &self.graph)?;
 
@@ -463,7 +469,7 @@ impl Predict for Tensorflow {
             }
         }
 
-        Ok(Output { predictions })
+        Ok(ModelOutput { predictions })
     }
 }
 

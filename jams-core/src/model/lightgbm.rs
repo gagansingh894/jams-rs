@@ -1,4 +1,6 @@
-use crate::model::predict::{ModelInput, Output, Predict, DEFAULT_OUTPUT_KEY};
+use crate::model::input::{ModelInput, Values};
+use crate::model::output::{ModelOutput, DEFAULT_OUTPUT_KEY};
+use crate::model::predict::Predict;
 use lgbm;
 use lgbm::mat::MatLayouts;
 use lgbm::mat::MatLayouts::ColMajor;
@@ -47,19 +49,24 @@ impl LightGBMModelInput {
         );
 
         // convert integer to float
-        let mut converted: Vec<f32> = model_input
+        let converted: Vec<f32> = model_input
             .integer_features
             .values
+            .into_ints()
+            .unwrap()
             .into_iter()
             .map(|x| x as f32)
             .collect();
 
         // reuse the float vector by appending new values
-        model_input.float_features.values.append(&mut converted);
+        model_input
+            .float_features
+            .values
+            .append(&mut Values::Float(converted));
 
         // create a MatBuf in column-major order
         let matbuf = MatBuf::from_vec(
-            model_input.float_features.values,
+            model_input.float_features.values.into_floats().unwrap(),
             numerical_features_shape.1,
             numerical_features_shape.0,
             ColMajor,
@@ -111,7 +118,7 @@ impl Predict for LightGBM {
     ///
     /// Returns an `Err` if there is an issue parsing the input or performing the prediction.
     #[tracing::instrument(skip(self, input))]
-    fn predict(&self, input: ModelInput) -> anyhow::Result<Output> {
+    fn predict(&self, input: ModelInput) -> anyhow::Result<ModelOutput> {
         let input = LightGBMModelInput::parse(input)?;
         let p = Parameters::new();
         let preds = self
@@ -122,7 +129,7 @@ impl Predict for LightGBM {
                 let mut predictions: HashMap<String, Vec<Vec<f64>>> = HashMap::new();
                 let values: Vec<Vec<f64>> = preds.values().iter().map(|v| vec![*v]).collect();
                 predictions.insert(DEFAULT_OUTPUT_KEY.to_string(), values);
-                Ok(Output { predictions })
+                Ok(ModelOutput { predictions })
             }
             Err(e) => {
                 tracing::error!("Failed to make predictions using LightGBM: {}", e);
