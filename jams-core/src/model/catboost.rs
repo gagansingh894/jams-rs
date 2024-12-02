@@ -1,7 +1,8 @@
-use crate::model::predict::{ModelInput, Output, Predict, DEFAULT_OUTPUT_KEY};
-use std::collections::HashMap;
-
+use crate::model::input::{ModelInput, Values};
+use crate::model::output::{ModelOutput, DEFAULT_OUTPUT_KEY};
+use crate::model::predict::Predict;
 use catboost_rs;
+use std::collections::HashMap;
 
 /// Struct representing input data for a Catboost model.
 struct CatboostModelInput {
@@ -32,22 +33,27 @@ impl CatboostModelInput {
         );
 
         // convert integer to float
-        let mut converted: Vec<f32> = model_input
+        let converted: Vec<f32> = model_input
             .integer_features
             .values
+            .into_ints()
+            .unwrap()
             .into_iter()
             .map(|x| x as f32)
             .collect();
 
         // reuse the float vector by appending new values
-        model_input.float_features.values.append(&mut converted);
+        model_input
+            .float_features
+            .values
+            .append(&mut Values::Float(converted));
 
         // we will use nd array to perform transpose operation
         let categorical_nd = match model_input.string_features.values.is_empty() {
             true => ndarray::Array2::<String>::default((1, 1)),
             false => ndarray::Array2::<String>::from_shape_vec(
                 model_input.string_features.shape,
-                model_input.string_features.values,
+                model_input.string_features.values.into_strings().unwrap(),
             )?,
         };
 
@@ -55,7 +61,7 @@ impl CatboostModelInput {
             true => ndarray::Array2::<f32>::default((1, 1)),
             false => ndarray::Array2::<f32>::from_shape_vec(
                 numerical_features_shape,
-                model_input.float_features.values,
+                model_input.float_features.values.into_floats().unwrap(),
             )?,
         };
 
@@ -114,7 +120,7 @@ impl Predict for Catboost {
     ///
     /// Returns an `Err` if there is an issue with parsing the input or making predictions.
     #[tracing::instrument(skip(self, input))]
-    fn predict(&self, input: ModelInput) -> anyhow::Result<Output> {
+    fn predict(&self, input: ModelInput) -> anyhow::Result<ModelOutput> {
         let input = CatboostModelInput::parse(input)?;
         let preds = self
             .model
@@ -124,7 +130,7 @@ impl Predict for Catboost {
                 let mut predictions: HashMap<String, Vec<Vec<f64>>> = HashMap::new();
                 let values: Vec<Vec<f64>> = preds.into_iter().map(|v| vec![v]).collect();
                 predictions.insert(DEFAULT_OUTPUT_KEY.to_string(), values);
-                Ok(Output { predictions })
+                Ok(ModelOutput { predictions })
             }
             Err(e) => {
                 tracing::error!(

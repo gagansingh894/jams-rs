@@ -2037,7 +2037,7 @@ checksum = "49f1f14873335454500d59611f1cf4a4b0f786f9ac11f4312a78e4cf2566695b"
 
 [[package]]
 name = "jams"
-version = "0.1.26"
+version = "0.1.27"
 dependencies = [
  "anyhow",
  "clap",
@@ -2066,7 +2066,7 @@ dependencies = [
 
 [[package]]
 name = "jams-core"
-version = "0.2.20"
+version = "0.2.21"
 dependencies = [
  "anyhow",
  "async-trait",
@@ -2081,9 +2081,11 @@ dependencies = [
  "dashmap",
  "flate2",
  "futures",
+ "lazy_static",
  "lgbm",
  "log",
  "ndarray",
+ "object-pool",
  "rand 0.8.5",
  "serde",
  "serde_json",
@@ -2109,7 +2111,7 @@ dependencies = [
 
 [[package]]
 name = "jams-serve"
-version = "0.1.32"
+version = "0.1.33"
 dependencies = [
  "anyhow",
  "axum 0.7.7",
@@ -2434,6 +2436,15 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "aedf0a2d09c573ed1d8d85b30c119153926a2b36dce0ab28322c09a117a4683e"
 dependencies = [
  "memchr",
+]
+
+[[package]]
+name = "object-pool"
+version = "0.6.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "ceffa2e6ccecd71e60a0f06b655df2c66acd1c0c892dafefc96fd49d65f71d53"
+dependencies = [
+ "parking_lot",
 ]
 
 [[package]]

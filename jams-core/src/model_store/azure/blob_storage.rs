@@ -442,20 +442,25 @@ impl Storage for AzureBlobStorageModelStore {
         tokio::time::sleep(interval).await;
 
         tracing::info!("Polling model store ⌛");
-        // let models = match self.fetch_models(None, self.model_store_dir.clone()).await
-        // {
-        //     Ok(models) => {
-        //         tracing::info!("Successfully fetched valid models from Azure Blob Storage ✅");
-        //         models
-        //     }
-        //     Err(e) => {
-        //         anyhow::bail!("Failed to fetch models ❌ - {}", e.to_string());
-        //     }
-        // };
-        //
-        // for (model_name, model) in models {
-        //     self.models.insert(model_name, model);
-        // }
+
+        let models = match self
+            .container_client
+            .fetch_models(None, self.model_store_dir.clone())
+            .await
+        {
+            Ok(models) => {
+                tracing::info!("Successfully fetched valid models from Azure Blob Storage ✅");
+                models
+            }
+            Err(e) => {
+                tracing::error!("Failed to fetch models ❌ - {}", e.to_string());
+                anyhow::bail!("Failed to fetch models ❌ - {}", e.to_string());
+            }
+        };
+
+        for (model_name, model) in models {
+            self.models.insert(model_name, model);
+        }
 
         Ok(())
     }

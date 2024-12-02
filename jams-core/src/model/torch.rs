@@ -1,6 +1,8 @@
-use crate::model::predict::{ModelInput, Output, Predict, DEFAULT_OUTPUT_KEY};
+use crate::model::predict::Predict;
 use std::collections::HashMap;
 
+use crate::model::input::{ModelInput, Values};
+use crate::model::output::{ModelOutput, DEFAULT_OUTPUT_KEY};
 use tch::CModule;
 
 /// Struct representing the input for a Torch model.
@@ -31,20 +33,26 @@ impl TorchModelInput {
         );
 
         // convert integer to float
-        let mut converted: Vec<f32> = model_input
+        let converted: Vec<f32> = model_input
             .integer_features
             .values
+            .into_ints()
+            .unwrap()
             .into_iter()
             .map(|x| x as f32)
             .collect();
 
         // reuse the float vector by appending new values
-        model_input.float_features.values.append(&mut converted);
+        model_input
+            .float_features
+            .values
+            .append(&mut Values::Float(converted));
 
-        let tensor = tch::Tensor::from_slice(&model_input.float_features.values).view([
-            numerical_features_shape.1 as i64,
-            numerical_features_shape.0 as i64,
-        ]);
+        let tensor =
+            tch::Tensor::from_slice(model_input.float_features.values.as_floats().unwrap()).view([
+                numerical_features_shape.1 as i64,
+                numerical_features_shape.0 as i64,
+            ]);
 
         Ok(Self { tensor })
     }
@@ -99,7 +107,7 @@ impl Predict for Torch {
     /// * `Ok(Output)` - The prediction output.
     /// * `Err(anyhow::Error)` - If there was an error during prediction.
     #[tracing::instrument(skip(self, input))]
-    fn predict(&self, input: ModelInput) -> anyhow::Result<Output> {
+    fn predict(&self, input: ModelInput) -> anyhow::Result<ModelOutput> {
         let input = TorchModelInput::parse(input)?;
         let preds = self.model.forward_ts(&[input.tensor]);
         match preds {
@@ -107,7 +115,7 @@ impl Predict for Torch {
                 let mut predictions: HashMap<String, Vec<Vec<f64>>> = HashMap::new();
                 let values: Vec<Vec<f64>> = preds.try_into()?;
                 predictions.insert(DEFAULT_OUTPUT_KEY.to_string(), values);
-                Ok(Output { predictions })
+                Ok(ModelOutput { predictions })
             }
             Err(e) => {
                 tracing::error!(

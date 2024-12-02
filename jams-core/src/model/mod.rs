@@ -1,6 +1,6 @@
 use crate::model::catboost::Catboost;
 use crate::model::lightgbm::LightGBM;
-use crate::model::predict::{ModelInput, Output, Predict};
+use crate::model::predict::Predict;
 use crate::model::tensorflow::Tensorflow;
 use crate::model::torch::Torch;
 
@@ -24,6 +24,8 @@ mod xgboost;
 
 // Always included modules
 pub mod frameworks;
+pub mod input;
+pub mod output;
 pub mod predict;
 mod test_utils;
 
@@ -67,7 +69,7 @@ impl Predictor {
     /// prediction, which may be due to issues in the underlying model, data
     /// compatibility, or other errors.
     ///
-    pub fn predict(&self, input: ModelInput) -> anyhow::Result<Output> {
+    pub fn predict(&self, input: input::ModelInput) -> anyhow::Result<output::ModelOutput> {
         match self {
             Predictor::Catboost(predictor) => predictor.predict(input),
             Predictor::LightGBM(predictor) => predictor.predict(input),

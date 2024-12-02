@@ -1,6 +1,6 @@
 #[cfg(test)]
 pub mod utils {
-    use crate::model::predict::ModelInput;
+    use crate::model::input::ModelInput;
     use rand::Rng;
 
     #[cfg(test)]
@@ -21,14 +21,16 @@ pub mod utils {
 
         // create string features
         for i in 0..num_string_features {
+            let mut string_values = Vec::new();
             for _ in 0..size {
                 let value = random_string_values
                     .get(rng.gen_range(0..random_string_values.len()))
                     .unwrap()
                     .to_string();
-                model_input.string_features.values.push(value);
-                model_input.string_features.shape.1 = size;
+                string_values.push(value);
             }
+            model_input.string_features.values.extend(string_values);
+            model_input.string_features.shape.1 = size;
 
             let feature_name = format!("string_feature_{}", i);
             model_input.string_features.names.push(feature_name);
@@ -37,11 +39,13 @@ pub mod utils {
 
         // create numeric features
         for i in 0..num_numeric_features {
+            let mut float_values = Vec::new();
             for _ in 0..size {
                 let value = rng.gen::<f32>();
-                model_input.float_features.values.push(value);
-                model_input.float_features.shape.1 = size;
+                float_values.push(value);
             }
+            model_input.float_features.values.extend(float_values);
+            model_input.float_features.shape.1 = size;
 
             let feature_name = format!("numeric_feature_{}", i);
             model_input.float_features.names.push(feature_name);
@@ -69,14 +73,16 @@ pub mod utils {
 
         // create string features
         for feature_name in string_features_names {
+            let mut string_values = Vec::new();
             for _ in 0..size {
                 let value = random_string_values
                     .get(rng.gen_range(0..random_string_values.len()))
                     .unwrap()
                     .to_string();
-                model_input.string_features.values.push(value);
-                model_input.string_features.shape.1 = size;
+                string_values.push(value);
             }
+            model_input.string_features.values.extend(string_values);
+            model_input.string_features.shape.1 = size;
 
             model_input.string_features.names.push(feature_name);
             model_input.string_features.shape.0 += 1;
@@ -84,11 +90,13 @@ pub mod utils {
 
         // create numeric features
         for feature_name in numeric_features_names {
+            let mut float_values = Vec::new();
             for _ in 0..size {
                 let value = rng.gen::<f32>();
-                model_input.float_features.values.push(value);
-                model_input.float_features.shape.1 = size;
+                float_values.push(value);
             }
+            model_input.float_features.values.extend(float_values);
+            model_input.float_features.shape.1 = size;
 
             model_input.float_features.names.push(feature_name);
             model_input.float_features.shape.0 += 1;
