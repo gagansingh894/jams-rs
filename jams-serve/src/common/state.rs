@@ -4,7 +4,7 @@ use jams_core::model_store::aws::s3::S3ModelStore;
 use jams_core::model_store::azure::blob_storage::AzureBlobStorageModelStore;
 use jams_core::model_store::local::filesystem::LocalModelStore;
 use jams_core::model_store::ModelStore;
-use jams_core::pool::background_refill_object_pool;
+use jams_core::pool::object_pool_refiller;
 use rayon::{ThreadPool, ThreadPoolBuilder};
 use std::env;
 use std::sync::Arc;
@@ -129,7 +129,7 @@ pub async fn build_app_state(
     );
 
     // start object pool refill worker
-    tokio::spawn(background_refill_object_pool());
+    tokio::spawn(object_pool_refiller());
 
     // setup shared state
     Ok(Arc::new(AppState { manager, cpu_pool }))
