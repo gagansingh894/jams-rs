@@ -1,7 +1,9 @@
+use crate::pool::MODEL_INPUT_POOL;
 use crate::FEATURE_NAMES_CAPACITY;
 use serde::de::{MapAccess, Visitor};
 use serde::{Deserialize, Deserializer};
 use std::fmt::Formatter;
+use std::sync::Arc;
 
 /// Type alias for the feature name, which is a string.
 pub type FeatureName = String;
@@ -268,6 +270,13 @@ impl ModelInput {
             }
         }
     }
+
+    /// Clears the contents of the `ModelInput` struct.
+    fn clear(&mut self) {
+        self.integer_features.clear();
+        self.float_features.clear();
+        self.string_features.clear();
+    }
 }
 
 impl<'de> Deserialize<'de> for ModelInput {
@@ -288,7 +297,12 @@ impl<'de> Deserialize<'de> for ModelInput {
             where
                 M: MapAccess<'de>,
             {
-                let mut model_input = ModelInput::default();
+                // get the ModelInput from the pool and detach from it
+                // A background job ensures that the object pool is always filled
+                let pool = Arc::clone(&MODEL_INPUT_POOL);
+                let pool_object = pool.pull_owned(ModelInput::default);
+                let (_, mut model_input) = pool_object.detach();
+                model_input.clear();
 
                 while let Some((key, value)) = map.next_entry::<String, serde_json::Value>()? {
                     match value {
