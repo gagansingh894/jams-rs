@@ -49,13 +49,3 @@ RUN ldconfig
 
 # Copy the binary
 COPY --from=builder /jams-rs/target/release/jams jams
-
-# Expose the port if the application listens on a specific port
-# 3000 for HTTP, 4000 for gRPC
-EXPOSE 3000
-EXPOSE 4000
-
-# Entrypoint
-# The user would need to expose the port
-ENTRYPOINT ["./jams"]
-CMD ["start", "http"]
