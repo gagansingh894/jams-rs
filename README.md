@@ -284,6 +284,17 @@ export DYLD_LIBRARY_PATH=$COMMON_LIBS_PATH:$COMMON_LIBS_PATH/libtorch2_2_0/libto
 cargo install jams
 ```
 
+*Note: If the above command fails, install `Xcode` from App store and run the following commands*
+```
+sudo xcode-select -s /Applications/Xcode.app/Contents/Developer
+sudo xcodebuild -license
+```
+*Optional: Ensure you are using correct Clang on MacOS. Set the following environment variables*
+```
+export CC=clang
+export CXX=clang++
+```
+
 ### Linux
 1. Use the bash script [here](https://github.com/gagansingh894/jams-rs/blob/main/build) based on your system architecture
 
