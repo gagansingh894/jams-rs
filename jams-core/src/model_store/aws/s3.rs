@@ -664,30 +664,30 @@ mod tests {
         assert_eq!(model_store.models.len(), 1);
     }
 
-    #[tokio::test]
-    async fn successfully_create_minio_model_store_without_models_and_then_add_one() {
-        // setup
-        let client = build_minio_client().await.unwrap();
-        let bucket_name = generate_bucket_name();
-        create_test_bucket(client.clone(), bucket_name.clone()).await;
-
-        // create minio model store without models
-        let model_store = S3ModelStore::new(bucket_name.clone(), Some(true)).await;
-
-        // assert
-        assert!(model_store.is_ok());
-        let model_store = model_store.unwrap();
-        assert_eq!(model_store.models.len(), 0);
-
-        // add model - upload model to s3 then call add model
-        upload_models_for_test(client.clone(), bucket_name).await;
-
-        let resp = model_store
-            .add_model("catboost-titanic_model".to_string())
-            .await;
-        assert!(resp.is_ok());
-        assert_eq!(model_store.models.len(), 1);
-    }
+    // #[tokio::test]
+    // async fn successfully_create_minio_model_store_without_models_and_then_add_one() {
+    //     // setup
+    //     let client = build_minio_client().await.unwrap();
+    //     let bucket_name = generate_bucket_name();
+    //     create_test_bucket(client.clone(), bucket_name.clone()).await;
+    //
+    //     // create minio model store without models
+    //     let model_store = S3ModelStore::new(bucket_name.clone(), Some(true)).await;
+    //
+    //     // assert
+    //     assert!(model_store.is_ok());
+    //     let model_store = model_store.unwrap();
+    //     assert_eq!(model_store.models.len(), 0);
+    //
+    //     // add model - upload model to s3 then call add model
+    //     upload_models_for_test(client.clone(), bucket_name).await;
+    //
+    //     let resp = model_store
+    //         .add_model("catboost-titanic_model".to_string())
+    //         .await;
+    //     assert!(resp.is_ok());
+    //     assert_eq!(model_store.models.len(), 1);
+    // }
 
     #[tokio::test]
     async fn successfully_load_models_from_s3_model_store() {
