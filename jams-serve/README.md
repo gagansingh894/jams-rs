@@ -2,6 +2,8 @@
 
 This library crate is part of a wider project called **J.A.M.S - Just Another Model Server**. Please refer [here](https://github.com/gagansingh894/jams-rs).
 
+**The MSRV is 1.82.**
+
 `jams-serve` is a http and gRPC API library for jams-core.
 
 Refer here for the [OpenAPI Spec](https://github.com/gagansingh894/jams-rs/blob/main/openapi.yml)

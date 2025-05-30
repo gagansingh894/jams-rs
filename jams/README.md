@@ -213,7 +213,7 @@ This project relies on a couple of shared libraries. To easily set up, please fo
 
 ### Mac - Apple Silicon
 1. Install [Homebrew](https://brew.sh/) if not already installed
-2. Install [Rust](https://www.rust-lang.org/tools/install) if not already installed. **The MSRV is 1.81.**
+2. Install [Rust](https://www.rust-lang.org/tools/install) if not already installed. **The MSRV is 1.82.**
 3. Run the following command to install bazel, lightgbm, pytorch and tensorflow
 ```
 brew install bazel lightgbm tensorflow
