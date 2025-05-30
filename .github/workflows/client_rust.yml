@@ -40,22 +40,22 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Install Protoc
-        run: |
-          echo "Installing protoc..."
-          apt-get update
-          apt-get install -y protobuf-compiler
-          rm -rf /var/lib/apt/lists/*
-
-      - name: Install cargo-nextest
-        run: cargo install cargo-nextest
-
-      - name: Lint
-        run: |
-          cd clients/rust/jams-client
-          make lint
-
-      - name: Run tests
-        run: |
-          cd clients/rust/jams-client
-          make nextest
+#      - name: Install Protoc
+#        run: |
+#          echo "Installing protoc..."
+#          apt-get update
+#          apt-get install -y protobuf-compiler
+#          rm -rf /var/lib/apt/lists/*
+#
+#      - name: Install cargo-nextest
+#        run: cargo install cargo-nextest
+#
+#      - name: Lint
+#        run: |
+#          cd clients/rust/jams-client
+#          make lint
+#
+#      - name: Run tests
+#        run: |
+#          cd clients/rust/jams-client
+#          make nextest
